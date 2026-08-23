@@ -37,3 +37,16 @@ def test_each_result_states_what_was_required_and_what_was_observed(tmp_path):
     for r in scenarios.run_all(tmp_path)["results"]:
         assert r["required_result"], r
         assert r["observed"], r
+
+
+def test_the_obsidian_mirror_is_idempotent_and_names_its_source():
+    """A mirror that changes on every run is a mirror nothing can check."""
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parent.parent
+    script = repo / "scripts" / "mirror_dume.py"
+    result = subprocess.run([sys.executable, str(script), "--check"],
+                            capture_output=True, text=True, cwd=repo, timeout=180)
+    assert result.returncode == 0, result.stdout + result.stderr

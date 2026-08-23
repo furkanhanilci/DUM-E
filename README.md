@@ -105,6 +105,27 @@ docs/adr/       DUME-ADRs
 tests/          57 tests, most of them attacks
 ```
 
+## Obsidian mirror
+
+`scripts/mirror_dume.py` generates a reading mirror of the commissioning
+programme into `<vault>/10 - Projects/DUM-E/`, following the vault's existing
+project conventions — numbered area folders, one index per area, `wp_001_*.md`
+file naming, frontmatter that names its source. Work-package notes carry live
+state (`wp_state`, `wave`, `candidate_revision`) read from the DUM-E state
+store, and scenario notes carry their executed verdict and steps.
+
+Tags use the `dume/` namespace. The vault's controlled vocabulary governs
+`aethrion/` only, so a separate project takes a separate namespace rather than
+enlarging someone else's.
+
+```bash
+python3 scripts/mirror_dume.py           # write the mirror
+python3 scripts/mirror_dume.py --check   # fail if the mirror is stale or hand-edited
+```
+
+The mirror is generated. Edit the canonical file — the pack or this repository —
+and re-run. An edit made in the vault is a divergence nothing can detect.
+
 ## Source of the plan
 
 `/home/otonom/Desktop/FH/DUME_COMMISSIONING_IMPLEMENTATION_PACK` — 54 work
