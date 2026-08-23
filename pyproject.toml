@@ -1,0 +1,18 @@
+[project]
+name = "dume"
+version = "0.1.0.dev0"
+description = "The temporary commissioning harness that builds AETHRION"
+requires-python = ">=3.10"
+# The foundation layer has no third-party runtime dependency on purpose: the
+# harness that verifies the environment must not itself need the environment to
+# be verified first.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+dume = "dume.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,89 @@
+{
+  "schema": "dume.upstream_lock/1",
+  "note": "AETHRION is deliberately absent. DUM-E is being commissioned as a harness in isolation; the specification and target workspaces are unbound configuration slots until a human binds them.",
+  "reference_date": "2026-08-24",
+  "upstreams": [
+    {
+      "name": "buzz",
+      "role": "Collaboration substrate: identities, personas, teams, rooms, threads, mentions, managed agents, model/runtime selection, ACP and operational events",
+      "source": "https://github.com/block/buzz.git",
+      "ref": "HEAD",
+      "pinned_revision": "0720f5380ce8a6c050afac159f8462c06cd51ab5",
+      "license": "Apache-2.0",
+      "reuse_class": "DEPENDENCY",
+      "authority_boundary": "Buzz messages and events are operational. Buzz is not acceptance authority."
+    },
+    {
+      "name": "superpowers",
+      "role": "Mandatory engineering methodology and skills",
+      "source": "https://github.com/obra/superpowers.git",
+      "ref": "HEAD",
+      "pinned_revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "license": "MIT",
+      "reuse_class": "DEPENDENCY",
+      "authority_boundary": "Superpowers supplies discipline. It is not acceptance authority. Presence of skill files is not behavioural proof."
+    },
+    {
+      "name": "qwen3.8",
+      "role": "Primary local high-volume model family",
+      "source": "https://github.com/QwenLM/Qwen3.8.git",
+      "ref": "HEAD",
+      "pinned_revision": "2ea10dc725823bf7c3e21ce8557cbe15245132ae",
+      "license": "read from the exact selected weight artefact, not from the repository",
+      "reuse_class": "OPTIONAL_BACKEND",
+      "authority_boundary": "Role-eligible only after qualification (WP-051)."
+    },
+    {
+      "name": "vllm",
+      "role": "High-throughput serving candidate",
+      "source": "https://github.com/vllm-project/vllm.git",
+      "ref": "HEAD",
+      "pinned_revision": null,
+      "resolve_at_execution": true,
+      "reuse_class": "OPTIONAL_BACKEND",
+      "decision_gate": "WP-005"
+    },
+    {
+      "name": "sglang",
+      "role": "High-throughput serving candidate",
+      "source": "https://github.com/sgl-project/sglang.git",
+      "ref": "HEAD",
+      "pinned_revision": null,
+      "resolve_at_execution": true,
+      "reuse_class": "OPTIONAL_BACKEND",
+      "decision_gate": "WP-005"
+    },
+    {
+      "name": "llama.cpp",
+      "role": "Quantised/GGUF fallback serving",
+      "source": "https://github.com/ggml-org/llama.cpp.git",
+      "ref": "HEAD",
+      "pinned_revision": null,
+      "resolve_at_execution": true,
+      "reuse_class": "OPTIONAL_BACKEND",
+      "decision_gate": "WP-005",
+      "note": "Promoted from fallback to a first-class candidate by ADR-0002: measured usable VRAM cannot hold bf16 27B."
+    },
+    {
+      "name": "hermes-agent",
+      "role": "Runtime/harness candidate with custom OpenAI-compatible endpoints and a Superpowers plugin",
+      "source": "https://github.com/NousResearch/Hermes-Agent.git",
+      "ref": "HEAD",
+      "pinned_revision": null,
+      "resolve_at_execution": true,
+      "license": "MIT",
+      "reuse_class": "OPTIONAL_BACKEND",
+      "decision_gate": "WP-016"
+    },
+    {
+      "name": "agent-client-protocol",
+      "role": "Runtime interoperability standard",
+      "source": "https://github.com/agentclientprotocol/agent-client-protocol.git",
+      "ref": "HEAD",
+      "pinned_revision": null,
+      "resolve_at_execution": true,
+      "reuse_class": "STANDARD",
+      "decision_gate": "WP-015"
+    }
+  ]
+}

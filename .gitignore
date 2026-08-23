@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# Evidence artefacts are large and host-specific; the *records* are tracked,
+# raw probe dumps are not.
+evidence/**/*.log
+evidence/**/*.raw
+# Never track anything that looks like a credential store.
+config/secrets.*
+*.env
