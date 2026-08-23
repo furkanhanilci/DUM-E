@@ -1,6 +1,8 @@
 # DUM-E Commissioning Status
 
-**Candidate revision:** `062dfd96fe6a9f8eb2e0922f3503c542ab621c0e`
+**Candidate revision:** recorded in the state store — `python3 -m dume.cli history WP-001`
+(a documentation-only commit on top of a re-pinned candidate is expected; the
+state store, not this sentence, is authoritative)
 **Date:** 2026-08-24
 **Verdict:** `TECH_COMPLETE` for WP-001 — **not accepted**
 
@@ -114,7 +116,7 @@ Then, as an identity that is **not** `claude-opus-5/commissioning-implementer`:
 
 ```bash
 python3 -m dume.cli evidence WP-001 --add --kind verification \
-  --candidate 062dfd96fe6a9f8eb2e0922f3503c542ab621c0e --actor "<verifier>" --verdict PASS \
+  --candidate "$CANDIDATE" --actor "<verifier>" --verdict PASS \
   --artefact <their own test record> --detail "<what they ran>"
 python3 -m dume.cli transition WP-001 ACCEPTED --actor "<verifier>"
 ```
