@@ -4,42 +4,42 @@
     "model_27b_weight_fit": {
       "bf16": {
         "fits_in_usable_vram": false,
-        "headroom_bytes": -9853021021,
+        "headroom_bytes": -9898235618,
         "weight_bytes": 54000000000
       },
       "fp16": {
         "fits_in_usable_vram": false,
-        "headroom_bytes": -9853021021,
+        "headroom_bytes": -9898235618,
         "weight_bytes": 54000000000
       },
       "fp8": {
         "fits_in_usable_vram": true,
-        "headroom_bytes": 17146978979,
+        "headroom_bytes": 17101764382,
         "weight_bytes": 27000000000
       },
       "int8": {
         "fits_in_usable_vram": true,
-        "headroom_bytes": 17146978979,
+        "headroom_bytes": 17101764382,
         "weight_bytes": 27000000000
       },
       "q3_k_m": {
         "fits_in_usable_vram": true,
-        "headroom_bytes": 31456978979,
+        "headroom_bytes": 31411764382,
         "weight_bytes": 12690000000
       },
       "q4_k_m": {
         "fits_in_usable_vram": true,
-        "headroom_bytes": 27946978979,
+        "headroom_bytes": 27901764382,
         "weight_bytes": 16200000000
       },
       "q5_k_m": {
         "fits_in_usable_vram": true,
-        "headroom_bytes": 24976978979,
+        "headroom_bytes": 24931764382,
         "weight_bytes": 19170000000
       },
       "q6_k": {
         "fits_in_usable_vram": true,
-        "headroom_bytes": 22006978979,
+        "headroom_bytes": 21961764382,
         "weight_bytes": 22140000000
       }
     },
@@ -50,11 +50,11 @@
     "nvlink": false,
     "ram_total_bytes": 270112620544,
     "root_can_hold_bf16_27b": false,
-    "root_filesystem_free_bytes": 42478804992,
+    "root_filesystem_free_bytes": 42474135552,
     "runtime_overhead_fraction": 0.12,
-    "vram_free_bytes": 50167021568,
+    "vram_free_bytes": 50115641344,
     "vram_total_bytes": 51514441728,
-    "vram_usable_for_weights_bytes": 44146978979
+    "vram_usable_for_weights_bytes": 44101764382
   },
   "classification_reasons": [
     "2 GPU(s), 41.1 GiB usable for weights after a 12% runtime reserve",
@@ -84,7 +84,7 @@
     "cores_per_socket": "24",
     "logical_cpus": 96,
     "model": "Intel(R) Xeon(R) Gold 5220R CPU @ 2.20GHz",
-    "ram_available_bytes": 259333545984,
+    "ram_available_bytes": 259137347584,
     "ram_total_bytes": 270112620544,
     "sockets": "2",
     "swap_total_bytes": 2147479552,
@@ -110,15 +110,15 @@
         "index": 1,
         "name": "NVIDIA RTX A5000",
         "pci_bus_id": "00000000:2D:00.0",
-        "vram_free_bytes": 24751636480,
+        "vram_free_bytes": 24700256256,
         "vram_total_bytes": 25757220864,
-        "vram_used_bytes": 664797184
+        "vram_used_bytes": 716177408
       }
     ],
     "nvlink": false,
     "probe_command": "nvidia-smi --query-gpu=...",
     "topology": "\u001b[4mGPU0\tGPU1\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\u001b[0m\nGPU0\t X \tNODE\t0-23,48-71\t0\t\tN/A\nGPU1\tNODE\t X \t0-23,48-71\t0\t\tN/A\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks",
-    "vram_free_bytes": 50167021568,
+    "vram_free_bytes": 50115641344,
     "vram_total_bytes": 51514441728
   },
   "host_class": "SINGLE_GPU_CONSTRAINED",
@@ -154,24 +154,24 @@
         "used_bytes": 434579337216
       },
       {
-        "free_bytes": 42478804992,
+        "free_bytes": 42474135552,
         "fstype": "ext4",
         "mountpoint": "/",
         "percent_used": 84.1,
         "read_only": false,
         "source": "/dev/nvme0n1p3",
         "total_bytes": 394027008000,
-        "used_bytes": 331457699840
+        "used_bytes": 331462369280
       },
       {
-        "free_bytes": 42478804992,
+        "free_bytes": 42474135552,
         "fstype": "ext4",
         "mountpoint": "/var/snap/firefox/common/host-hunspell",
         "percent_used": 84.1,
         "read_only": true,
         "source": "/dev/nvme0n1p3[/usr/share/hunspell]",
         "total_bytes": 394027008000,
-        "used_bytes": 331457699840
+        "used_bytes": 331462369280
       },
       {
         "free_bytes": 528461824,

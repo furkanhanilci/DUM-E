@@ -9,3 +9,10 @@ evidence/**/*.raw
 # Never track anything that looks like a credential store.
 config/secrets.*
 *.env
+# The SQLite state store lives on the commissioning host, not in Git. Invariant:
+# transitions must survive a DUM-E process restart — they do, on disk. Surviving
+# a fresh clone is not required, and tracking the file would make every state
+# change dirty the tree it is recording state about.
+state/*.db
+state/*.db-wal
+state/*.db-shm
