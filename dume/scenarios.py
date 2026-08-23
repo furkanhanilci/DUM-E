@@ -56,6 +56,23 @@ def _fixture_cfg(root: Path) -> dict:
     }
 
 
+def _pipeline(store: Store, wp: str, candidate: str, producer: str = "producer",
+              spec: str = "spec-reviewer", code: str = "code-reviewer",
+              verifier: str = "verifier") -> None:
+    """Drive a fixture package through the full pipeline with distinct actors."""
+    for state, actor in (("READY", "human"), ("PACKAGED", "human"),
+                         ("PLANNED", "architect")):
+        store.transition(wp, state, actor=actor)
+    store.transition(wp, "EXECUTING", actor=producer, candidate_revision=candidate)
+    for state, kind, actor in (
+            ("SPEC_REVIEW", "specification_compliance", spec),
+            ("CODE_REVIEW", "code_quality", code),
+            ("VERIFYING", "verification", verifier)):
+        store.transition(wp, state, actor="orchestrator")
+        store.record_review(wp, kind, candidate, actor, "PASS")
+    store.transition(wp, "TECH_COMPLETE", actor=producer)
+
+
 def acc_d001(root: Path) -> Result:
     """Sealed specification mutation attempt."""
     steps = []
@@ -132,12 +149,10 @@ def acc_d013(root: Path) -> Result:
     store = Store(root / "d013.db")
     try:
         store.register("WP-X", "fixture", "01_FOUNDATION", 1)
-        store.transition("WP-X", "READY", actor="human")
-        store.transition("WP-X", "IN_PROGRESS", actor="agent-alpha", candidate_revision="c1")
-        store.transition("WP-X", "TECH_COMPLETE", actor="agent-alpha")
-        steps.append("agent-alpha produced candidate c1 and reached TECH_COMPLETE")
-        store.add_evidence("WP-X", "verification", "c1", "agent-alpha", verdict="PASS")
-        steps.append("agent-alpha recorded its own PASSing verification")
+        _pipeline(store, "WP-X", "c1", producer="agent-alpha")
+        steps.append("agent-alpha produced candidate c1; the pipeline reached "
+                     "TECH_COMPLETE with independent reviewers")
+        steps.append("agent-alpha now attempts to accept its own package")
         try:
             store.transition("WP-X", "ACCEPTED", actor="agent-alpha")
             return Result("ACC-D013", "Producer equals reviewer", "FAIL",
@@ -145,18 +160,26 @@ def acc_d013(root: Path) -> Result:
                           "the producer accepted its own package", steps)
         except StateError as exc:
             steps.append(f"acceptance refused: {exc}")
-        # A bystander rubber-stamping the producer's own verification must also fail.
+        # And the producer must not be able to review its own work at all.
+        store.register("WP-W", "fixture", "01_FOUNDATION", 1)
+        for state, actor in (("READY", "human"), ("PACKAGED", "human"),
+                             ("PLANNED", "architect")):
+            store.transition("WP-W", state, actor=actor)
+        store.transition("WP-W", "EXECUTING", actor="agent-alpha",
+                         candidate_revision="c1")
+        store.transition("WP-W", "SPEC_REVIEW", actor="orchestrator")
         try:
-            store.transition("WP-X", "ACCEPTED", actor="agent-beta")
+            store.record_review("WP-W", "specification_compliance", "c1",
+                                "agent-alpha", "PASS")
             return Result("ACC-D013", "Producer equals reviewer", "FAIL",
                           "Acceptance is refused.",
-                          "a bystander accepted producer-authored verification", steps)
+                          "the producer reviewed its own work", steps)
         except StateError as exc:
-            steps.append(f"rubber-stamp refused: {exc}")
+            steps.append(f"self-review refused: {exc}")
         return Result("ACC-D013", "Producer equals reviewer", "PASS",
                       "Acceptance is refused.",
-                      "both self-acceptance and rubber-stamping of producer-authored "
-                      "verification were refused", steps)
+                      "self-acceptance and self-review were both refused, and a "
+                      "verifier who already reviewed cannot verify", steps)
     finally:
         store.close()
 
@@ -166,12 +189,10 @@ def acc_d022_d023(root: Path) -> list[Result]:
     store = Store(root / "d022.db")
     try:
         store.register("WP-Y", "fixture", "01_FOUNDATION", 1)
-        store.transition("WP-Y", "READY", actor="human")
-        store.transition("WP-Y", "IN_PROGRESS", actor="producer", candidate_revision="c1")
-        store.transition("WP-Y", "TECH_COMPLETE", actor="producer")
-        store.add_evidence("WP-Y", "verification", "c1", "verifier", verdict="PASS")
+        _pipeline(store, "WP-Y", "c1")
+        store.transition("WP-Y", "ACCEPTANCE_READY", actor="orchestrator")
 
-        s22 = ["c1 verified PASS by an independent verifier"]
+        s22 = ["c1 passed spec review, code review and independent verification"]
         try:
             store.transition("WP-Y", "ACCEPTED", actor="verifier", candidate_revision="c2")
             r22 = Result("ACC-D022", "Candidate changes after review", "FAIL",
@@ -184,15 +205,18 @@ def acc_d022_d023(root: Path) -> list[Result]:
                          "evidence for c1 did not carry over to c2", s22)
 
         # Stale green: move the package to a new candidate, then offer the old pass.
-        store.transition("WP-Y", "REJECTED", actor="verifier", reason="scenario")
-        store.transition("WP-Y", "IN_PROGRESS", actor="producer", candidate_revision="c2")
-        store.transition("WP-Y", "TECH_COMPLETE", actor="producer")
+        store.transition("WP-Y", "FAILED", actor="verifier", reason="scenario")
+        store.transition("WP-Y", "RETRY", actor="orchestrator", reason="scenario")
+        store.transition("WP-Y", "PLANNED", actor="architect")
+        store.transition("WP-Y", "EXECUTING", actor="producer", candidate_revision="c2")
         s23 = ["package moved to candidate c2; only c1 has a green result"]
+        store.transition("WP-Y", "SPEC_REVIEW", actor="orchestrator")
         try:
-            store.transition("WP-Y", "ACCEPTED", actor="verifier")
+            # The tempting shortcut: walk on as though c1's review still applies.
+            store.transition("WP-Y", "CODE_REVIEW", actor="orchestrator")
             r23 = Result("ACC-D023", "Stale green test evidence", "FAIL",
                          "The freshness check rejects it.",
-                         "a green result from an older candidate was accepted", s23)
+                         "a green result from an older candidate was reused", s23)
         except StateError as exc:
             s23.append(f"refused: {exc}")
             s23.append("the c1 FAIL/PASS history is still on record — evidence is "

@@ -26,16 +26,52 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 # The closed lifecycle. Anything not in this map is not a reachable transition.
+#
+# The shape is the one the commissioning design fixes: a package is DISCOVERED
+# before it is READY, PACKAGED before it is PLANNED, and passes three separate
+# review stages that ask three different questions — was the requirement met, is
+# the implementation good, does it actually work — before a machine gate decides
+# merge eligibility. Collapsing any of those into "reviewed" loses the
+# distinction that makes the answer worth having.
 TRANSITIONS: dict[str, set[str]] = {
-    "NOT_STARTED": {"READY", "BLOCKED"},
-    "READY": {"IN_PROGRESS", "BLOCKED"},
-    "IN_PROGRESS": {"TECH_COMPLETE", "BLOCKED", "REJECTED"},
-    "TECH_COMPLETE": {"ACCEPTED", "REJECTED", "BLOCKED"},
-    # Terminal-for-now states can be reopened, because a rejected package is
-    # corrected and re-run rather than abandoned.
-    "REJECTED": {"IN_PROGRESS", "BLOCKED"},
-    "BLOCKED": {"READY", "IN_PROGRESS", "NOT_STARTED"},
+    "DISCOVERED": {"READY", "BLOCKED"},
+    "READY": {"PACKAGED", "BLOCKED"},
+    "PACKAGED": {"PLANNED", "BLOCKED", "FAILED"},
+    "PLANNED": {"EXECUTING", "BLOCKED", "FAILED"},
+    "EXECUTING": {"SPEC_REVIEW", "FAILED", "BLOCKED"},
+    "SPEC_REVIEW": {"CODE_REVIEW", "FAILED", "BLOCKED"},
+    "CODE_REVIEW": {"VERIFYING", "FAILED", "BLOCKED"},
+    "VERIFYING": {"TECH_COMPLETE", "FAILED", "BLOCKED"},
+    "TECH_COMPLETE": {"ACCEPTANCE_READY", "FAILED", "BLOCKED"},
+    "ACCEPTANCE_READY": {"ACCEPTED", "FAILED", "BLOCKED"},
+    # A failure is classified and retried, never silently repeated. The retry
+    # re-enters at PLANNED because a correction needs a plan, not a second
+    # attempt at the same one.
+    "FAILED": {"RETRY", "BLOCKED"},
+    "RETRY": {"PLANNED", "BLOCKED"},
+    "BLOCKED": {"READY", "PACKAGED", "PLANNED", "DISCOVERED"},
     "ACCEPTED": set(),
+}
+
+# The three review stages, in the order the pipeline runs them, and the question
+# each one is the only one qualified to answer.
+REVIEW_STAGES = (
+    ("SPEC_REVIEW", "specification_compliance", "Was the requirement met?"),
+    ("CODE_REVIEW", "code_quality", "Is the implementation good?"),
+    ("VERIFYING", "verification", "Does it actually work?"),
+)
+
+# The state a package must be in before each stage may record its verdict.
+STAGE_STATE = {kind: state for state, kind, _ in REVIEW_STAGES}
+
+# Entering a stage requires the previous one to have passed on the *current*
+# candidate. Checking only at the end would let a package walk the whole
+# pipeline with no verdict at all and be caught late, when the cost of the
+# correction is highest.
+STAGE_PREREQUISITE = {
+    "CODE_REVIEW": ("specification_compliance", "SPEC_REVIEW"),
+    "VERIFYING": ("code_quality", "CODE_REVIEW"),
+    "TECH_COMPLETE": ("verification", "VERIFYING"),
 }
 
 STATES = frozenset(TRANSITIONS)
@@ -128,7 +164,7 @@ class Store:
         with self.conn:
             self.conn.execute(
                 "INSERT INTO wp (wp_id,title,workstream,wave,state,updated_at) "
-                "VALUES (?,?,?,?,'NOT_STARTED',?) ON CONFLICT(wp_id) DO UPDATE SET "
+                "VALUES (?,?,?,?,'DISCOVERED',?) ON CONFLICT(wp_id) DO UPDATE SET "
                 "title=excluded.title, workstream=excluded.workstream, wave=excluded.wave",
                 (wp_id, title, workstream, wave, _now()),
             )
@@ -251,9 +287,23 @@ class Store:
                     f"{wp_id}: cannot be READY, hard dependencies not ACCEPTED: "
                     + ", ".join(unmet))
 
-        if to_state == "IN_PROGRESS":
+        prerequisite = STAGE_PREREQUISITE.get(to_state)
+        if prerequisite:
+            kind, from_stage = prerequisite
+            candidate = candidate_revision or row["candidate_revision"]
+            passing = [e for e in self.evidence(wp_id, candidate, kind)
+                       if e["verdict"] == "PASS"]
+            if not passing:
+                question = next(q for _s, k, q in REVIEW_STAGES if k == kind)
+                raise StateError(
+                    f"{wp_id}: cannot enter {to_state} — {from_stage} has no "
+                    f"PASSing {kind} on candidate {candidate}. Nobody has "
+                    f"answered: {question}")
+
+        if to_state == "EXECUTING":
             # The actor that starts implementation is the producer, and is
-            # remembered so that acceptance can refuse the same identity later.
+            # remembered so that every later independence check has an identity
+            # to compare against.
             candidate_revision = candidate_revision or row["candidate_revision"]
 
         if to_state == "TECH_COMPLETE":
@@ -261,13 +311,14 @@ class Store:
                 raise StateError(
                     f"{wp_id}: TECH_COMPLETE requires the candidate revision it "
                     "was reached on")
+            self._check_pipeline_complete(row, candidate_revision)
 
         if to_state == "ACCEPTED":
             self._check_acceptance(row, actor, candidate_revision)
 
         new_rev = candidate_revision or row["candidate_revision"]
         producer = row["producer_actor"]
-        if to_state == "IN_PROGRESS":
+        if to_state == "EXECUTING":
             producer = actor
         with self.conn:
             self.conn.execute(
@@ -278,6 +329,65 @@ class Store:
                 "INSERT INTO transition (wp_id,from_state,to_state,actor,reason,at) "
                 "VALUES (?,?,?,?,?,?)",
                 (wp_id, current, to_state, actor, reason, _now()))
+
+    def _check_pipeline_complete(self, row: sqlite3.Row,
+                                candidate_revision: str | None) -> None:
+        """TECH_COMPLETE means all three review stages passed on this candidate.
+
+        Three separate questions were asked by three separate identities. One
+        actor answering two of them is one opinion wearing two hats, and the
+        pipeline exists precisely so that it is not.
+        """
+        wp_id = row["wp_id"]
+        candidate = candidate_revision or row["candidate_revision"]
+        seen: dict[str, str] = {}
+        for _state, kind, question in REVIEW_STAGES:
+            records = [e for e in self.evidence(wp_id, candidate, kind)]
+            passing = [e for e in records if e["verdict"] == "PASS"]
+            if not passing:
+                raise StateError(
+                    f"{wp_id}: no PASSing {kind} on candidate {candidate} "
+                    f"— nobody has answered: {question}")
+            for record in passing:
+                if row["producer_actor"] and record["actor"] == row["producer_actor"]:
+                    raise StateError(
+                        f"{wp_id}: {kind} on candidate {candidate} was recorded "
+                        f"by the producer {record['actor']!r}; the producer may "
+                        "not review its own work")
+            seen[kind] = passing[-1]["actor"]
+
+        # Verification must be independent of both reviewers, because a verifier
+        # who already argued the code was good is checking their own conclusion.
+        verifier = seen["verification"]
+        for kind in ("specification_compliance", "code_quality"):
+            if seen[kind] == verifier:
+                raise StateError(
+                    f"{wp_id}: {verifier!r} performed both {kind} and "
+                    "verification; fresh verification must be independent of "
+                    "the review that preceded it")
+
+    def record_review(self, wp_id: str, kind: str, candidate_revision: str,
+                      actor: str, verdict: str, artefact_path: str | None = None,
+                      detail: str | None = None) -> int:
+        """Record one review-stage verdict, refusing a stage out of order."""
+        if kind not in STAGE_STATE:
+            raise StateError(
+                f"unknown review stage {kind!r}; expected one of "
+                + ", ".join(sorted(STAGE_STATE)))
+        row = self.get(wp_id)
+        expected = STAGE_STATE[kind]
+        if row["state"] != expected:
+            raise StateError(
+                f"{wp_id}: {kind} may only be recorded in state {expected}, "
+                f"but the package is {row['state']}")
+        if row["producer_actor"] and actor == row["producer_actor"]:
+            raise StateError(
+                f"{wp_id}: producer {actor!r} may not perform {kind}")
+        if verdict not in {"PASS", "FAIL"}:
+            raise StateError(f"a review verdict is PASS or FAIL, not {verdict!r}")
+        return self.add_evidence(wp_id, kind, candidate_revision, actor,
+                                 verdict=verdict, artefact_path=artefact_path,
+                                 detail=detail)
 
     def _check_acceptance(self, row: sqlite3.Row, actor: str,
                           candidate_revision: str | None) -> None:
@@ -359,7 +469,7 @@ def json_dump(obj, path: Path | str) -> str:
     was found the hard way: a secret-scan report recorded a credential quoted
     inside its own suppression reason.
     """
-    from . import secrets as _secrets
+    from .. import secrets as _secrets
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     body = json.dumps(obj, indent=2, sort_keys=True, ensure_ascii=False)
