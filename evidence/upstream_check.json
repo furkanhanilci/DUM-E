@@ -1,0 +1,89 @@
+{
+  "checked_at": "2026-08-23T23:29:48+00:00",
+  "drift_count": 0,
+  "results": [
+    {
+      "license": "Apache-2.0",
+      "live_revision": "0720f5380ce8a6c050afac159f8462c06cd51ab5",
+      "name": "buzz",
+      "pinned_revision": "0720f5380ce8a6c050afac159f8462c06cd51ab5",
+      "reuse_class": "DEPENDENCY",
+      "role": "Collaboration substrate: identities, personas, teams, rooms, threads, mentions, managed agents, model/runtime selection, ACP and operational events",
+      "source": "https://github.com/block/buzz.git",
+      "status": "NO_DRIFT"
+    },
+    {
+      "license": "MIT",
+      "live_revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "name": "superpowers",
+      "pinned_revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "reuse_class": "DEPENDENCY",
+      "role": "Mandatory engineering methodology and skills",
+      "source": "https://github.com/obra/superpowers.git",
+      "status": "NO_DRIFT"
+    },
+    {
+      "license": "read from the exact selected weight artefact, not from the repository",
+      "live_revision": "2ea10dc725823bf7c3e21ce8557cbe15245132ae",
+      "name": "qwen3.8",
+      "pinned_revision": "2ea10dc725823bf7c3e21ce8557cbe15245132ae",
+      "reuse_class": "OPTIONAL_BACKEND",
+      "role": "Primary local high-volume model family",
+      "source": "https://github.com/QwenLM/Qwen3.8.git",
+      "status": "NO_DRIFT"
+    },
+    {
+      "license": null,
+      "live_revision": "185cada36bb25aa55f762d004d54c5ca1e3fc753",
+      "name": "vllm",
+      "pinned_revision": null,
+      "reuse_class": "OPTIONAL_BACKEND",
+      "role": "High-throughput serving candidate",
+      "source": "https://github.com/vllm-project/vllm.git",
+      "status": "UNPINNED"
+    },
+    {
+      "license": null,
+      "live_revision": "95f5ecd3d26665423d3e6577a2a00c04f5cde733",
+      "name": "sglang",
+      "pinned_revision": null,
+      "reuse_class": "OPTIONAL_BACKEND",
+      "role": "High-throughput serving candidate",
+      "source": "https://github.com/sgl-project/sglang.git",
+      "status": "UNPINNED"
+    },
+    {
+      "license": null,
+      "live_revision": "c060ca974c773c7c3d17fd1b66dc9d312bc292c0",
+      "name": "llama.cpp",
+      "pinned_revision": null,
+      "reuse_class": "OPTIONAL_BACKEND",
+      "role": "Quantised/GGUF fallback serving",
+      "source": "https://github.com/ggml-org/llama.cpp.git",
+      "status": "UNPINNED"
+    },
+    {
+      "license": "MIT",
+      "live_revision": "4a3e5c4094d96c2e184dead99bccb4f4aabb2e1b",
+      "name": "hermes-agent",
+      "pinned_revision": null,
+      "reuse_class": "OPTIONAL_BACKEND",
+      "role": "Runtime/harness candidate with custom OpenAI-compatible endpoints and a Superpowers plugin",
+      "source": "https://github.com/NousResearch/Hermes-Agent.git",
+      "status": "UNPINNED"
+    },
+    {
+      "license": null,
+      "live_revision": "c9733c2689a133534159f823957d1874b1b451c3",
+      "name": "agent-client-protocol",
+      "pinned_revision": null,
+      "reuse_class": "STANDARD",
+      "role": "Runtime interoperability standard",
+      "source": "https://github.com/agentclientprotocol/agent-client-protocol.git",
+      "status": "UNPINNED"
+    }
+  ],
+  "schema": "dume.upstream_check/1",
+  "unreachable_count": 0,
+  "verdict": "CLEAN"
+}

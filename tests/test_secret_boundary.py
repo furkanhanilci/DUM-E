@@ -78,3 +78,55 @@ def test_scan_tree_finds_a_planted_credential(tmp_path):
     (tmp_path / "leak.env").write_text(f"GITHUB_TOKEN={REAL['github_token']}\n")
     findings = secrets.scan_tree(tmp_path)
     assert set(findings) == {"leak.env"}
+
+
+def test_an_allowlist_entry_without_a_reason_is_refused(tmp_path):
+    """A suppression must always have an author. Silence with no reason is not
+    a decision, it is a leak waiting to be blamed on nobody."""
+    import json
+    path = tmp_path / "allow.json"
+    path.write_text(json.dumps({"allow": [{"path": "x.py", "kinds": "*"}]}))
+    with pytest.raises(ValueError, match="no reason"):
+        secrets.load_allowlist(path)
+
+
+def test_suppressed_hits_are_reported_rather_than_hidden(tmp_path):
+    (tmp_path / "fixture.py").write_text(f"KEY = '{REAL['github_token']}'\n")
+    (tmp_path / "real.py").write_text(f"KEY = '{REAL['anthropic_api_key']}'\n")
+    allow = [{"path": "fixture.py", "kinds": "*", "reason": "test fixture"}]
+    import dume.secrets as m
+    original = m.load_allowlist
+    m.load_allowlist = lambda path=None: allow
+    try:
+        report = m.scan_tree_with_suppressions(tmp_path)
+    finally:
+        m.load_allowlist = original
+    assert set(report["findings"]) == {"real.py"}
+    assert [s["path"] for s in report["suppressed"]] == ["fixture.py"]
+    assert report["suppressed"][0]["reason"] == "test fixture"
+
+
+def test_transient_tool_caches_are_not_scanned(tmp_path):
+    """A cache reproduces findings from elsewhere and buries the one that matters."""
+    cache = tmp_path / ".pytest_cache" / "v"
+    cache.mkdir(parents=True)
+    (cache / "nodeids").write_text(REAL["github_token"])
+    assert secrets.scan_tree(tmp_path, allowlist=[]) == {}
+
+
+def test_the_repository_itself_carries_no_unsuppressed_credential():
+    """The control, applied to the thing it protects."""
+    from pathlib import Path
+    repo = Path(__file__).resolve().parent.parent
+    report = secrets.scan_tree_with_suppressions(repo)
+    assert report["findings"] == {}, report["findings"]
+
+
+def test_evidence_is_redacted_at_the_moment_it_becomes_a_file(tmp_path):
+    """I-19 applied at the write, not delegated to every caller's memory."""
+    from dume.state import json_dump
+    out = tmp_path / "receipt.json"
+    json_dump({"note": f"observed {REAL['github_token']} in the payload"}, out)
+    body = out.read_text()
+    assert REAL["github_token"] not in body
+    assert "REDACTED:github_token" in body

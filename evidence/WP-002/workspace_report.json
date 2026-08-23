@@ -1,0 +1,64 @@
+{
+  "schema": "dume.workspace_report/1",
+  "unbound": [
+    "AETHRION_SPEC",
+    "AETHRION_TARGET",
+    "MODEL_CACHE"
+  ],
+  "workspaces": [
+    {
+      "bound": true,
+      "control": "HOLDS",
+      "mode": "READ_WRITE",
+      "mount_read_only": false,
+      "name": "DUME",
+      "path": "/home/otonom/Desktop/FH/DUM-E",
+      "write_probe": {
+        "detail": "write succeeded",
+        "outcome": "WROTE"
+      }
+    },
+    {
+      "bound": false,
+      "mode": "READ_ONLY",
+      "name": "AETHRION_SPEC",
+      "path": null
+    },
+    {
+      "bound": false,
+      "mode": "READ_WRITE",
+      "name": "AETHRION_TARGET",
+      "path": null
+    },
+    {
+      "bound": true,
+      "control": "HOLDS",
+      "mode": "READ_WRITE",
+      "mount_read_only": false,
+      "name": "WORKTREES",
+      "path": "/home/otonom/Desktop/FH/DUM-E/worktrees",
+      "write_probe": {
+        "detail": "write succeeded",
+        "outcome": "WROTE"
+      }
+    },
+    {
+      "bound": true,
+      "control": "HOLDS",
+      "mode": "APPEND_ONLY",
+      "mount_read_only": false,
+      "name": "EVIDENCE",
+      "path": "/home/otonom/Desktop/FH/DUM-E/evidence",
+      "write_probe": {
+        "detail": "write succeeded",
+        "outcome": "WROTE"
+      }
+    },
+    {
+      "bound": false,
+      "mode": "READ_WRITE",
+      "name": "MODEL_CACHE",
+      "path": "/media/otonom/DATADRIVE1/dume-model-cache"
+    }
+  ]
+}

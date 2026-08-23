@@ -79,6 +79,8 @@ def cmd_workspace(args) -> int:
     if report["unbound"]:
         print(f"\nunbound slots: {', '.join(report['unbound'])} "
               "— a work package needing one of these is BLOCKED, not improvised.")
+    out = EVIDENCE / "WP-002" / "workspace_report.json"
+    print(f"\nrecorded: {out}  sha256={json_dump(report, out)}")
     _emit(report, args.json)
     return 0
 
@@ -94,18 +96,27 @@ def cmd_check_write(args) -> int:
 def cmd_secrets(args) -> int:
     root = Path(args.path)
     if root.is_file():
-        findings = {str(root): secrets.scan_file(root)}
-        findings = {k: v for k, v in findings.items() if v}
+        findings = {k: v for k, v in {str(root): secrets.scan_file(root)}.items() if v}
+        suppressed = []
     else:
-        findings = secrets.scan_tree(root)
+        scanned = secrets.scan_tree_with_suppressions(root)
+        findings, suppressed = scanned["findings"], scanned["suppressed"]
     total = sum(len(v) for v in findings.values())
     for path, hits in sorted(findings.items()):
         print(f"{path}")
         for hit in hits:
             print(f"    {hit.preview}")
-    print(f"\n{total} credential(s) in {len(findings)} file(s) under {root}")
-    _emit({"findings": {k: [h.as_dict() for h in v] for k, v in findings.items()},
-           "total": total}, args.json)
+    print(f"\n{total} unsuppressed credential(s) in {len(findings)} file(s) under {root}")
+    if suppressed:
+        print(f"{len(suppressed)} hit(s) suppressed by a reviewed allowlist entry:")
+        for entry in suppressed:
+            print(f"    {entry['path']}  {entry['kind']}  — {entry['reason']}")
+    report = {"schema": "dume.secret_scan/1", "root": str(root), "total": total,
+              "suppressed": suppressed,
+              "findings": {k: [h.as_dict() for h in v] for k, v in findings.items()}}
+    out = EVIDENCE / "WP-003" / "secret_scan.json"
+    print(f"recorded: {out}  sha256={json_dump(report, out)}")
+    _emit(report, args.json)
     return 1 if total else 0
 
 
@@ -128,6 +139,8 @@ def cmd_toolchain(args) -> int:
         for m in lock["missing_for_later_waves"]:
             print(f"  wave {m['needed_from_wave']}: {m['name']} — {m['required_for']}")
     print(f"\nenvironment digest: {lock['environment_digest']}")
+    out = EVIDENCE / "WP-004" / "toolchain_lock.json"
+    print(f"recorded: {out}  sha256={json_dump(lock, out)}")
     _emit(lock, args.json)
     return 1 if lock["missing_required"] else 0
 

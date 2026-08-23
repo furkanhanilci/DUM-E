@@ -351,8 +351,17 @@ def sha256_file(path: Path | str) -> str:
 
 
 def json_dump(obj, path: Path | str) -> str:
-    """Write deterministic JSON and return its digest."""
+    """Write deterministic JSON and return its digest.
+
+    Redaction happens here, at the moment evidence becomes a file. Invariant 19
+    says secrets never enter evidence or logs, and the only way to make that
+    true is to apply it at the write, not to ask every caller to remember. This
+    was found the hard way: a secret-scan report recorded a credential quoted
+    inside its own suppression reason.
+    """
+    from . import secrets as _secrets
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, indent=2, sort_keys=True, ensure_ascii=False) + "\n")
+    body = json.dumps(obj, indent=2, sort_keys=True, ensure_ascii=False)
+    path.write_text(_secrets.redact(body) + "\n")
     return sha256_file(path)

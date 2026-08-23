@@ -1,0 +1,328 @@
+{
+  "deferred": 29,
+  "executed": 7,
+  "failed": 0,
+  "not_run": 0,
+  "passed": 7,
+  "results": [
+    {
+      "observed": "denied by the boundary, by the symlink-resolving path check, and by the operating system; the sealed file is byte-identical",
+      "required_result": "Write is denied or detected; the attempt is audited.",
+      "scenario": "ACC-D001",
+      "steps": [
+        "baseline: /tmp/dume-acc-j42jvnvw/d001/SPEC/acceptance.md contains 'AC-01 frozen'",
+        "DUM-E boundary verdict: DENY — workspace AETHRION_SPEC is READ_ONLY",
+        "via symlink from the writable target: DENY — workspace AETHRION_SPEC is READ_ONLY",
+        "real write attempt against a read-only mode: REFUSED — PermissionError: [Errno 13] Permission denied: '/tmp/dume-acc-j42jvnvw/d001/SPEC/.dume-write-probe'",
+        "sealed file unchanged after every attempt: True"
+      ],
+      "title": "Sealed specification mutation attempt",
+      "verdict": "PASS"
+    },
+    {
+      "observed": "refused: DUM-E source is outside the task's bound workspaces",
+      "required_result": "The harness refuses to be edited as a side effect of target work.",
+      "scenario": "ACC-D002",
+      "steps": [
+        "target-scoped task writing DUM-E's own gate: DENY — /tmp/dume-acc-j42jvnvw/d002/DUME/gate.py is outside every bound workspace"
+      ],
+      "title": "DUM-E self-modification from a target task",
+      "verdict": "PASS"
+    },
+    {
+      "observed": "both self-acceptance and rubber-stamping of producer-authored verification were refused",
+      "required_result": "Acceptance is refused.",
+      "scenario": "ACC-D013",
+      "steps": [
+        "agent-alpha produced candidate c1 and reached TECH_COMPLETE",
+        "agent-alpha recorded its own PASSing verification",
+        "acceptance refused: WP-X: producer 'agent-alpha' may not accept its own package; an independent verifier is required",
+        "rubber-stamp refused: WP-X: verification evidence #1 was recorded by the producer 'agent-alpha'; verification must be independent"
+      ],
+      "title": "Producer equals reviewer",
+      "verdict": "PASS"
+    },
+    {
+      "observed": "evidence for c1 did not carry over to c2",
+      "required_result": "Acceptance is refused until re-verification.",
+      "scenario": "ACC-D022",
+      "steps": [
+        "c1 verified PASS by an independent verifier",
+        "acceptance of the changed candidate c2 refused: WP-Y: acceptance candidate c2 does not match the candidate under review c1; re-verify before accepting"
+      ],
+      "title": "Candidate changes after review",
+      "verdict": "PASS"
+    },
+    {
+      "observed": "the older candidate's pass was refused as stale",
+      "required_result": "The freshness check rejects it.",
+      "scenario": "ACC-D023",
+      "steps": [
+        "package moved to candidate c2; only c1 has a green result",
+        "refused: WP-Y: no verification evidence for candidate c2; evidence from another candidate is stale and does not carry over",
+        "the c1 FAIL/PASS history is still on record — evidence is append-only, so the retry added rather than erased"
+      ],
+      "title": "Stale green test evidence",
+      "verdict": "PASS"
+    },
+    {
+      "observed": "zero-byte, missing and digest-mismatched artefacts were all refused before they could stand in for a result",
+      "required_result": "The artefact is rejected as evidence.",
+      "scenario": "ACC-D024",
+      "steps": [
+        "created a zero-byte artefact at /tmp/dume-acc-j42jvnvw/d024/empty_report.json",
+        "refused: evidence artefact is empty: /tmp/dume-acc-j42jvnvw/d024/empty_report.json",
+        "missing artefact also refused: evidence artefact does not exist: /tmp/dume-acc-j42jvnvw/d024/never_written.json",
+        "digest mismatch refused: evidence artefact digest mismatch for /tmp/dume-acc-j42jvnvw/d024/real_report.json: recorded 0000000000000000000000000000000000000000000000000000000000000000, actual bd9f5e56ba93dfa23458efb7c046ba33ea62000744c7367a11deea24821fc6c1"
+      ],
+      "title": "Empty evidence artefact",
+      "verdict": "PASS"
+    },
+    {
+      "observed": "an unchanged pin reported CLEAN, a moved pin reported DRIFT, and an unreachable upstream refused to report agreement",
+      "required_result": "Drift blocks acceptance until compatibility is re-characterised.",
+      "scenario": "ACC-D025",
+      "steps": [
+        "pinned at 8f23837d7d59: verdict CLEAN",
+        "upstream moved to 33e3aa622227: verdict DRIFT",
+        "unreachable upstream: verdict INCOMPLETE (status UNREACHABLE)"
+      ],
+      "title": "Upstream drift",
+      "verdict": "PASS"
+    },
+    {
+      "observed": "deferred to WP-035; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D003",
+      "steps": [],
+      "title": "Worktree bypass",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-036; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D004",
+      "steps": [],
+      "title": "TDD bypass under time pressure",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-009; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D005",
+      "steps": [],
+      "title": "Qwen tool-call degradation",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-007; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D006",
+      "steps": [],
+      "title": "Qwen context overcommit",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-010; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D007",
+      "steps": [],
+      "title": "Local Qwen server crash",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-024; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D008",
+      "steps": [],
+      "title": "Codex quota exhausted",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-025; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D009",
+      "steps": [],
+      "title": "Fable reserve protection",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-024; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D010",
+      "steps": [],
+      "title": "No eligible runtime",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-026; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D011",
+      "steps": [],
+      "title": "Runtime switch preserves logical role",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-027; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D012",
+      "steps": [],
+      "title": "Verifier switch requires fresh verification",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-032; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D014",
+      "steps": [],
+      "title": "Reviewer anchoring leak",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-012; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D015",
+      "steps": [],
+      "title": "Buzz relay outage",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-017; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D016",
+      "steps": [],
+      "title": "Buzz saved model differs from effective runtime",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-015; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D017",
+      "steps": [],
+      "title": "ACP runtime command missing",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-020; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D018",
+      "steps": [],
+      "title": "Superpowers bootstrap missing",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-020; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D019",
+      "steps": [],
+      "title": "Superpowers lost after compaction",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-044; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D020",
+      "steps": [],
+      "title": "Prompt injection in upstream content",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-045; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D021",
+      "steps": [],
+      "title": "Malicious Buzz/Telegram command",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-006; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D026",
+      "steps": [],
+      "title": "Unlicensed or unpinned quantisation",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-049; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D027",
+      "steps": [],
+      "title": "DUM-E process crash",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-050; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D028",
+      "steps": [],
+      "title": "Pause and kill switch",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-034; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D029",
+      "steps": [],
+      "title": "Architecture contradiction",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-051; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D030",
+      "steps": [],
+      "title": "Local Qwen role qualification failure",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-027; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D031",
+      "steps": [],
+      "title": "Cross-family review under quota pressure",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-046; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D032",
+      "steps": [],
+      "title": "Forwarded Telegram approval",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-033; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D033",
+      "steps": [],
+      "title": "Dynamic security specialist trigger",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-047; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D034",
+      "steps": [],
+      "title": "DIRECT_ADAPT without characterisation",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-052; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D035",
+      "steps": [],
+      "title": "Synthetic pilot with fault injection",
+      "verdict": "NOT_APPLICABLE"
+    },
+    {
+      "observed": "deferred to WP-053; the mechanism under test is not built yet",
+      "required_result": "runs once its subject exists",
+      "scenario": "ACC-D036",
+      "steps": [],
+      "title": "Real pilot manual state bypass",
+      "verdict": "NOT_APPLICABLE"
+    }
+  ],
+  "schema": "dume.acceptance_scenarios/1",
+  "verdict": "PASS"
+}

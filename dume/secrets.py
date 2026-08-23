@@ -136,11 +136,48 @@ def scan_file(path: Path | str) -> list[Hit]:
         return []
 
 
-def scan_tree(root: Path | str, skip: tuple[str, ...] = (".git", "__pycache__",
-                                                         ".venv", "node_modules")
+# Directories whose contents are reproduced from elsewhere. Scanning them
+# reports the same finding twice and buries the one that matters.
+SKIP_DIRS = (".git", "__pycache__", ".venv", "node_modules", ".pytest_cache",
+             ".mypy_cache", ".ruff_cache", "dist", "build", ".tox")
+
+ALLOWLIST_PATH = Path(__file__).resolve().parent.parent / "config" / "secret_scan_allowlist.json"
+
+
+def load_allowlist(path: Path | None = None) -> list[dict]:
+    """Known-synthetic credentials, each with a recorded reason.
+
+    An allowlist entry is a reviewed decision, not a way to make a finding go
+    away: an entry without a reason is refused, so silence always has an author.
+    """
+    import json
+    path = Path(path) if path else ALLOWLIST_PATH
+    if not path.is_file():
+        return []
+    entries = json.loads(path.read_text()).get("allow", [])
+    for entry in entries:
+        if not entry.get("reason"):
+            raise ValueError(
+                f"allowlist entry for {entry.get('path')!r} has no reason; "
+                "an unexplained suppression is not a decision")
+    return entries
+
+
+def _allowed(entries: list[dict], rel_path: str, kind: str) -> dict | None:
+    import fnmatch
+    for entry in entries:
+        if fnmatch.fnmatch(rel_path, entry["path"]) and (
+                entry.get("kinds") in (None, "*") or kind in entry.get("kinds", [])):
+            return entry
+    return None
+
+
+def scan_tree(root: Path | str, skip: tuple[str, ...] = SKIP_DIRS,
+              allowlist: list[dict] | None = None
               ) -> dict[str, list[Hit]]:
     """Scan a directory, reporting only files that carry something."""
     root = Path(root)
+    entries = load_allowlist() if allowlist is None else allowlist
     findings: dict[str, list[Hit]] = {}
     for path in root.rglob("*"):
         if not path.is_file() or path.is_symlink():
@@ -152,7 +189,39 @@ def scan_tree(root: Path | str, skip: tuple[str, ...] = (".git", "__pycache__",
                 continue
         except OSError:
             continue
-        hits = scan_file(path)
+        rel = str(path.relative_to(root))
+        hits = [h for h in scan_file(path) if not _allowed(entries, rel, h.kind)]
         if hits:
-            findings[str(path.relative_to(root))] = hits
+            findings[rel] = hits
     return findings
+
+
+def scan_tree_with_suppressions(root: Path | str, skip: tuple[str, ...] = SKIP_DIRS
+                                ) -> dict:
+    """Scan, and report suppressed hits separately so the count is never hidden."""
+    root = Path(root)
+    entries = load_allowlist()
+    findings: dict[str, list[Hit]] = {}
+    suppressed: list[dict] = []
+    for path in Path(root).rglob("*"):
+        if not path.is_file() or path.is_symlink():
+            continue
+        if any(part in skip for part in path.parts):
+            continue
+        try:
+            if path.stat().st_size > 4 * 1024 * 1024:
+                continue
+        except OSError:
+            continue
+        rel = str(path.relative_to(root))
+        live: list[Hit] = []
+        for hit in scan_file(path):
+            entry = _allowed(entries, rel, hit.kind)
+            if entry:
+                suppressed.append({"path": rel, "kind": hit.kind,
+                                   "reason": entry["reason"]})
+            else:
+                live.append(hit)
+        if live:
+            findings[rel] = live
+    return {"findings": findings, "suppressed": suppressed}
