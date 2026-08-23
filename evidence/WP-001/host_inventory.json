@@ -1,0 +1,218 @@
+{
+  "capacity_envelope": {
+    "gpu_count": 2,
+    "model_27b_weight_fit": {
+      "bf16": {
+        "fits_in_usable_vram": false,
+        "headroom_bytes": -9841948058,
+        "weight_bytes": 54000000000
+      },
+      "fp16": {
+        "fits_in_usable_vram": false,
+        "headroom_bytes": -9841948058,
+        "weight_bytes": 54000000000
+      },
+      "fp8": {
+        "fits_in_usable_vram": true,
+        "headroom_bytes": 17158051942,
+        "weight_bytes": 27000000000
+      },
+      "int8": {
+        "fits_in_usable_vram": true,
+        "headroom_bytes": 17158051942,
+        "weight_bytes": 27000000000
+      },
+      "q3_k_m": {
+        "fits_in_usable_vram": true,
+        "headroom_bytes": 31468051942,
+        "weight_bytes": 12690000000
+      },
+      "q4_k_m": {
+        "fits_in_usable_vram": true,
+        "headroom_bytes": 27958051942,
+        "weight_bytes": 16200000000
+      },
+      "q5_k_m": {
+        "fits_in_usable_vram": true,
+        "headroom_bytes": 24988051942,
+        "weight_bytes": 19170000000
+      },
+      "q6_k": {
+        "fits_in_usable_vram": true,
+        "headroom_bytes": 22018051942,
+        "weight_bytes": 22140000000
+      }
+    },
+    "model_cache_candidate": {
+      "free_bytes": 895243591680,
+      "mountpoint": "/media/otonom/DATADRIVE1"
+    },
+    "nvlink": false,
+    "ram_total_bytes": 270112620544,
+    "root_can_hold_bf16_27b": false,
+    "root_filesystem_free_bytes": 42485817344,
+    "runtime_overhead_fraction": 0.12,
+    "vram_free_bytes": 50179604480,
+    "vram_total_bytes": 51514441728,
+    "vram_usable_for_weights_bytes": 44158051942
+  },
+  "classification_reasons": [
+    "2 GPU(s), 41.1 GiB usable for weights after a 12% runtime reserve",
+    "a 27B model in bf16 does not fit in usable VRAM; quantisation or a smaller model is required, not a larger context",
+    "GPUs are linked over PCIe/NODE, not NVLink; tensor parallelism pays an interconnect cost",
+    "the root filesystem holds 40 GiB free, which cannot host bf16 27B weights; the model cache must live on another filesystem"
+  ],
+  "container_and_network": {
+    "common_serving_ports_in_use": [],
+    "docker": "Docker version 29.7.1, build e9452d6",
+    "listening_ports": [
+      22,
+      53,
+      631,
+      7070,
+      8765,
+      19876,
+      23116,
+      23119,
+      34831,
+      46993,
+      56094
+    ],
+    "podman": null
+  },
+  "cpu_memory": {
+    "cores_per_socket": "24",
+    "logical_cpus": 96,
+    "model": "Intel(R) Xeon(R) Gold 5220R CPU @ 2.20GHz",
+    "ram_available_bytes": 259363672064,
+    "ram_total_bytes": 270112620544,
+    "sockets": "2",
+    "swap_total_bytes": 2147479552,
+    "threads_per_core": "2"
+  },
+  "gpu": {
+    "available": true,
+    "cuda_version": "12.2",
+    "gpus": [
+      {
+        "compute_mode": "Default",
+        "driver_version": "535.309.01",
+        "index": 0,
+        "name": "NVIDIA RTX A5000",
+        "pci_bus_id": "00000000:15:00.0",
+        "vram_free_bytes": 25415385088,
+        "vram_total_bytes": 25757220864,
+        "vram_used_bytes": 9437184
+      },
+      {
+        "compute_mode": "Default",
+        "driver_version": "535.309.01",
+        "index": 1,
+        "name": "NVIDIA RTX A5000",
+        "pci_bus_id": "00000000:2D:00.0",
+        "vram_free_bytes": 24764219392,
+        "vram_total_bytes": 25757220864,
+        "vram_used_bytes": 652214272
+      }
+    ],
+    "nvlink": false,
+    "probe_command": "nvidia-smi --query-gpu=...",
+    "topology": "\u001b[4mGPU0\tGPU1\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\u001b[0m\nGPU0\t X \tNODE\t0-23,48-71\t0\t\tN/A\nGPU1\tNODE\t X \t0-23,48-71\t0\t\tN/A\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks",
+    "vram_free_bytes": 50179604480,
+    "vram_total_bytes": 51514441728
+  },
+  "host_class": "SINGLE_GPU_CONSTRAINED",
+  "os": {
+    "architecture": "x86_64",
+    "distribution": "Ubuntu 22.04.5 LTS",
+    "kernel": "6.8.0-136-generic",
+    "python": "3.10.12",
+    "system": "Linux",
+    "version_id": "22.04"
+  },
+  "schema": "dume.host_inventory/1",
+  "storage": {
+    "filesystems": [
+      {
+        "free_bytes": 895243591680,
+        "fstype": "fuseblk",
+        "mountpoint": "/media/otonom/DATADRIVE1",
+        "percent_used": 88.8,
+        "read_only": false,
+        "source": "/dev/sda2",
+        "total_bytes": 8001546088448,
+        "used_bytes": 7106302496768
+      },
+      {
+        "free_bytes": 145574957056,
+        "fstype": "ext4",
+        "mountpoint": "/media/otonom/f4d05caa-2e25-4cce-81fa-ae9e742afbe0",
+        "percent_used": 71.1,
+        "read_only": false,
+        "source": "/dev/nvme0n1p2",
+        "total_bytes": 611280867328,
+        "used_bytes": 434579337216
+      },
+      {
+        "free_bytes": 42485817344,
+        "fstype": "ext4",
+        "mountpoint": "/",
+        "percent_used": 84.1,
+        "read_only": false,
+        "source": "/dev/nvme0n1p3",
+        "total_bytes": 394027008000,
+        "used_bytes": 331450687488
+      },
+      {
+        "free_bytes": 42485817344,
+        "fstype": "ext4",
+        "mountpoint": "/var/snap/firefox/common/host-hunspell",
+        "percent_used": 84.1,
+        "read_only": true,
+        "source": "/dev/nvme0n1p3[/usr/share/hunspell]",
+        "total_bytes": 394027008000,
+        "used_bytes": 331450687488
+      },
+      {
+        "free_bytes": 528461824,
+        "fstype": "vfat",
+        "mountpoint": "/boot/efi",
+        "percent_used": 1.4,
+        "read_only": false,
+        "source": "/dev/nvme0n1p1",
+        "total_bytes": 535805952,
+        "used_bytes": 7344128
+      },
+      {
+        "free_bytes": 0,
+        "fstype": "fuse.gvfsd-fuse",
+        "mountpoint": "/run/user/1000/gvfs",
+        "percent_used": null,
+        "read_only": false,
+        "source": "gvfsd-fuse",
+        "total_bytes": 0,
+        "used_bytes": 0
+      },
+      {
+        "free_bytes": 0,
+        "fstype": "fuse.Obsidian.AppImage",
+        "mountpoint": "/tmp/.mount_ObsidixF2t7v",
+        "percent_used": null,
+        "read_only": true,
+        "source": "Obsidian.AppImage",
+        "total_bytes": 0,
+        "used_bytes": 0
+      }
+    ],
+    "largest_free": {
+      "free_bytes": 895243591680,
+      "fstype": "fuseblk",
+      "mountpoint": "/media/otonom/DATADRIVE1",
+      "percent_used": 88.8,
+      "read_only": false,
+      "source": "/dev/sda2",
+      "total_bytes": 8001546088448,
+      "used_bytes": 7106302496768
+    }
+  }
+}

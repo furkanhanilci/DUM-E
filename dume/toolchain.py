@@ -71,14 +71,18 @@ def _probe(tool: Tool) -> dict:
     try:
         p = subprocess.run([path, *tool.version_args], capture_output=True,
                            text=True, timeout=20)
-        raw = ((p.stdout or "") + (p.stderr or "")).strip().splitlines()
+        combined = ((p.stdout or "") + (p.stderr or "")).strip()
+        raw = combined.splitlines()
         entry["version_raw"] = raw[0] if raw else None
+        # Some tools put the version on a later line (nvidia-smi prints a
+        # banner first), so the whole output is searched, not just line one.
+        entry["_version_search"] = combined
     except (OSError, subprocess.TimeoutExpired) as exc:
         entry["version_raw"] = f"probe failed: {exc}"
         return entry
-    if entry["version_raw"]:
-        m = re.search(tool.version_pattern, entry["version_raw"])
-        entry["version"] = m.group(1) if m else None
+    haystack = entry.pop("_version_search", entry["version_raw"] or "")
+    m = re.search(tool.version_pattern, haystack)
+    entry["version"] = m.group(1) if m else None
     return entry
 
 

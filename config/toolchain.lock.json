@@ -1,0 +1,134 @@
+{
+  "current_wave": 1,
+  "environment_digest": "aee4c0dab104ce7fc2ad11ad4d25c43e029bc523c5bcd829ef69bc7b09b30cfd",
+  "missing_for_later_waves": [
+    {
+      "name": "cargo",
+      "needed_from_wave": 4,
+      "required_for": "building Buzz from source (WP-011)"
+    }
+  ],
+  "missing_required": [],
+  "optional_missing": [
+    {
+      "name": "sqlite3",
+      "required_for": "inspecting DUM-E state by hand"
+    }
+  ],
+  "platform": "Linux-6.8.0-136-generic-x86_64-with-glibc2.35",
+  "python_executable": "/usr/bin/python3",
+  "python_version": "3.10.12",
+  "schema": "dume.toolchain_lock/1",
+  "tools": [
+    {
+      "name": "git",
+      "needed_from_wave": 1,
+      "path": "/usr/bin/git",
+      "present": true,
+      "required": true,
+      "required_for": "worktree isolation and candidate identity",
+      "version": "2.34.1",
+      "version_raw": "git version 2.34.1"
+    },
+    {
+      "name": "python3",
+      "needed_from_wave": 1,
+      "path": "/usr/bin/python3",
+      "present": true,
+      "required": true,
+      "required_for": "the DUM-E harness itself",
+      "version": "3.10.12",
+      "version_raw": "Python 3.10.12"
+    },
+    {
+      "name": "findmnt",
+      "needed_from_wave": 1,
+      "path": "/usr/bin/findmnt",
+      "present": true,
+      "required": true,
+      "required_for": "read-only mount verification (WP-002)",
+      "version": "2.37.2",
+      "version_raw": "findmnt from util-linux 2.37.2"
+    },
+    {
+      "name": "curl",
+      "needed_from_wave": 1,
+      "path": "/usr/bin/curl",
+      "present": true,
+      "required": true,
+      "required_for": "upstream fetch and health probing",
+      "version": "7.81.0",
+      "version_raw": "curl 7.81.0 (x86_64-pc-linux-gnu) libcurl/7.81.0 OpenSSL/3.0.2 zlib/1.2.11 brotli/1.0.9 zstd/1.4.8 libidn2/2.3.2 libpsl/0.21.0 (+libidn2/2.3.2) libssh/0.9.6/openssl/zlib nghttp2/1.43.0 librtmp/2.3 OpenLDAP/2.5.20"
+    },
+    {
+      "name": "jq",
+      "needed_from_wave": 1,
+      "path": "/usr/bin/jq",
+      "present": true,
+      "required": false,
+      "required_for": "deterministic JSON handling in runbooks",
+      "version": "1.6",
+      "version_raw": "jq-1.6"
+    },
+    {
+      "name": "uv",
+      "needed_from_wave": 1,
+      "path": "/home/otonom/.local/bin/uv",
+      "present": true,
+      "required": false,
+      "required_for": "reproducible Python environments",
+      "version": "0.12.3",
+      "version_raw": "uv 0.12.3 (x86_64-unknown-linux-gnu)"
+    },
+    {
+      "name": "nvidia-smi",
+      "needed_from_wave": 1,
+      "path": "/usr/bin/nvidia-smi",
+      "present": true,
+      "required": true,
+      "required_for": "GPU capacity probing (WP-001)",
+      "version": null,
+      "version_raw": "ERROR: Option --version is not recognized. Please run 'nvidia-smi -h'."
+    },
+    {
+      "name": "docker",
+      "needed_from_wave": 5,
+      "path": "/usr/bin/docker",
+      "present": true,
+      "required": false,
+      "required_for": "Buzz relay and serving containers",
+      "version": "29.7.1",
+      "version_raw": "Docker version 29.7.1, build e9452d6"
+    },
+    {
+      "name": "cargo",
+      "needed_from_wave": 4,
+      "path": null,
+      "present": false,
+      "required": false,
+      "required_for": "building Buzz from source (WP-011)",
+      "version": null,
+      "version_raw": null
+    },
+    {
+      "name": "node",
+      "needed_from_wave": 4,
+      "path": "/home/otonom/.local/bin/node",
+      "present": true,
+      "required": false,
+      "required_for": "harness tooling",
+      "version": "26.7.0",
+      "version_raw": "v26.7.0"
+    },
+    {
+      "name": "sqlite3",
+      "needed_from_wave": 1,
+      "path": null,
+      "present": false,
+      "required": false,
+      "required_for": "inspecting DUM-E state by hand",
+      "version": null,
+      "version_raw": null
+    }
+  ]
+}

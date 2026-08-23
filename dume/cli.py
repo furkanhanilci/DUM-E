@@ -10,7 +10,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import config, inventory, secrets, toolchain, upstream
+from . import config, inventory, scenarios, secrets, toolchain, upstream
 from .catalogue import seed
 from .state import Store, StateError, json_dump
 from .workspace import Boundary, mount_is_read_only, probe_write
@@ -59,17 +59,23 @@ def cmd_workspace(args) -> int:
         if entry["bound"] and entry["path"]:
             entry["mount_read_only"] = mount_is_read_only(entry["path"])
             if args.probe:
-                wrote, detail = probe_write(entry["path"])
-                entry["write_probe"] = {"succeeded": wrote, "detail": detail}
-                # A READ_ONLY workspace that accepts a write is a failed control,
-                # not a warning.
-                entry["control_holds"] = not (entry["mode"] == "READ_ONLY" and wrote)
+                outcome, detail = probe_write(entry["path"])
+                entry["write_probe"] = {"outcome": outcome, "detail": detail}
+                # A READ_ONLY workspace that accepts a write is a failed control.
+                # A workspace that is not there proved nothing either way, and is
+                # reported as INCONCLUSIVE rather than counted as a pass.
+                if outcome == "MISSING":
+                    entry["control"] = "INCONCLUSIVE"
+                elif entry["mode"] == "READ_ONLY":
+                    entry["control"] = "FAILED" if outcome == "WROTE" else "HOLDS"
+                else:
+                    entry["control"] = "HOLDS" if outcome == "WROTE" else "FAILED"
         report["workspaces"].append(entry)
         flag = "bound  " if entry["bound"] else "UNBOUND"
         print(f"{flag} {name:<16} {entry['mode']:<12} {entry['path'] or '—'}")
         if args.probe and entry["bound"] and "write_probe" in entry:
-            ok = "holds" if entry["control_holds"] else "FAILED"
-            print(f"         write probe: {entry['write_probe']['detail']} → control {ok}")
+            print(f"         write probe: {entry['write_probe']['detail']} "
+                  f"→ control {entry['control']}")
     if report["unbound"]:
         print(f"\nunbound slots: {', '.join(report['unbound'])} "
               "— a work package needing one of these is BLOCKED, not improvised.")
@@ -138,6 +144,24 @@ def cmd_upstream(args) -> int:
     print(f"recorded: {out}  sha256={json_dump(result, out)}")
     _emit(result, args.json)
     return 1 if result["verdict"] != "CLEAN" else 0
+
+
+def cmd_scenarios(args) -> int:
+    report = scenarios.run_all()
+    for r in report["results"]:
+        if r["verdict"] in {"PASS", "FAIL", "NOT_RUN"}:
+            print(f"{r['verdict']:<8} {r['scenario']}  {r['title']}")
+            if args.verbose:
+                for step in r["steps"]:
+                    print(f"           · {step}")
+    print(f"\nexecuted {report['executed']} — {report['passed']} passed, "
+          f"{report['failed']} failed, {report['not_run']} not run")
+    print(f"deferred {report['deferred']} scenarios whose subject is not built yet "
+          "(listed in the machine record, never counted as passes)")
+    out = EVIDENCE / "acceptance_scenarios.json"
+    print(f"recorded: {out}  sha256={json_dump(report, out)}")
+    _emit(report, args.json)
+    return 0 if report["verdict"] == "PASS" else 1
 
 
 def cmd_seed(args) -> int:
@@ -241,6 +265,10 @@ def build_parser() -> argparse.ArgumentParser:
     t.set_defaults(func=cmd_toolchain)
 
     sub.add_parser("upstream", help="check every pin against upstream").set_defaults(func=cmd_upstream)
+
+    sc = sub.add_parser("scenarios", help="run the adversarial acceptance scenarios")
+    sc.add_argument("-v", "--verbose", action="store_true", help="show every step")
+    sc.set_defaults(func=cmd_scenarios)
     sub.add_parser("seed", help="load the work-package catalogue").set_defaults(func=cmd_seed)
 
     st = sub.add_parser("status", help="commissioning state")

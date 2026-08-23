@@ -136,19 +136,28 @@ def mount_is_read_only(path: Path | str) -> bool | None:
     return "ro" in options
 
 
-def probe_write(path: Path | str) -> tuple[bool, str]:
+def probe_write(path: Path | str) -> tuple[str, str]:
     """Actually attempt a write and report what the OS did.
 
     This is the falsifiable probe. A workspace that *claims* to be read-only and
     accepts a write has failed, and only a real write attempt can show that.
+
+    Returns one of ``WROTE``, ``REFUSED`` or ``MISSING``. The third outcome is
+    kept separate on purpose: a directory that does not exist refuses writes for
+    a reason that has nothing to do with the boundary, and reporting that as a
+    working control would be the exact self-congratulation this harness exists
+    to prevent.
     """
-    target = _resolve(path) / ".dume-write-probe"
+    root = _resolve(path)
+    if not root.is_dir():
+        return "MISSING", f"{root} does not exist, so nothing was proven"
+    target = root / ".dume-write-probe"
     try:
         target.write_text("probe\n")
     except OSError as exc:
-        return False, f"{type(exc).__name__}: {exc}"
+        return "REFUSED", f"{type(exc).__name__}: {exc}"
     try:
         os.unlink(target)
     except OSError:
         pass
-    return True, "write succeeded"
+    return "WROTE", "write succeeded"

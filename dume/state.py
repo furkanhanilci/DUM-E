@@ -174,6 +174,23 @@ class Store:
         self.get(wp_id)
         if not candidate_revision:
             raise StateError("evidence must bind to a candidate revision")
+        # An artefact that is absent or empty is not evidence. Accepting one
+        # would let "the file exists" stand in for "the behaviour happened",
+        # which is the whole failure ACC-D024 describes.
+        if artefact_path is not None:
+            artefact = Path(artefact_path)
+            if not artefact.is_file():
+                raise StateError(
+                    f"evidence artefact does not exist: {artefact_path}")
+            if artefact.stat().st_size == 0:
+                raise StateError(
+                    f"evidence artefact is empty: {artefact_path}")
+            digest = sha256_file(artefact)
+            if artefact_sha256 and artefact_sha256 != digest:
+                raise StateError(
+                    f"evidence artefact digest mismatch for {artefact_path}: "
+                    f"recorded {artefact_sha256}, actual {digest}")
+            artefact_sha256 = digest
         with self.conn:
             cur = self.conn.execute(
                 "INSERT INTO evidence (wp_id,kind,candidate_revision,actor,verdict,"

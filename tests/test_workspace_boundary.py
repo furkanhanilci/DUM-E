@@ -108,15 +108,23 @@ def test_write_probe_reports_what_the_os_actually_did(tmp_path):
     """The falsifiable probe: a directory that really is read-only refuses."""
     d = tmp_path / "locked"
     d.mkdir()
-    wrote, _ = probe_write(d)
-    assert wrote is True
+    assert probe_write(d)[0] == "WROTE"
     os.chmod(d, 0o500)
     try:
-        wrote, detail = probe_write(d)
-        assert wrote is False
+        outcome, detail = probe_write(d)
+        assert outcome == "REFUSED"
         assert "PermissionError" in detail or "Errno 13" in detail
     finally:
         os.chmod(d, 0o700)
+
+
+def test_a_missing_directory_proves_nothing_rather_than_passing(tmp_path):
+    """An absent workspace refuses writes for a reason that has nothing to do
+    with the boundary. Counting that as a working control would be exactly the
+    self-congratulation this harness exists to prevent."""
+    outcome, detail = probe_write(tmp_path / "not-created-yet")
+    assert outcome == "MISSING"
+    assert "nothing was proven" in detail
 
 
 def test_guard_returns_a_resolved_path_so_callers_cannot_re_introduce_the_link(
