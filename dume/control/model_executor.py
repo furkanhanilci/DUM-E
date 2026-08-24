@@ -38,7 +38,17 @@ MAX_TOOL_TURNS = 24
 # budget has to fit the file and its escaping — not just the model's prose. At
 # 3000 this truncated a perfectly good four-case test file mid-string, and the
 # server reported it as a parse error at column 680.
-IMPLEMENTER_MAX_TOKENS = 12000
+# Enough for a write_file call carrying a six-thousand-character file plus its
+# JSON escaping, and no more. A larger budget is not headroom — it is an
+# invitation to answer in prose instead of acting, and a turn spent that way
+# costs four hundred seconds at thirty tokens a second.
+IMPLEMENTER_MAX_TOKENS = 4000
+
+# Two replies running with no tool call is not a model that needs another nudge;
+# it is a model that is not going to use the tools. Stopping says so while the
+# evidence is still legible, instead of burning twenty more turns to reach the
+# same conclusion.
+MAX_SILENT_TURNS = 2
 
 # A ceiling stated to the model, well under what the budget can carry. A tool
 # call is one JSON string containing the whole file plus its escaping, so a file
@@ -269,6 +279,7 @@ class ModelExecutor:
 
         red_exit: int | None = None
         green_exit: int | None = None
+        silent = 0
         for turn in range(MAX_TOOL_TURNS):
             reply = client.chat(messages, tools=TOOL_SCHEMAS,
                                 max_tokens=IMPLEMENTER_MAX_TOKENS)
@@ -276,6 +287,13 @@ class ModelExecutor:
                 text = (reply.content or "").strip()
                 if "DONE" in text.upper() and green_exit == 0:
                     break
+                silent += 1
+                if silent >= MAX_SILENT_TURNS:
+                    raise ImplementationRefused(
+                        f"the implementer answered in prose {silent} turns "
+                        f"running without calling a tool (last reply "
+                        f"{len(text)} chars, finish={reply.finish_reason}). "
+                        "It is describing the work rather than doing it.")
                 messages.append({"role": "assistant", "content": text[:2000]})
                 messages.append({"role": "user", "content":
                     "Continue using the tools. "
@@ -289,6 +307,7 @@ class ModelExecutor:
                        "Reply DONE.")})
                 continue
 
+            silent = 0
             messages.append({"role": "assistant", "content": reply.content or "",
                              "tool_calls": [
                                  {"id": c.id, "type": "function",
