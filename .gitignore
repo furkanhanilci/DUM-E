@@ -17,3 +17,8 @@ state/*.db
 state/*.db-wal
 state/*.db-shm
 evidence/**/fresh/
+
+# Worktrees the harness cuts for a candidate. They are scratch: each one is a
+# checkout of the target repository, not of this one, and committing them
+# nests a repository inside a repository — git says so and then does it anyway.
+worktrees/
