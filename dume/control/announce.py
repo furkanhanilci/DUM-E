@@ -44,14 +44,26 @@ class Announcer:
     def from_config(cls, path: Path | str | None = None) -> "Announcer":
         """Read the bridge's own configuration. Missing is not an error — a
         deployment that has not set up Telegram is a deployment that does not
-        want to be told, which is a choice rather than a fault."""
+        want to be told, which is a choice rather than a fault.
+
+        `narrator_token` gives the harness its own voice. With one bot,
+        "DUM-E finished a step" and "the system answered your command" arrive
+        from the same name and look like the same kind of thing. They are not:
+        one is a machine reporting what it did, the other is an answer to a
+        person. Two identities make the difference visible without anybody
+        having to read carefully.
+
+        Falling back to the command token is deliberate — a deployment with one
+        bot still gets narrated, it just gets narrated in the same voice.
+        """
         from .telegram import SECRETS, TelegramError
         try:
             data = json.loads(Path(path or SECRETS).read_text())
         except (OSError, json.JSONDecodeError, TelegramError):
             return cls()
         from .forum import Topics
-        return cls(token=data.get("token"), chat_id=data.get("broadcast"),
+        return cls(token=data.get("narrator_token") or data.get("token"),
+                   chat_id=data.get("broadcast"),
                    topics=Topics.load().by_channel or {})
 
     @property

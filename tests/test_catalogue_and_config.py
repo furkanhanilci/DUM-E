@@ -1,5 +1,6 @@
 """The catalogue and configuration layer."""
 import json
+from pathlib import Path
 
 import pytest
 
@@ -39,14 +40,28 @@ def test_wave_one_has_no_dependencies_and_later_waves_do(tmp_path):
     store.close()
 
 
-def test_real_configuration_loads_and_leaves_aethrion_unbound():
-    """DUM-E is being commissioned in isolation; the spec/target slots are
-    declared but deliberately not bound to any path."""
+def test_the_specification_is_mounted_read_only_however_it_is_bound():
+    """This used to assert that the spec and target slots were unbound.
+
+    That was a true observation at the time and a bad invariant: it recorded
+    where the deployment happened to be, so binding the target — the thing the
+    whole harness exists to build into — broke a test that had nothing to say
+    about whether the binding was correct.
+
+    What actually has to hold is the mode. A harness able to edit the
+    requirement it is being measured against is not being measured, so the
+    specification is READ_ONLY whether it is bound or not, and a bound slot
+    names a path that exists.
+    """
     cfg = config.load()
-    assert cfg["workspaces"]["AETHRION_SPEC"]["bound"] is False
-    assert cfg["workspaces"]["AETHRION_SPEC"]["path"] is None
-    assert cfg["workspaces"]["AETHRION_SPEC"]["mode"] == "READ_ONLY"
-    assert cfg["workspaces"]["AETHRION_TARGET"]["bound"] is False
+    spec = cfg["workspaces"]["AETHRION_SPEC"]
+    assert spec["mode"] == "READ_ONLY", "the specification must not be writable"
+
+    for name, workspace in cfg["workspaces"].items():
+        if workspace.get("bound"):
+            assert workspace["path"], f"{name} is bound to nothing"
+            assert Path(workspace["path"]).is_dir(), (
+                f"{name} is bound to {workspace['path']}, which is not there")
 
 
 def test_unknown_workspace_mode_is_refused(tmp_path):

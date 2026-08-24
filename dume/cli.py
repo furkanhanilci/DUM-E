@@ -423,6 +423,24 @@ def cmd_reliability(args) -> int:
     return 0 if report["merge_eligible"] else 1
 
 
+def cmd_commission(args) -> int:
+    """Commission one package. Unlike `live`, what this does is kept."""
+    from .control.commission import NotCommissionable, run
+    try:
+        report = run(args.wp, focus=args.focus)
+    except NotCommissionable as exc:
+        print(f"refused: {exc}", file=sys.stderr)
+        return 1
+    for step in report.get("steps", []):
+        print(f"  {step['name']:<28} {step['outcome']:<8} {step['detail'][:96]}")
+    print(f"\nverdict: {report.get('verdict')}  in {report.get('seconds')}s")
+    print(f"target : {report.get('target')}")
+    if report.get("channel"):
+        print(f"channel: {report['channel']}")
+    _emit(report, args.json if hasattr(args, "json") else False)
+    return 0 if report.get("verdict") == "MERGE_ELIGIBLE" else 1
+
+
 def cmd_live(args) -> int:
     from .control import live
     report = live.run(args.wp, evidence_root=EVIDENCE / "live")
@@ -870,7 +888,13 @@ def build_parser() -> argparse.ArgumentParser:
     sk.add_argument("--show", metavar="ROLE", help="print one role's whole bundle")
     sk.set_defaults(func=cmd_skills)
 
-    lv = sub.add_parser("live", help="a real commissioning run with live models")
+    cm2 = sub.add_parser("commission",
+                         help="commission a package against the real state")
+    cm2.add_argument("wp")
+    cm2.add_argument("--focus", help="what this slice should produce")
+    cm2.set_defaults(func=cmd_commission)
+
+    lv = sub.add_parser("live", help="a rehearsal run: synthetic repo, throwaway state")
     lv.add_argument("wp", nargs="?", default="WP-001")
     lv.set_defaults(func=cmd_live)
 

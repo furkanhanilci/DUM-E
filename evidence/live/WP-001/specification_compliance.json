@@ -1,5 +1,14 @@
 {
-  "verdict": "PASS",
-  "reason": "The diff meets all specified requirements and acceptance criteria.",
-  "findings": []
+  "verdict": "FAIL",
+  "reason": "The diff does not include all mandatory deliverables and does not address all known failure modes.",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "summary": "Missing mandatory deliverables: host_inventory.json, host_inventory.md, gpu_probe.log, disk_capacity_report.md, deployment_profile_candidate.md."
+    },
+    {
+      "severity": "HIGH",
+      "summary": "The diff does not demonstrate control of known failure modes: Choosing 262k context because the model supports it rather than because the host can sustain it, Confusing total VRAM with usable VRAM after display/runtime overhead, Installing incompatible CUDA/PyTorch/serving combinations before evidence exists."
+    }
+  ]
 }

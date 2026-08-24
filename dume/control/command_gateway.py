@@ -74,6 +74,13 @@ ACTIONS: dict[str, Action] = {a.name: a for a in (
     Action("pause", CONTROL, "Stop starting new work. Running work finishes."),
     Action("resume", CONTROL, "Allow new work to start again."),
     Action("retry", CONTROL, "Re-enter a failed package at PLANNED.", ("wp",)),
+    # Starting real work is CONTROL, not a decision: it moves a package the
+    # lifecycle already says may move. What the run produces still has to pass
+    # independent review and a deterministic gate, and accepting it is still a
+    # HUMAN_DECISION — which is why this does not need to be one.
+    Action("commission", CONTROL,
+           "Commission a package: real state, real target repository, live "
+           "models. Runs in the background and narrates as it goes.", ("wp",)),
     Action("reserve", CONTROL, "Keep a runtime for architecture-critical work.",
            ("runtime",)),
     Action("release", CONTROL, "Return a reserved runtime to normal use.",

@@ -212,19 +212,30 @@ class Orchestrator:
                 phone.needs_you(f"{wp_id} is blocked at {name}", detail)
 
         row = self.store.get(wp_id)
-        if row["state"] != "READY":
+        # A retried package re-enters at PLANNED — that is what `retry` does,
+        # and what the failure path does on its own when a failure is
+        # retryable. Requiring READY made retry a dead end: the package moved to
+        # PLANNED and then nothing could pick it up, so a failed package could
+        # be retried forever and never run again. Both states start a run; the
+        # transitions below are skipped for one that has already made them.
+        resuming = row["state"] == "PLANNED"
+        if row["state"] not in ("READY", "PLANNED"):
             unmet = self.store.unmet_dependencies(wp_id)
             step("precondition", "BLOCKED",
-                 f"state is {row['state']}, not READY"
+                 f"state is {row['state']}, not READY or PLANNED"
                  + (f"; waiting on {', '.join(unmet)}" if unmet else ""))
             report.verdict = "BLOCKED"
             return report
-        step("precondition", "OK", "package is READY and dependencies are ACCEPTED")
+        step("precondition", "OK",
+             ("package re-enters at PLANNED after a retry"
+              if resuming else "package is READY")
+             + " and dependencies are ACCEPTED")
 
         # 1. Packet — mechanical, frozen, digested.
         packet = self.build_packet(wp_id)
         report.packet_sha256 = packet.packet_sha256
-        self.store.transition(wp_id, "PACKAGED", actor=actor,
+        if not resuming:
+            self.store.transition(wp_id, "PACKAGED", actor=actor,
                               reason=f"packet {packet.packet_sha256[:12]}")
         step("packet", "OK",
              f"{len(packet.sections)} frozen sections, "
@@ -266,7 +277,8 @@ class Orchestrator:
              "; ".join(f"{k}→{v.runtime_id}({v.family})" for k, v in bindings.items()))
 
         # 4. Plan.
-        self.store.transition(wp_id, "PLANNED",
+        if not resuming:
+            self.store.transition(wp_id, "PLANNED",
                               actor=bindings["architect"].agent_id,
                               reason="implementation plan accepted")
         plan = executor.plan(packet, cohort)

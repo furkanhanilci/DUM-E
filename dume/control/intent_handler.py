@@ -206,6 +206,42 @@ class IntentHandler:
             return f"refused: {exc}"
         return f"{wp} re-entered at PLANNED. A correction needs a plan, not a rerun."
 
+    def _commission(self, wp: str, actor: str) -> str:
+        """Start a real commissioning run, in the background.
+
+        Not run inline: a commissioning takes minutes and the caller is a chat
+        message. Holding the bridge open for it would stop every other command
+        — including the ones for stopping this one.
+
+        What it does is reported as it happens, in the channel the run narrates
+        to, so "started" here is the whole of what this can honestly say.
+        """
+        import subprocess
+        import sys
+        from pathlib import Path as _Path
+
+        root = _Path(__file__).resolve().parents[2]
+        try:
+            from .commission import NotCommissionable, target_repo
+            target_repo()
+            row = self.store.get(wp)
+        except Exception as exc:
+            return f"refused: {exc}"
+        if row["state"] not in ("READY", "PLANNED"):
+            return (f"refused: {wp} is {row['state']}; a run starts from READY "
+                    "or PLANNED.")
+
+        log = root / "evidence" / f"commission-{wp}.log"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        with log.open("w") as handle:
+            subprocess.Popen(
+                [sys.executable, "-u", "-m", "dume.cli", "commission", wp],
+                cwd=root, stdout=handle, stderr=handle,
+                start_new_session=True)
+        return (f"{wp} commissioning started by {actor}.\n\n"
+                "Each step is narrated as it happens. Nothing said about it "
+                "moves it — the gate decides, and accepting it is yours.")
+
     def _runtime_mode(self, runtime: str, mode: str) -> str:
         try:
             self.registry.set_mode(runtime, mode)
@@ -500,6 +536,7 @@ class IntentHandler:
                 "pause": lambda: self._pause(actor),
                 "resume": lambda: self._resume(),
                 "retry": lambda: self._retry(args["wp"], actor),
+                "commission": lambda: self._commission(args["wp"], actor),
                 "reserve": lambda: self._runtime_mode(args["runtime"], "RESERVE"),
                 "release": lambda: self._runtime_mode(args["runtime"], "NORMAL"),
                 "disable": lambda: self._runtime_mode(args["runtime"], "DISABLED"),

@@ -1,62 +1,46 @@
 {
   "schema": "dume.workspace_report/1",
-  "unbound": [
-    "AETHRION_SPEC",
-    "AETHRION_TARGET",
-    "MODEL_CACHE"
-  ],
+  "unbound": [],
   "workspaces": [
     {
       "bound": true,
-      "control": "HOLDS",
       "mode": "READ_WRITE",
       "mount_read_only": false,
       "name": "DUME",
-      "path": "/home/otonom/Desktop/FH/DUM-E",
-      "write_probe": {
-        "detail": "write succeeded",
-        "outcome": "WROTE"
-      }
-    },
-    {
-      "bound": false,
-      "mode": "READ_ONLY",
-      "name": "AETHRION_SPEC",
-      "path": null
-    },
-    {
-      "bound": false,
-      "mode": "READ_WRITE",
-      "name": "AETHRION_TARGET",
-      "path": null
+      "path": "/home/otonom/Desktop/FH/DUM-E"
     },
     {
       "bound": true,
-      "control": "HOLDS",
+      "mode": "READ_ONLY",
+      "mount_read_only": false,
+      "name": "AETHRION_SPEC",
+      "path": "/home/otonom/Desktop/FH/AETHRION"
+    },
+    {
+      "bound": true,
+      "mode": "READ_WRITE",
+      "mount_read_only": false,
+      "name": "AETHRION_TARGET",
+      "path": "/home/otonom/Desktop/FH/AETHRION_BUILD"
+    },
+    {
+      "bound": true,
       "mode": "READ_WRITE",
       "mount_read_only": false,
       "name": "WORKTREES",
-      "path": "/home/otonom/Desktop/FH/DUM-E/worktrees",
-      "write_probe": {
-        "detail": "write succeeded",
-        "outcome": "WROTE"
-      }
+      "path": "/home/otonom/Desktop/FH/DUM-E/worktrees"
     },
     {
       "bound": true,
-      "control": "HOLDS",
       "mode": "APPEND_ONLY",
       "mount_read_only": false,
       "name": "EVIDENCE",
-      "path": "/home/otonom/Desktop/FH/DUM-E/evidence",
-      "write_probe": {
-        "detail": "write succeeded",
-        "outcome": "WROTE"
-      }
+      "path": "/home/otonom/Desktop/FH/DUM-E/evidence"
     },
     {
-      "bound": false,
+      "bound": true,
       "mode": "READ_WRITE",
+      "mount_read_only": false,
       "name": "MODEL_CACHE",
       "path": "/media/otonom/DATADRIVE1/dume-model-cache"
     }

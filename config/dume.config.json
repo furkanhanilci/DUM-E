@@ -8,16 +8,16 @@
       "purpose": "The commissioning harness source. Control-plane changes are separate work, never a side effect of a target work package."
     },
     "AETHRION_SPEC": {
-      "path": null,
+      "path": "/home/otonom/Desktop/FH/AETHRION",
       "mode": "READ_ONLY",
       "purpose": "Authoritative commissioning specification. Read-only to every build agent. UNBOUND until a human binds it.",
-      "bound": false
+      "bound": true
     },
     "AETHRION_TARGET": {
-      "path": null,
+      "path": "/home/otonom/Desktop/FH/AETHRION_BUILD",
       "mode": "READ_WRITE",
       "purpose": "The implementation under construction. Written only through an assigned worktree. UNBOUND until a human binds it.",
-      "bound": false
+      "bound": true
     },
     "WORKTREES": {
       "path": "/home/otonom/Desktop/FH/DUM-E/worktrees",
@@ -33,7 +33,7 @@
       "path": "/media/otonom/DATADRIVE1/dume-model-cache",
       "mode": "READ_WRITE",
       "purpose": "Model weights, outside Git. Root filesystem cannot hold them.",
-      "bound": false
+      "bound": true
     }
   },
   "protected_paths": [
