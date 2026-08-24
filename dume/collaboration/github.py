@@ -29,6 +29,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 DEVICE_CODE_URL = "https://github.com/login/device/code"
@@ -43,6 +44,11 @@ BASE_SCOPE = "read:user"
 ORG_SCOPE = "read:user read:org"
 
 CONFIG = Path.home() / ".dume" / "secrets" / "github-membership.json"
+REQUESTS = Path.home() / ".dume" / "secrets" / "github-requests.json"
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 class MembershipError(RuntimeError):
@@ -173,6 +179,77 @@ def redeem(roster: Roster, device_code: str) -> str | None:
     }.get(error, data.get("error_description") or f"GitHub said {error!r}"))
 
 
+def _load_requests(path: Path) -> dict:
+    if not path.is_file():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except json.JSONDecodeError:
+        # A corrupt request file must not lock the operator out of the roster
+        # they already approved. It is replaced, and the loss is one queue of
+        # people who can knock again.
+        return {}
+
+
+def record_request(login: str, *, path: Path = REQUESTS) -> dict:
+    """Note that somebody asked, so the operator has something to approve.
+
+    A refusal that leaves no trace makes the operator the one who has to
+    remember; then the person is told to try again, and nothing has changed
+    between the two attempts. The queue is what turns "not on the list" from a
+    dead end into a decision somebody can make.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    requests = _load_requests(path)
+    entry = requests.get(login.lower())
+    if entry and entry.get("state") == "denied":
+        # A denial is not overwritten by knocking again. Re-approving is an
+        # explicit act.
+        return entry
+    entry = {"login": login, "state": "pending",
+             "first_asked": (entry or {}).get("first_asked") or _now(),
+             "last_asked": _now()}
+    requests[login.lower()] = entry
+    path.write_text(json.dumps(requests, indent=2, sort_keys=True) + "\n")
+    path.chmod(0o600)
+    return entry
+
+
+def pending(path: Path = REQUESTS) -> list[dict]:
+    return [entry for entry in _load_requests(path).values()
+            if entry.get("state") == "pending"]
+
+
+def decide(login: str, *, approve: bool, config: Path = CONFIG,
+           path: Path = REQUESTS) -> dict:
+    """Approve or deny a request. Approval writes the roster; both are recorded.
+
+    Approval edits the roster rather than the request queue, because the roster
+    is what `admit` reads. Leaving the approval only in the queue would produce
+    a person who is marked approved and still refused.
+    """
+    requests = _load_requests(path)
+    entry = requests.get(login.lower())
+    if not entry:
+        raise MembershipError(f"{login} has not asked to join")
+    entry["state"] = "approved" if approve else "denied"
+    entry["decided_at"] = _now()
+    requests[login.lower()] = entry
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(requests, indent=2, sort_keys=True) + "\n")
+    path.chmod(0o600)
+
+    if approve:
+        data = json.loads(config.read_text()) if config.is_file() else {}
+        logins = [str(name) for name in data.get("logins", [])]
+        if login.lower() not in {name.lower() for name in logins}:
+            logins.append(entry["login"])
+        data["logins"] = logins
+        config.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+        config.chmod(0o600)
+    return entry
+
+
 def admit(roster: Roster, token: str) -> dict:
     """Who this is, and whether the roster admits them.
 
@@ -200,7 +277,11 @@ def admit(roster: Roster, token: str) -> dict:
             f"membership of {roster.org} is {state or 'absent'}"
             + (" — the invitation is still pending" if state == "pending" else ""))
 
+    # Somebody proved a GitHub account and was turned away. Record it, so the
+    # operator has a decision in front of them rather than a memory to keep.
+    request = record_request(login)
     return {"login": login, "admitted": False,
+            "state": request["state"],
             "reason": "; ".join(reasons) or "this deployment admits nobody yet"}
 
 

@@ -310,6 +310,63 @@ def cmd_qualify(args) -> int:
     return 0 if result.qualified_roles else 1
 
 
+def cmd_membership(args) -> int:
+    """The roster, and the queue of people waiting on it.
+
+    Approval writes the roster rather than only the queue: the roster is what
+    admission reads, and a person marked approved in one place and refused by
+    the other is the worst of both.
+    """
+    import json as _json
+    from .collaboration import github
+
+    config = github.CONFIG
+    config.parent.mkdir(parents=True, exist_ok=True)
+    data = _json.loads(config.read_text()) if config.is_file() else {}
+
+    changed = False
+    if args.client_id:
+        data["client_id"] = args.client_id.strip()
+        changed = True
+    if args.org is not None:
+        data["org"] = args.org.strip() or None
+        changed = True
+    if changed:
+        data.setdefault("logins", [])
+        config.write_text(_json.dumps(data, indent=2, sort_keys=True) + "\n")
+        config.chmod(0o600)
+        print(f"wrote {config}")
+
+    for login, approve in ((args.approve, True), (args.deny, False)):
+        if not login:
+            continue
+        try:
+            entry = github.decide(login, approve=approve)
+        except github.MembershipError as exc:
+            print(f"refused: {exc}")
+            return 1
+        print(f"{entry['login']}: {entry['state']}")
+
+    try:
+        roster = github.load_roster()
+    except github.NotConfigured as exc:
+        print(f"not configured: {exc}")
+        return 1
+
+    print(f"client id : {roster.client_id[:8]}…")
+    print(f"admitted  : {', '.join(roster.logins) or '(nobody by name)'}")
+    print(f"org       : {roster.org or '(none)'}")
+    waiting = github.pending()
+    if waiting:
+        print("waiting for a decision:")
+        for entry in waiting:
+            print(f"  {entry['login']}  first asked {entry['first_asked']}")
+        print("approve with: dume membership --approve <login>")
+    else:
+        print("waiting    : nobody")
+    return 0
+
+
 def cmd_skills(args) -> int:
     """What discipline each role is actually held to."""
     lock = json.loads((REPO_ROOT / "config" / "upstream.lock.json").read_text())
@@ -744,6 +801,13 @@ def build_parser() -> argparse.ArgumentParser:
     tgp.add_argument("--check", action="store_true",
                      help="verify the bot and the allowlist, then exit")
     tgp.set_defaults(func=cmd_telegram)
+
+    mb = sub.add_parser("membership", help="who may join this deployment")
+    mb.add_argument("--client-id", help="write the GitHub OAuth app client id")
+    mb.add_argument("--org", help="admit anyone with active membership of this org")
+    mb.add_argument("--approve", metavar="LOGIN", help="admit a pending request")
+    mb.add_argument("--deny", metavar="LOGIN", help="refuse a pending request")
+    mb.set_defaults(func=cmd_membership)
 
     sk = sub.add_parser("skills", help="what discipline each role is held to")
     sk.add_argument("--show", metavar="ROLE", help="print one role's whole bundle")
