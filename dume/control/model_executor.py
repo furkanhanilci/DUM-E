@@ -231,7 +231,10 @@ class ModelExecutor:
              f"Assurance level: {cohort.assurance_level}.\n\n"
              + (f"The bounded, executable slice to plan for is:\n{self.focus}\n\n"
                 if self.focus else "")
-             + "Produce an implementation plan as JSON with keys: summary (one "
+             + "You have no tools on this request and cannot run anything. "
+             "Everything you need is above; do not ask to read a file or list "
+             "a directory. The whole answer is one JSON object.\n\n"
+             "Produce an implementation plan as JSON with keys: summary (one "
              "sentence), satisfiable (true/false), steps (array of strings), "
              "test_first (a string describing the failing test to write first), "
              "risks (array of strings)."}]

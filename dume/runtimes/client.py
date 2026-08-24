@@ -176,6 +176,24 @@ class ModelClient:
                          "Answer with the JSON object only. Do not deliberate."}]
                     continue
                 raise ModelError(last_error)
+            # A reply that opens a tool call is a model that believes it has
+            # tools. This call has none: it is a question whose whole answer is
+            # one object. Saying so is what fixes it — the generic "that was
+            # not valid JSON" retry got another tool call, because the model
+            # was not wrong about the syntax, it was wrong about the situation.
+            if text.lstrip().startswith(("<tool_call>", "<function")):
+                last_error = ("the model tried to call a tool; there are none "
+                              f"on this call. It began {text[:120]!r}")
+                if attempt == 0:
+                    conversation = conversation + [
+                        {"role": "user", "content":
+                         "You have no tools on this request and cannot run "
+                         "anything. Do not read the filesystem. Answer from "
+                         "what is already in front of you, with the JSON "
+                         f"object only: {schema_hint}"}]
+                    continue
+                raise ModelError(last_error)
+
             # A model that wraps JSON in a fence is not malformed, just dressed.
             if text.startswith("```"):
                 text = text.strip("`")
@@ -187,7 +205,11 @@ class ModelClient:
                     return parsed
                 last_error = f"expected an object, got {type(parsed).__name__}"
             except json.JSONDecodeError as exc:
-                last_error = str(exc)
+                # What came back, not only that it was wrong. "Expecting value:
+                # line 1 column 1" says a reply was not JSON and nothing about
+                # what it was, which is the difference between reading the
+                # failure and guessing at it.
+                last_error = f"{exc}; the reply began {text[:200]!r}"
             if attempt == 0:
                 conversation = conversation + [
                     {"role": "assistant", "content": reply.content[:2000]},
