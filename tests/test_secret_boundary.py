@@ -215,3 +215,38 @@ def test_a_credential_derived_at_run_time_is_not_a_credential():
     ]
     for line in literal:
         assert scan(line), f"a real credential stopped being detected: {line}"
+
+
+def test_an_access_key_is_a_credential():
+    """S3 and everything S3-compatible names half its pair ACCESS_KEY.
+
+    Regression: the rule matched `access_token` but not `access_key`, so a live
+    MinIO credential in a deployment's own .env read as ordinary configuration.
+    The value is not the secret half, but it names an account, and a scanner
+    that stays silent about it teaches the reader that .env files are clean.
+    """
+    from dume.secrets import scan
+    for line in (
+        "BUZZ_S3_ACCESS_KEY=3d21a6ef0be730354eead826",
+        "AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLEX",
+        "access-key: 8f3aa91c77bd4e0192aa",
+    ):
+        assert scan(line), f"an access key went unreported: {line}"
+
+    # The public half stays public: a pubkey is published on purpose, and
+    # flagging it is how a scanner trains its reader to skim.
+    assert scan("RELAY_OWNER_PUBKEY=3f25f7cd72f4ca3472a1936569523f9ae9b15791") == []
+
+
+def test_a_credential_name_may_end_in_id():
+    """AWS_ACCESS_KEY_ID is the most widely copied credential name there is.
+
+    The rule required the credential word to sit immediately before the `=`, so
+    a trailing `_ID` hid it. Only `id` is allowed as a tail: a general suffix
+    would swallow TOKEN_CACHE_DIR=/some/long/path, and a scanner that reports
+    paths is one whose findings get skimmed.
+    """
+    from dume.secrets import scan
+    assert scan("AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLEX")
+    assert scan("client_secret_id: 8f3aa91c77bd4e0192aa")
+    assert scan("TOKEN_CACHE_DIR=/home/otonom/some/long/path") == []

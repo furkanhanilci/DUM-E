@@ -49,8 +49,40 @@ REF_TAG = "aethrion-ref"
 
 
 def channel_id_for(wp_id: str) -> str:
-    """The channel a work package talks in. Derived, not allocated."""
+    """The channel a work package talks in. Derived, not allocated.
+
+    The derivation is deliberately unchanged and unprefixed: WP-001's channel
+    already holds a commissioning run, and altering how the id is computed
+    would point the name at a different, empty channel while leaving the
+    messages somewhere nothing looks. A derived id is only useful while it
+    keeps deriving the same thing.
+    """
     return str(uuid.uuid5(DUME_CHANNEL_NAMESPACE, wp_id.upper()))
+
+
+def channel_id(kind: str, name: str) -> str:
+    """A channel id the relay will accept, derived from a name.
+
+    The relay requires a lowercase UUID v4 — it advertises `h_grammar:
+    uuid-v4-lowercase` in its NIP-11 document. A readable id like
+    "dume-control" is accepted when the channel is *created* and then refused
+    on every message sent to it, so the channel exists, looks fine, and is
+    silently unusable. Deriving the id means the mapping lives in an algorithm
+    rather than in a table that can drift, and the same name always resolves to
+    the same channel after a restart.
+    """
+    return str(uuid.uuid5(DUME_CHANNEL_NAMESPACE, f"{kind}:{name}"))
+
+
+# The eleven space channels, by the name a person types. Ids are derived, so
+# this table names things rather than holding addresses.
+SPACE_CHANNELS: dict[str, str] = {
+    name: channel_id("SPACE", name) for name in (
+        "dume-control", "dume-implementation", "dume-review",
+        "dume-verification", "research-literature", "research-questions",
+        "review-science", "decisions-escalations", "decisions-records",
+        "operations-runtimes", "operations-incidents")
+}
 
 # Nostr event kinds Buzz assigns meaning to. Only the ones DUM-E actually uses.
 KIND_TEXT_NOTE = 1

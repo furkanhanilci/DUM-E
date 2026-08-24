@@ -162,3 +162,28 @@ def test_every_action_declares_a_class_and_a_summary():
         assert action.klass in {"READ", "CONTROL", "HUMAN_DECISION",
                                 "DANGEROUS_ACTION"}
         assert action.summary.endswith("."), name
+
+
+def test_a_challenge_must_name_something_a_parser_did_not_invent():
+    """`challenge control "" "no subject"` posted a challenge about "no".
+
+    The command parser splits on whitespace, so an empty argument does not
+    arrive empty — it disappears, and the first word of the sentence slides
+    into its place. The contract requires a CHALLENGE to name its subject, and
+    checking the shape is what stops the parser deciding what a message is
+    about.
+    """
+    from dume.control.intent_handler import IntentHandler
+
+    valid = [
+        "WP-001",
+        "WP-001/candidate/db4725af93ee",
+        "evidence/live/run.log",
+        "db4725af93ee",
+    ]
+    for reference in valid:
+        assert IntentHandler.REFERENCE.match(reference), reference
+
+    invented = ["no", "subject", "", "the", "it", "this one"]
+    for reference in invented:
+        assert not IntentHandler.REFERENCE.match(reference), reference

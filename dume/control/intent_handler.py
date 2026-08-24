@@ -12,6 +12,7 @@ evidence bound to a candidate, and no message from any surface is that.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -262,6 +263,180 @@ class IntentHandler:
 
     # ---- dispatch -------------------------------------------------------
 
+    # ---- the conversation -------------------------------------------------
+    #
+    # Telegram is a control surface, not a second client. What it shows of a
+    # channel is what a phone can carry honestly: who said it, what class they
+    # declared it as, and what it was about. Threads are named by their root
+    # rather than drawn, because a thread drawn as a flat list is a thread
+    # misrepresented — and a phone is exactly where somebody would act on the
+    # misreading.
+
+    def _relay(self):
+        from pathlib import Path as _Path
+        from ..collaboration.buzz import BuzzClient, load_identity
+        store = _Path.home() / ".dume" / "secrets" / "buzz-identities.json"
+        return BuzzClient("http://127.0.0.1:3000", load_identity(store, "owner"))
+
+    # The short name a person types, and the space channel it means. The id
+    # itself is derived in the collaboration layer, so this table names things
+    # rather than holding addresses that can drift out of step with it.
+    CHANNEL_NAMES = {
+        "control": "dume-control", "implementation": "dume-implementation",
+        "review": "dume-review", "verification": "dume-verification",
+        "literature": "research-literature", "questions": "research-questions",
+        "science": "review-science", "escalations": "decisions-escalations",
+        "records": "decisions-records", "runtimes": "operations-runtimes",
+        "incidents": "operations-incidents",
+    }
+
+    @property
+    def CHANNELS(self) -> dict:  # noqa: N802
+        from ..collaboration.buzz import SPACE_CHANNELS
+        return {short: SPACE_CHANNELS[full]
+                for short, full in self.CHANNEL_NAMES.items()}
+
+    SPACES = {
+        "DUM-E": ["control", "implementation", "review", "verification"],
+        "Research": ["literature", "questions"],
+        "Review": ["science"],
+        "Decisions": ["escalations", "records"],
+        "Operations": ["runtimes", "incidents"],
+    }
+
+    def _resolve_channel(self, name: str) -> str:
+        key = name.lstrip("#").lower()
+        if key in self.CHANNELS:
+            return self.CHANNELS[key]
+        # A work package has its own channel, derived from its id rather than
+        # looked up, so it can be named directly: `read WP-001`.
+        if key.upper().startswith("WP-"):
+            from ..collaboration.buzz import channel_id_for
+            return channel_id_for(key.upper())
+        raise KeyError(
+            f"{name!r} is not a channel. Try: " + ", ".join(sorted(self.CHANNELS)))
+
+    def _spaces(self) -> str:
+        lines = []
+        for space, channels in self.SPACES.items():
+            lines.append(space)
+            for channel in channels:
+                lines.append(f"  #{channel}")
+        lines.append("")
+        lines.append("Also: read WP-001 for a package's own channel.")
+        lines.append("read #<channel> for the last messages.")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _render(events: list) -> list[str]:
+        out = []
+        for event in reversed(events):
+            tags = {}
+            refs = []
+            for tag in event.get("tags", []):
+                if len(tag) > 1:
+                    if tag[0] == "aethrion-ref":
+                        refs.append(tag[1])
+                    else:
+                        tags.setdefault(tag[0], tag[1])
+            klass = tags.get("aethrion-type", "—")
+            who = (event.get("pubkey") or "?")[:8]
+            body = " ".join((event.get("content") or "").split())[:260]
+            line = f"[{klass}] {who}  {body}"
+            if refs:
+                line += f"\n     re: {', '.join(refs[:2])}"
+            out.append(line)
+        return out
+
+    def _read(self, channel: str) -> str:
+        target = self._resolve_channel(channel)
+        try:
+            events = self._relay().read(target, limit=12)
+        except Exception as exc:
+            # The relay being down is not a refusal and must not read as one.
+            return f"the relay could not be reached: {str(exc)[:160]}"
+        if not events:
+            return f"#{channel.lstrip('#')} is empty."
+        return f"#{channel.lstrip('#')} — last {len(events)}\n\n" + \
+            "\n\n".join(self._render(events))
+
+    def _open(self) -> str:
+        """Messages whose class asks a question and that nobody answered.
+
+        A CHALLENGE with no reply is the thing most worth carrying to a phone,
+        because it is the thing most likely to be waiting on the person holding
+        it.
+        """
+        asks = {"CHALLENGE", "REQUEST", "DISAGREEMENT", "BLOCKER"}
+        try:
+            client = self._relay()
+        except Exception as exc:
+            return f"the relay could not be reached: {str(exc)[:160]}"
+        found = []
+        targets = dict(self.CHANNELS)
+        try:
+            from ..collaboration.buzz import channel_id_for
+            for row in self.store.all_wps():
+                if row["state"] not in ("DISCOVERED", "ACCEPTED"):
+                    targets[row["wp_id"]] = channel_id_for(row["wp_id"])
+        except Exception:
+            pass
+        for name, target in targets.items():
+            try:
+                events = client.read(target, limit=40)
+            except Exception:
+                continue
+            answered = {tag[1] for event in events for tag in event.get("tags", [])
+                        if len(tag) > 1 and tag[0] == "e"}
+            for event in events:
+                tags = {t[0]: t[1] for t in event.get("tags", []) if len(t) > 1}
+                if tags.get("aethrion-type") in asks and event["id"] not in answered:
+                    body = " ".join((event.get("content") or "").split())[:180]
+                    found.append(f"#{name}  [{tags['aethrion-type']}] {body}")
+        if not found:
+            return "Nothing is waiting for an answer."
+        return f"{len(found)} waiting for an answer:\n\n" + "\n\n".join(found[:12])
+
+    def _say(self, channel: str, text: str, actor: str) -> str:
+        target = self._resolve_channel(channel)
+        try:
+            self._relay().announce(target, f"{text}\n\n— {actor}, from Telegram",
+                                   message_type="STATUS")
+        except Exception as exc:
+            return f"not posted: {str(exc)[:180]}"
+        return f"posted to #{channel.lstrip('#')} as STATUS."
+
+    # What a reference has to look like before it counts as one. A CHALLENGE is
+    # required to name its subject, and the command parser splits on whitespace
+    # — so an empty argument does not arrive as empty, it disappears, and the
+    # first word of the sentence slides into its place. `challenge control ""
+    # "no subject"` posted a challenge about "no". Checking the shape here is
+    # what stops the parser deciding what a message is about.
+    REFERENCE = re.compile(
+        r"^(?:WP-\d{3}(?:/[\w.\-]+)*|[\w.\-]+/[\w.\-/]+|[0-9a-f]{8,64})$")
+
+    def _challenge(self, channel: str, reference: str, text: str,
+                   actor: str) -> str:
+        reference = reference.strip()
+        if not self.REFERENCE.match(reference):
+            return (f"not posted: {reference!r} does not name anything. A "
+                    "CHALLENGE has to say what it is about, or nobody can "
+                    "answer, track or close it.\n\nTry a package (WP-001), a "
+                    "candidate (WP-001/candidate/db4725af93ee) or an evidence "
+                    "path.")
+        target = self._resolve_channel(channel)
+        try:
+            self._relay().announce(
+                target, f"{text}\n\n— {actor}, from Telegram",
+                message_type="CHALLENGE", refs=[reference])
+        except Exception as exc:
+            # The contract refuses a CHALLENGE with no subject, and that refusal
+            # arrives here as an ordinary error. Reporting it plainly is right:
+            # the sender left out the one thing that makes it answerable.
+            return f"not posted: {str(exc)[:180]}"
+        return (f"posted to #{channel.lstrip('#')} as CHALLENGE about "
+                f"{reference}.\n\nIt is a message. It moves nothing by itself.")
+
     def __call__(self, intent: CommandIntent) -> str:
         actor = intent.authenticated_actor
         args = intent.arguments
@@ -276,6 +451,12 @@ class IntentHandler:
                 "evidence": lambda: self._evidence(args["wp"]),
                 "roles": lambda: self._roles(),
                 "ask": lambda: self._ask(args["role"], args["question"]),
+                "spaces": lambda: self._spaces(),
+                "read": lambda: self._read(args["channel"]),
+                "open": lambda: self._open(),
+                "say": lambda: self._say(args["channel"], args["text"], actor),
+                "challenge": lambda: self._challenge(
+                    args["channel"], args["reference"], args["text"], actor),
                 "pause": lambda: self._pause(actor),
                 "resume": lambda: self._resume(),
                 "retry": lambda: self._retry(args["wp"], actor),

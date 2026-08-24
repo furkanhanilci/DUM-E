@@ -58,6 +58,17 @@ ACTIONS: dict[str, Action] = {a.name: a for a in (
                           "currently bound to."),
     Action("ask", READ, "Put a question to a role. The answer is that role's "
                         "recorded work, not a new opinion.", ("role", "question")),
+    Action("spaces", READ, "Every AETHRION space and its channels."),
+    Action("read", READ, "The last messages in one channel.", ("channel",)),
+    Action("open", READ, "Messages nobody has answered, across every space."),
+
+    # Saying something is CONTROL, not READ. It is also not a decision: the
+    # class exists so that "can act" and "can settle" stay separable, which is
+    # the whole point of the four classes.
+    Action("say", CONTROL, "Post a STATUS message to a channel.",
+           ("channel", "text")),
+    Action("challenge", CONTROL, "Post a CHALLENGE. Must name what it is about.",
+           ("channel", "reference", "text")),
 
     Action("pause", CONTROL, "Stop starting new work. Running work finishes."),
     Action("resume", CONTROL, "Allow new work to start again."),

@@ -49,9 +49,21 @@ PATTERNS: list[tuple[str, re.Pattern]] = [
         r"(?i)(?:^|[^A-Za-z0-9_.\-])"          # not mid-identifier
         r"(?:[A-Za-z0-9_.\-]*?[_.\-])?"        # optional prefix ending at a separator
         r"(?:api[_.\-]?key|secret[_.\-]?key|private[_.\-]?key|privkey"
+        # ACCESS_KEY is how S3 and every S3-compatible store names the first
+        # half of its pair — AWS_ACCESS_KEY_ID, BUZZ_S3_ACCESS_KEY, MINIO_ROOT_
+        # USER's sibling. The rule had access_token but not access_key, so it
+        # read a live MinIO credential as ordinary configuration. Found by
+        # scanning a deployment's own .env and checking what it did *not* say.
+        r"|access[_.\-]?key"
         r"|access[_.\-]?token|auth[_.\-]?token|refresh[_.\-]?token"
         r"|client[_.\-]?secret|passphrase|password|passwd|credentials?"
         r"|secret|token|private|nsec)"
+        # An optional `_ID` tail, because AWS_ACCESS_KEY_ID is how the most
+        # widely copied credential name in existence is spelled. Deliberately
+        # only `id` and not any suffix: a general tail would swallow
+        # TOKEN_CACHE_DIR=/some/long/path, and a scanner that reports paths is
+        # one whose findings get skimmed.
+        r"(?:[_.\-]?id)?"
         r"[\"']?\s*[:=]\s*[\"']?([A-Za-z0-9_\-+/=]{12,})[\"']?")),
 ]
 
