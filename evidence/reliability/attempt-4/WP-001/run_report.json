@@ -1,0 +1,450 @@
+{
+  "bindings": {
+    "architect": {
+      "agent_id": "WP-001/architect",
+      "bound_at": "2026-08-24T08:19:59+00:00",
+      "family": "qwen",
+      "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
+      "reason": "cheapest qualified runtime for architect",
+      "role_id": "architect",
+      "runtime_id": "qwen-local"
+    },
+    "code_reviewer": {
+      "agent_id": "WP-001/code_reviewer",
+      "bound_at": "2026-08-24T08:19:59+00:00",
+      "family": "mistral",
+      "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
+      "reason": "cheapest qualified runtime for code_reviewer; identity must differ from implementer, spec_reviewer, family-independent of implementer",
+      "role_id": "code_reviewer",
+      "runtime_id": "mistral-local"
+    },
+    "implementer": {
+      "agent_id": "WP-001/implementer",
+      "bound_at": "2026-08-24T08:19:59+00:00",
+      "family": "qwen",
+      "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
+      "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+      "role_id": "implementer",
+      "runtime_id": "qwen-local"
+    },
+    "implementer#2": {
+      "agent_id": "WP-001/implementer#2",
+      "bound_at": "2026-08-24T08:19:59+00:00",
+      "family": "qwen",
+      "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
+      "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+      "role_id": "implementer",
+      "runtime_id": "qwen-local"
+    },
+    "spec_reviewer": {
+      "agent_id": "WP-001/spec_reviewer",
+      "bound_at": "2026-08-24T08:19:59+00:00",
+      "family": "mistral",
+      "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
+      "reason": "cheapest qualified runtime for spec_reviewer; identity must differ from implementer, family-independent of implementer",
+      "role_id": "spec_reviewer",
+      "runtime_id": "mistral-local"
+    },
+    "verifier": {
+      "agent_id": "WP-001/verifier",
+      "bound_at": "2026-08-24T08:19:59+00:00",
+      "family": "mistral",
+      "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
+      "reason": "cheapest qualified runtime for verifier; identity must differ from implementer, spec_reviewer, code_reviewer, family-independent of implementer",
+      "role_id": "verifier",
+      "runtime_id": "mistral-local"
+    }
+  },
+  "candidate_revision": "dbe79003f4fd79c6ddef816ca796a351f6a3e184",
+  "channel": "bd97b0e4-ad6c-5373-946f-7e8395ecbb87",
+  "cohort": {
+    "assurance_level": "BASELINE",
+    "communication_topology": {
+      "channel": "DUME-WP-001",
+      "human_addressing": [
+        "@commissioning_orchestrator",
+        "@architect",
+        "@implementer",
+        "@implementer",
+        "@spec_reviewer",
+        "@code_reviewer",
+        "@verifier"
+      ],
+      "rule": "operational only — a message is never a gate verdict",
+      "threads": [
+        "plan",
+        "implementation",
+        "review",
+        "verification"
+      ]
+    },
+    "context_projection": {
+      "embargo": "independent-first — a reviewer's verdict is not visible to the next reviewer until their own is recorded, so the second opinion is a second opinion",
+      "every_role_receives": [
+        "the frozen packet",
+        "the candidate revision",
+        "its own role card"
+      ],
+      "implementer_also_receives": [
+        "its worktree path",
+        "the accepted plan"
+      ],
+      "nobody_receives": [
+        "another agent's conversation history",
+        "an earlier reviewer's verdict before forming their own",
+        "any credential"
+      ],
+      "reviewer_receives": [
+        "the candidate diff",
+        "the frozen acceptance"
+      ],
+      "verifier_receives": [
+        "a fresh checkout",
+        "the acceptance suite"
+      ]
+    },
+    "independence_matrix": [
+      "identity: implementer ≠ spec_reviewer",
+      "identity: implementer ≠ code_reviewer",
+      "identity: implementer ≠ verifier",
+      "identity: implementer ≠ spec_reviewer",
+      "identity: implementer ≠ code_reviewer",
+      "identity: implementer ≠ verifier",
+      "identity: spec_reviewer ≠ implementer",
+      "identity: code_reviewer ≠ implementer",
+      "identity: code_reviewer ≠ spec_reviewer",
+      "identity: verifier ≠ implementer",
+      "identity: verifier ≠ spec_reviewer",
+      "identity: verifier ≠ code_reviewer",
+      "family: spec_reviewer ≠ implementer",
+      "family: code_reviewer ≠ implementer",
+      "family: verifier ≠ implementer"
+    ],
+    "packet_sha256": "d0ae2a32d17c26a082b74c17a43e59c04b640e9cc396d1ee58a0458e50a1b02c",
+    "roles": [
+      {
+        "decides": "Sequencing only. The orchestrator moves work between stages; it does not decide whether a stage passed.",
+        "fresh_context_required": false,
+        "independence_requirements": [],
+        "purpose": "Runs the work-package workflow and manages the cohort.",
+        "qualification_required": false,
+        "reason": "every package needs sequencing",
+        "role_id": "commissioning_orchestrator",
+        "skill_bundle": [
+          "brainstorming",
+          "writing-plans"
+        ],
+        "task": null
+      },
+      {
+        "decides": "The shape of the change, and whether the requirement is satisfiable as written.",
+        "fresh_context_required": false,
+        "independence_requirements": [],
+        "purpose": "Turns a frozen packet into an implementation plan.",
+        "qualification_required": true,
+        "reason": "the plan is a separate artefact from the code, and the packet is frozen input to it",
+        "role_id": "architect",
+        "skill_bundle": [
+          "brainstorming",
+          "writing-plans",
+          "systems-architecture"
+        ],
+        "task": null
+      },
+      {
+        "decides": "Nothing about its own correctness.",
+        "fresh_context_required": false,
+        "independence_requirements": [
+          "must not be the same identity as spec_reviewer",
+          "must not be the same identity as code_reviewer",
+          "must not be the same identity as verifier"
+        ],
+        "purpose": "Produces the candidate under Superpowers discipline.",
+        "qualification_required": true,
+        "reason": "produces the candidate",
+        "role_id": "implementer",
+        "skill_bundle": [
+          "test-driven-development",
+          "systematic-debugging",
+          "verification-before-completion"
+        ],
+        "task": "host_inventory.json"
+      },
+      {
+        "decides": "Nothing about its own correctness.",
+        "fresh_context_required": false,
+        "independence_requirements": [
+          "must not be the same identity as spec_reviewer",
+          "must not be the same identity as code_reviewer",
+          "must not be the same identity as verifier"
+        ],
+        "purpose": "Produces the candidate under Superpowers discipline.",
+        "qualification_required": true,
+        "reason": "produces the candidate",
+        "role_id": "implementer",
+        "skill_bundle": [
+          "test-driven-development",
+          "systematic-debugging",
+          "verification-before-completion"
+        ],
+        "task": "host_inventory.md, disk_capacity_report.md, deployment_profile_candidate.md"
+      },
+      {
+        "decides": "Was the requirement met? Nothing about code quality.",
+        "fresh_context_required": false,
+        "independence_requirements": [
+          "must not be the same identity as implementer",
+          "must not share a model family with implementer"
+        ],
+        "purpose": "Compares the candidate against the frozen specification.",
+        "qualification_required": true,
+        "reason": "answers: was the requirement met?",
+        "role_id": "spec_reviewer",
+        "skill_bundle": [
+          "requirements-analysis",
+          "verification-before-completion"
+        ],
+        "task": null
+      },
+      {
+        "decides": "Is the implementation good? Nothing about whether it runs.",
+        "fresh_context_required": false,
+        "independence_requirements": [
+          "must not be the same identity as implementer",
+          "must not be the same identity as spec_reviewer",
+          "must not share a model family with implementer"
+        ],
+        "purpose": "Judges implementation quality and architectural fit.",
+        "qualification_required": true,
+        "reason": "answers: is the implementation good?",
+        "role_id": "code_reviewer",
+        "skill_bundle": [
+          "code-review",
+          "systems-architecture"
+        ],
+        "task": null
+      },
+      {
+        "decides": "Does it actually work? This is the only role whose PASS is evidence of behaviour.",
+        "fresh_context_required": true,
+        "independence_requirements": [
+          "must not be the same identity as implementer",
+          "must not be the same identity as spec_reviewer",
+          "must not be the same identity as code_reviewer",
+          "must not share a model family with implementer"
+        ],
+        "purpose": "Runs the acceptance suite from a fresh checkout and environment.",
+        "qualification_required": true,
+        "reason": "answers: does it actually work?",
+        "role_id": "verifier",
+        "skill_bundle": [
+          "verification-before-completion",
+          "systematic-debugging"
+        ],
+        "task": null
+      }
+    ],
+    "signals": {
+      "adversarial_scenarios": 0,
+      "deliverable_count": 5,
+      "dependency_count": 0,
+      "is_architecture_bearing": false,
+      "known_failure_modes": 3,
+      "must_be_reversible": false,
+      "touches_durable_state": true,
+      "touches_external_code": false,
+      "touches_runtime_binding": true,
+      "touches_security_boundary": false,
+      "wave": 1
+    },
+    "specialists": [
+      {
+        "authority": "raises findings only; never a gate verdict",
+        "matched": [
+          "capability"
+        ],
+        "specialist": "security",
+        "trigger": "the package touches credentials, capability or trust boundaries"
+      },
+      {
+        "authority": "raises findings only; never a gate verdict",
+        "matched": [
+          "evidence"
+        ],
+        "specialist": "data",
+        "trigger": "the package changes durable state or evidence"
+      },
+      {
+        "authority": "raises findings only; never a gate verdict",
+        "matched": [
+          "model",
+          "runtime"
+        ],
+        "specialist": "runtime",
+        "trigger": "the package binds or switches models and runtimes"
+      }
+    ],
+    "wp_id": "WP-001"
+  },
+  "gate": {
+    "candidate_revision": "dbe79003f4fd79c6ddef816ca796a351f6a3e184",
+    "checks": [
+      {
+        "detail": "state records dbe79003f4fd79c6ddef816ca796a351f6a3e184, gate was asked about dbe79003f4fd79c6ddef816ca796a351f6a3e184",
+        "name": "candidate_unchanged",
+        "passed": true,
+        "question": "Is this the exact candidate that was reviewed?"
+      },
+      {
+        "detail": "working tree clean",
+        "name": "worktree_clean",
+        "passed": true,
+        "question": "Is every change committed into the candidate?"
+      },
+      {
+        "detail": "1 PASS record(s), 1 from an identity other than the producer WP-001/implementer",
+        "name": "specification_compliance_passed",
+        "passed": true,
+        "question": "Was the requirement met?"
+      },
+      {
+        "detail": "1 PASS record(s), 1 from an identity other than the producer WP-001/implementer",
+        "name": "code_quality_passed",
+        "passed": true,
+        "question": "Is the implementation good?"
+      },
+      {
+        "detail": "1 PASS record(s), 1 from an identity other than the producer WP-001/implementer",
+        "name": "verification_passed",
+        "passed": true,
+        "question": "Does it actually work?"
+      },
+      {
+        "detail": "verifier WP-001/verifier, distinct from both reviewers",
+        "name": "verification_independent",
+        "passed": true,
+        "question": "Did the verifier avoid checking its own earlier conclusion?"
+      },
+      {
+        "detail": "packet digest d0ae2a32d17c vs recorded d0ae2a32d17c",
+        "name": "packet_unchanged",
+        "passed": true,
+        "question": "Was the work done against the frozen packet?"
+      },
+      {
+        "detail": "4 file(s) changed, none protected",
+        "name": "protected_paths_untouched",
+        "passed": true,
+        "question": "Did the candidate stay out of the paths it may not touch?"
+      },
+      {
+        "detail": "no frozen digests were declared for this package",
+        "name": "frozen_acceptance_unchanged",
+        "passed": true,
+        "question": "Is the frozen acceptance byte-identical?"
+      },
+      {
+        "detail": "3 artefact(s) present and non-empty",
+        "name": "required_artefacts_present",
+        "passed": true,
+        "question": "Does every mandatory artefact exist and contain something?"
+      },
+      {
+        "detail": "no open Critical/High finding",
+        "name": "no_blocking_findings",
+        "passed": true,
+        "question": "Is anything Critical or High still open?"
+      }
+    ],
+    "evaluated_at": "2026-08-24T08:25:59+00:00",
+    "failed_checks": [],
+    "schema": "dume.merge_eligibility/1",
+    "verdict": "MERGE_ELIGIBLE",
+    "wp_id": "WP-001"
+  },
+  "handoffs": [],
+  "packet_sha256": "d0ae2a32d17c26a082b74c17a43e59c04b640e9cc396d1ee58a0458e50a1b02c",
+  "started_at": "2026-08-24T08:19:59+00:00",
+  "steps": [
+    {
+      "at": "2026-08-24T08:19:59+00:00",
+      "detail": "package is READY and dependencies are ACCEPTED",
+      "name": "precondition",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-24T08:19:59+00:00",
+      "detail": "3 frozen sections, 0 dependencies, 5 deliverables, digest d0ae2a32d17c",
+      "name": "packet",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-24T08:19:59+00:00",
+      "detail": "BASELINE assurance, roles: commissioning_orchestrator, architect, implementer, implementer, spec_reviewer, code_reviewer, verifier; specialists: security, data, runtime",
+      "name": "cohort",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-24T08:19:59+00:00",
+      "detail": "architect→qwen-local(qwen); implementer→qwen-local(qwen); implementer#2→qwen-local(qwen); spec_reviewer→mistral-local(mistral); code_reviewer→mistral-local(mistral); verifier→mistral-local(mistral)",
+      "name": "runtime_binding",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-24T08:22:17+00:00",
+      "detail": "Add a pure capacity.py module (usable_vram_bytes + classify) with a TDD test file that enforces the usable-VRAM reserve and the four-way host classification, grounded in the WP-001 capacity-envelope and classification scope.",
+      "name": "plan",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-24T08:22:17+00:00",
+      "detail": "dume/WP-001/live-d0ae2a32 off 52651a903997",
+      "name": "worktree",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-24T08:25:48+00:00",
+      "detail": "candidate dbe79003f4fd, RED→GREEN evidence: RED exit=2, GREEN exit=0, 4 tool calls",
+      "name": "implement",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-24T08:25:48+00:00",
+      "detail": "4 file(s) changed, none protected",
+      "name": "protected_paths",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-24T08:25:54+00:00",
+      "detail": "WP-001/spec_reviewer: PASS — The diff meets all specified requirements and acceptance criteria.",
+      "name": "specification_compliance",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-24T08:25:58+00:00",
+      "detail": "WP-001/code_reviewer: PASS — The implementation is well-structured, clear, and thoroughly tested.",
+      "name": "code_quality",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-24T08:25:59+00:00",
+      "detail": "WP-001/verifier: PASS — fresh checkout, pytest exit=0; verifier said PASS — All tests passed with exit code 0.",
+      "name": "verification",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-24T08:25:59+00:00",
+      "detail": "candidate dbe79003f4fd",
+      "name": "tech_complete",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-24T08:25:59+00:00",
+      "detail": "MERGE_ELIGIBLE",
+      "name": "machine_gate",
+      "outcome": "OK"
+    }
+  ],
+  "verdict": "MERGE_ELIGIBLE",
+  "wp_id": "WP-001"
+}

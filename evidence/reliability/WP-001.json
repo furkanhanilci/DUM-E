@@ -1,0 +1,56 @@
+{
+  "schema": "dume.reliability/1",
+  "work_package": "WP-001",
+  "attempts": [
+    {
+      "index": 1,
+      "verdict": "MERGE_ELIGIBLE",
+      "reached": "machine_gate",
+      "stopped_at": null,
+      "seconds": 389.5,
+      "detail": ""
+    },
+    {
+      "index": 2,
+      "verdict": "MERGE_ELIGIBLE",
+      "reached": "machine_gate",
+      "stopped_at": null,
+      "seconds": 380.5,
+      "detail": ""
+    },
+    {
+      "index": 3,
+      "verdict": "MERGE_ELIGIBLE",
+      "reached": "machine_gate",
+      "stopped_at": null,
+      "seconds": 337.2,
+      "detail": ""
+    },
+    {
+      "index": 4,
+      "verdict": "MERGE_ELIGIBLE",
+      "reached": "machine_gate",
+      "stopped_at": null,
+      "seconds": 360.6,
+      "detail": ""
+    },
+    {
+      "index": 5,
+      "verdict": "MERGE_ELIGIBLE",
+      "reached": "machine_gate",
+      "stopped_at": null,
+      "seconds": 373.9,
+      "detail": ""
+    }
+  ],
+  "runs": 5,
+  "merge_eligible": 5,
+  "success_rate": 1.0,
+  "verdicts": {
+    "MERGE_ELIGIBLE": 5
+  },
+  "stopped_at": {},
+  "deepest_stage": "machine_gate",
+  "same_failure_every_time": true,
+  "note": "A harness that fails the same way every time has one bug. A harness that fails differently each time has a reliability problem, and those need different responses."
+}

@@ -58,7 +58,11 @@ subject and **named** rather than counted as passes.
 - **Live**, one task of WP-001: `MERGE_ELIGIBLE` in 370.7 seconds. RED exit 2 →
   GREEN exit 0, three independent reviews, fresh-checkout verification at exit 0,
   eleven gate checks.
-- **Reliability**, five repeats: see `evidence/reliability/`.
+- **Reliability**, five repeats: **5/5 `MERGE_ELIGIBLE`**, every one reaching
+  the machine gate, nothing stopped at any stage. 337–390 seconds, a narrow
+  band. Each run produced a *different* candidate revision and each independently
+  showed RED exit 2 → GREEN exit 0, so what repeats is the discipline rather
+  than a memorised output.
 
 ## Architecture changes
 
@@ -81,6 +85,7 @@ changed the plan rather than confirming it:
 |---|---|---|
 | No independent verifier bound | **High** | blocks every acceptance |
 | Both reviewers share a family | Medium | a third family fixes it |
+| Reliability measured on one task only | Medium | repeat on a package of a different shape |
 | ACP and Buzz agent lifecycle unused | Medium | WP-015/WP-016 |
 | Qwen 4-bit tool-calling accuracy unmeasured | Medium | WP-009 must measure, not inherit |
 | Root filesystem at 91% | Medium | before any build writing to it |

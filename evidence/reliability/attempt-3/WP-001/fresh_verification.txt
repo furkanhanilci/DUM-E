@@ -1,0 +1,4 @@
+candidate=ab892901be8a50138db3638d13fba0dee9b60e7f
+exit=0
+...............                                                          [100%]
+15 passed in 0.03s

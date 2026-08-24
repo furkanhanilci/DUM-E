@@ -47,15 +47,17 @@ the second is a person.
 - **Runtime switching**: role preserved, runtime rebound, task state carried,
   conversation dropped.
 
+- **Repeatably.** Five consecutive live runs, five `MERGE_ELIGIBLE`, all
+  reaching the machine gate, nothing stopped at any stage, 337–390 seconds.
+  Each produced a different candidate revision and each showed RED exit 2 →
+  GREEN exit 0 independently, so what repeats is the discipline and not a
+  memorised answer.
+
 ## What has not
 
-The second half of the pipeline — code review, fresh verification, machine gate
-— has run end to end **only under the synthetic executor**. No live run has yet
-reached `MERGE_ELIGIBLE`, and no package is `ACCEPTED`.
-
-That last one is not a technical gap: acceptance needs an independent verifier
-identity, and the store refuses to let the actor that produced this code accept
-it.
+No package is `ACCEPTED`. That is not a technical gap: acceptance needs an
+independent verifier identity, and the store refuses to let the actor that
+produced this code accept it.
 
 ## Nine decisions, and what forced each
 
@@ -102,8 +104,7 @@ it.
 | Risk | Severity | Revisit |
 |---|---|---|
 | No independent verifier bound | **High** | blocks every acceptance |
-| No live run has reached the gate | **High** | the current work |
-| Reliability unmeasured (`dume reliability`) | Medium | after the first green run |
+| Reliability measured on one task only | Medium | repeat on a package of a different shape |
 | Both reviewers share a family | Medium | a third family would fix it |
 | ACP and Buzz agent lifecycle unused | Medium | WP-015/WP-016 |
 | Qwen 4-bit tool-calling accuracy unmeasured | Medium | WP-009 must measure it |
