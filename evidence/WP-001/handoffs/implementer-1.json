@@ -1,0 +1,44 @@
+{
+  "accepted_plan": {
+    "steps": [
+      "a",
+      "b"
+    ],
+    "summary": "build X"
+  },
+  "artefact_refs": [],
+  "candidate_sha": "abc123def456",
+  "completed_steps": [
+    "a"
+  ],
+  "context_policy": "task state only. The previous agent's conversation is deliberately excluded: it would double the context, carry over its confusions, and prejudice a role that is supposed to form its own view.",
+  "from_binding": {
+    "agent_id": "WP-x/implementer",
+    "bound_at": "2026-08-24T07:19:12+00:00",
+    "family": "qwen",
+    "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
+    "reason": "cheapest qualified runtime for implementer",
+    "role_id": "implementer",
+    "runtime_id": "qwen-local"
+  },
+  "issued_at": "2026-08-24T07:19:12+00:00",
+  "logical_role": "implementer",
+  "open_findings": [],
+  "open_steps": [
+    "b"
+  ],
+  "packet_sha256": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+  "reason": "quota exhausted mid-package",
+  "task_id": "t1",
+  "to_binding": {
+    "agent_id": "WP-001/implementer@fallback",
+    "bound_at": "2026-08-24T07:19:12+00:00",
+    "family": "mistral",
+    "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
+    "reason": "cheapest qualified runtime for implementer",
+    "role_id": "implementer",
+    "runtime_id": "mistral-local"
+  },
+  "worktree": "/tmp/wt",
+  "wp_id": "WP-001"
+}

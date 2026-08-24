@@ -21,10 +21,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ..acceptance.gate import MergeGate
+from ..collaboration.buzz import BuzzError, Cohort, channel_id_for
 from ..cohort.compiler import CohortManifest, compile_cohort
 from ..packets.wp_packet_builder import PacketBuilder, WPPacket
 from ..runtimes.client import ModelError
 from ..runtimes.failures import classify, retry_decision
+from ..runtimes.handoff import RuntimeSwitcher, SwitchRefused
 from ..runtimes.profiles import NoEligibleRuntime, RuntimeBinding, RuntimeRegistry
 from ..state import StateError, json_dump
 from ..worktrees.manager import ProtectedPathViolation, WorktreeManager
@@ -53,8 +55,10 @@ class RunReport:
     packet_sha256: str | None = None
     candidate_revision: str | None = None
     cohort: dict | None = None
+    channel: str | None = None
     bindings: dict = field(default_factory=dict)
     gate: dict | None = None
+    handoffs: list = field(default_factory=list)
     verdict: str = "INCOMPLETE"
 
     def as_dict(self) -> dict:
@@ -74,13 +78,55 @@ class BlockedRuntime(RuntimeError):
 class Orchestrator:
     def __init__(self, store, *, packet_builder: PacketBuilder,
                  registry: RuntimeRegistry, worktrees: WorktreeManager | None = None,
-                 evidence_dir: Path | None = None):
+                 evidence_dir: Path | None = None, buzz=None):
         self.store = store
         self.packets = packet_builder
         self.registry = registry
         self.worktrees = worktrees
         self.evidence_dir = Path(evidence_dir) if evidence_dir else Path("evidence")
         self.gate = MergeGate(store, worktrees)
+        # The collaboration substrate. Optional on purpose: a relay outage stops
+        # the commentary, never the commissioning (Invariant 16), and a message
+        # is never a gate verdict (Invariant 11).
+        self.buzz = buzz
+        self.cohort_identities: Cohort | None = None
+        self.channel: str | None = None
+        self.switcher = RuntimeSwitcher(registry, self.evidence_dir)
+
+    # ---- collaboration --------------------------------------------------
+
+    def _say(self, text: str, mentions: list[str] | None = None) -> None:
+        """Post an operational message. Never allowed to stop the run.
+
+        A substrate outage is not an implementation failure, so this swallows
+        the error and records it as a step rather than raising into a pipeline
+        that has nothing wrong with it.
+        """
+        if not (self.buzz and self.channel):
+            return
+        try:
+            self.buzz.announce(self.channel, text, mentions=mentions)
+        except BuzzError as exc:
+            self._buzz_faults.append(str(exc)[:200])
+
+    def open_channel(self, wp_id: str, roles: list[str]) -> str | None:
+        """Give the package a channel and mint one identity per role slot."""
+        if not self.buzz:
+            return None
+        from ..collaboration.buzz import deploy_cohort
+        self.channel = channel_id_for(wp_id)
+        try:
+            self.cohort_identities = deploy_cohort(self.buzz, wp_id, roles)
+        except BuzzError as exc:
+            self._buzz_faults.append(str(exc)[:200])
+            self.channel = None
+        return self.channel
+
+    def _pubkey(self, role: str) -> list[str]:
+        if not self.cohort_identities:
+            return []
+        identity = self.cohort_identities.identities.get(role)
+        return [identity.pubkey] if identity else []
 
     # ---- steps ----------------------------------------------------------
 
@@ -137,9 +183,15 @@ class Orchestrator:
         the evidence, and those hold whichever executor is supplied.
         """
         report = RunReport(wp_id=wp_id, started_at=_now())
+        self._buzz_faults: list[str] = []
+
+        icon = {"OK": "✅", "BLOCKED": "⏸️", "FAILED": "❌"}
 
         def step(name: str, outcome: str, detail: str) -> None:
             report.steps.append(Step(name, outcome, detail))
+            # Every stage transition is narrated where a human can watch it and
+            # address a role by name. Operational only.
+            self._say(f"{icon.get(outcome, '•')} {name}: {detail[:600]}")
 
         row = self.store.get(wp_id)
         if row["state"] != "READY":
@@ -165,6 +217,16 @@ class Orchestrator:
         # 2. Cohort — derived from the packet, not from an adjective.
         cohort = compile_cohort(packet)
         report.cohort = cohort.as_dict()
+        # The channel opens here, so everything from the cohort onwards is
+        # narrated and every role has a name a human can @-address.
+        self.open_channel(wp_id, cohort.role_ids())
+        if self.channel:
+            self._say(
+                f"{wp_id} — {packet.title}\n"
+                f"packet {packet.packet_sha256[:12]} · {cohort.assurance_level} "
+                f"assurance · roles: {', '.join(cohort.role_ids())}\n"
+                "Messages in this channel are operational. No verdict posted "
+                "here moves the package.")
         step("cohort", "OK",
              f"{cohort.assurance_level} assurance, roles: "
              f"{', '.join(cohort.role_ids())}"
@@ -209,11 +271,46 @@ class Orchestrator:
             result = executor.implement(packet, plan, worktree)
         except ModelError as exc:
             # The model or its server failed to run the work. Invariant 16: that
-            # says nothing about the candidate, and blaming the implementation
-            # would send the wrong person to fix it and burn a retry that cannot
-            # help.
+            # says nothing about the candidate. Rather than failing the package,
+            # rebind the role to another runtime and hand over the task — not
+            # the conversation — then try once more.
             step("implement", "FAILED", f"{type(exc).__name__}: {exc}")
-            return self._fail(report, wp_id, "RUNTIME_FAILURE", actor, str(exc))
+            switch, why = self.switcher.should_switch(
+                "RUNTIME_FAILURE", bindings.get("implementer"))
+            if not switch:
+                return self._fail(report, wp_id, "RUNTIME_FAILURE", actor, str(exc))
+            try:
+                handoff = self.switcher.switch(
+                    role="implementer", wp_id=wp_id,
+                    task_id=f"{wp_id}-implement",
+                    current=bindings.get("implementer"),
+                    reason=f"{why}: {str(exc)[:120]}",
+                    already_bound=bindings,
+                    independent_of=ROLES["implementer"].independent_of,
+                    family_independent_of=ROLES["implementer"].family_independent_of,
+                    plan=plan, worktree=worktree.path,
+                    packet_sha256=packet.packet_sha256)
+            except SwitchRefused as refusal:
+                step("runtime_switch", "BLOCKED", str(refusal))
+                self.store.transition(wp_id, "BLOCKED", actor=actor,
+                                      reason="BLOCKED_RUNTIME after switch refused")
+                report.verdict = "BLOCKED_RUNTIME"
+                self._write(report)
+                return report
+            new_id = handoff.to_binding["runtime_id"]
+            step("runtime_switch", "OK",
+                 f"implementer rebound {handoff.from_binding['runtime_id']} → "
+                 f"{new_id}; role unchanged, task state carried, conversation not")
+            report.handoffs.append(handoff.as_dict())
+            bindings["implementer"] = RuntimeBinding(**handoff.to_binding)
+            if hasattr(executor, "rebind"):
+                executor.rebind("implementer", new_id, handoff)
+            try:
+                result = executor.implement(packet, plan, worktree)
+            except Exception as second:
+                step("implement", "FAILED", f"after switch: {second}")
+                return self._fail(report, wp_id, "RUNTIME_FAILURE", actor,
+                                  str(second))
         except Exception as exc:
             step("implement", "FAILED", f"{type(exc).__name__}: {exc}")
             return self._fail(report, wp_id, "IMPLEMENTATION_FAILURE", actor, str(exc))
@@ -257,6 +354,9 @@ class Orchestrator:
                 return self._fail(report, wp_id, "HARNESS_FAILURE", actor, str(exc))
             step(kind, "OK" if verdict["verdict"] == "PASS" else "FAILED",
                  f"{reviewer}: {verdict['verdict']} — {verdict.get('detail', '')}")
+            self._say(f"@{role_key} answered {verdict['verdict']}: "
+                      f"{verdict.get('detail', '')[:400]}",
+                      mentions=self._pubkey(role_key))
             if verdict["verdict"] != "PASS":
                 for finding in verdict.get("findings", []):
                     self.store.add_finding(wp_id, finding.get("severity", "HIGH"),
@@ -285,6 +385,13 @@ class Orchestrator:
                  else ": " + "; ".join(f"{c.name} — {c.detail}" for c in gate.failed)))
 
         report.verdict = gate.verdict
+        if self.channel:
+            report.channel = self.channel
+        if self._buzz_faults:
+            report.steps.append(Step(
+                "collaboration", "BLOCKED",
+                f"{len(self._buzz_faults)} Buzz fault(s); the commissioning was "
+                f"unaffected: {self._buzz_faults[0]}"))
         self._write(report)
         return report
 

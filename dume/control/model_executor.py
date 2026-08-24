@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ..packets.wp_packet_builder import WPPacket
+from ..review.skills import SkillBundle, SkillsUnavailable, bundles_for_cohort
 from ..runtimes.client import ModelClient, ModelError
 from .agent_tools import TOOL_SCHEMAS, ToolLog, Toolbox
 
@@ -134,6 +135,15 @@ class ModelExecutor:
     evidence_dir: Path
     bindings: dict = field(default_factory=dict)   # role_id -> RuntimeBinding
     transcripts: dict = field(default_factory=dict)
+    # The pinned Superpowers skills each role is held to, keyed by role.
+    #
+    # Empty means the agents run on this harness's own prose, which is a fact a
+    # run must record rather than paper over: the discipline would then be
+    # unversioned and could drift without anyone noticing.
+    skills: dict = field(default_factory=dict)
+    # Set when a role has been handed over mid-package. Prepended to that role's
+    # next prompt so the replacement knows what it inherited.
+    briefings: dict = field(default_factory=dict)
     # A bounded, code-shaped slice of the package to actually build.
     #
     # The commissioning plan's deliverables are documents and schemas — it
@@ -145,6 +155,36 @@ class ModelExecutor:
     # the rules. A run with a focus has characterised the harness, not completed
     # the package, and the result records the difference.
     focus: str | None = None
+
+    def system_prompt(self, role: str) -> str:
+        """The role card, preceded by the discipline the role is held to.
+
+        Order matters: the skill comes first and says it wins on method, so a
+        role card and a skill that disagree resolve towards the pinned artefact
+        rather than towards whichever the model read last.
+        """
+        card = ROLE_CARDS[role]
+        bundle = self.skills.get(role)
+        prompt = card if bundle is None else (
+            f"{bundle.text}\n\n---\n\n# Your role\n\n{card}")
+        briefing = self.briefings.get(role)
+        if briefing:
+            prompt = f"{prompt}\n\n---\n\n{briefing}"
+        return prompt
+
+    def rebind(self, role: str, runtime_id: str, handoff) -> None:
+        """Point a role at another runtime, and tell the replacement what it is
+        taking over. The briefing is task state; the previous agent's
+        conversation is dropped rather than forwarded."""
+        from .live import ENDPOINTS
+        endpoint = ENDPOINTS.get(runtime_id)
+        if endpoint:
+            self.clients[role] = ModelClient(endpoint, model="local")
+        self.briefings[role] = handoff.briefing()
+        # The replacement starts clean. Keeping the old transcript under the
+        # same key would leak it into the next _record and, worse, invite
+        # someone to feed it back in.
+        self.transcripts.pop(role, None)
 
     def _client(self, role: str) -> ModelClient:
         try:
@@ -166,7 +206,7 @@ class ModelExecutor:
     def plan(self, packet: WPPacket, cohort) -> dict:
         client = self._client("architect")
         messages = [
-            {"role": "system", "content": ROLE_CARDS["architect"]},
+            {"role": "system", "content": self.system_prompt("architect")},
             {"role": "user", "content":
              _packet_brief(packet) + "\n\n"
              f"Assurance level: {cohort.assurance_level}.\n\n"
@@ -200,7 +240,7 @@ class ModelExecutor:
         root = Path(worktree.path)
 
         messages = [
-            {"role": "system", "content": ROLE_CARDS["implementer"]},
+            {"role": "system", "content": self.system_prompt("implementer")},
             {"role": "user", "content":
              _packet_brief(packet, limit=3500) + "\n\n"
              "## the accepted plan\n" + json.dumps(plan, indent=2)[:2000] + "\n\n"
@@ -292,6 +332,13 @@ class ModelExecutor:
         discipline_dir.mkdir(parents=True, exist_ok=True)
         (discipline_dir / "tool_log.json").write_text(
             json.dumps({"calls": log.calls}, indent=2))
+        (discipline_dir / "skills_injected.json").write_text(json.dumps(
+            {"schema": "dume.skills_injected/1",
+             "note": ("What each role was actually held to. Injection is an "
+                      "input, not proof of obedience — that is answered by the "
+                      "red-then-green exit codes and the independent reviews."),
+             "bundles": {r: b.as_dict() for r, b in self.skills.items()}},
+            indent=2))
 
         if red_exit is None or green_exit != 0:
             raise ImplementationRefused(
@@ -345,7 +392,7 @@ class ModelExecutor:
                        + "\n".join(f"- {d}" for d in packet.deliverables))
 
         messages = [
-            {"role": "system", "content": ROLE_CARDS[role]},
+            {"role": "system", "content": self.system_prompt(role)},
             {"role": "user", "content":
              f"{context}\n\n## the candidate diff ({candidate[:12]})\n"
              f"```diff\n{diff}\n```\n\n{question}\n\n"
@@ -386,7 +433,7 @@ class ModelExecutor:
 
         client = self._client("verifier")
         messages = [
-            {"role": "system", "content": ROLE_CARDS["verifier"]},
+            {"role": "system", "content": self.system_prompt("verifier")},
             {"role": "user", "content":
              f"Candidate {candidate[:12]} was checked out fresh and the suite "
              f"was run.\n\nexit code: {run.returncode}\n\noutput:\n"

@@ -1,9 +1,0 @@
-exit=2
-[
-  {
-    "tool": "run_tests",
-    "arguments": {},
-    "outcome": "EXIT_2",
-    "detail": "port_module\n    return _bootstrap._gcd_import(name[level:], package, level)\ntest_capacity.py:7: in <module>\n    from capacity import usable_bytes\nE   ModuleNotFoundError: No module named 'capacity'\n=========================== short test summary info ============================\nERROR test_capacity.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.09s\n"
-  }
-]
