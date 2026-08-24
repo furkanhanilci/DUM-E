@@ -14,23 +14,53 @@ AETHRION.
 
 ## Status
 
-**v0.1.0.dev0 — foundation waves 1–3, TECH_COMPLETE, not accepted.**
+**v0.1.0.dev0 — the pipeline runs end to end. Nothing is accepted.**
 
-Acceptance requires an independent verifier. The actor that produced this code
-cannot accept it, and the state store refuses to let it try. See
+The Buzz relay is up, Superpowers is installed at the pinned revision, the
+synthetic pilot drives a package from packet to merge-eligible against a
+disposable target, and 150 tests are green. What is missing is not code: no
+independent verifier is bound, and the state store refuses to let the actor that
+produced this accept it. See
 [`docs/COMMISSIONING_STATUS.md`](docs/COMMISSIONING_STATUS.md).
 
 ## What is actually built
 
-| Work package | Capability | Command |
-|---|---|---|
-| WP-001 | Host hardware, OS and capacity inventory | `dume inventory` |
-| WP-002 | Three-workspace boundary and read-only specification mount | `dume workspace --probe`, `dume check-write PATH` |
-| WP-003 | Secrets, credentials and local trust boundary | `dume secrets PATH` |
-| WP-004 | Pinned toolchain and provenance lock | `dume toolchain [--verify]` |
-| — | Upstream pin verification | `dume upstream` |
-| — | Durable lifecycle state for all 54 packages | `dume seed`, `dume status`, `dume transition`, `dume evidence`, `dume history` |
-| — | Adversarial acceptance scenarios | `dume scenarios -v` |
+| Capability | Command |
+|---|---|
+| Host capacity inventory | `dume inventory` |
+| Workspace boundary and read-only specification mount | `dume workspace --probe`, `dume check-write PATH` |
+| Credential boundary | `dume secrets PATH` |
+| Toolchain lock and drift | `dume toolchain [--verify]` |
+| Upstream pin verification | `dume upstream` |
+| Deterministic work-package packet | `dume packet WP-nnn` |
+| Cohort compilation with independence requirements | `dume cohort WP-nnn` |
+| Runtime status, probing and role binding | `dume runtime --probe --bind ROLE` |
+| Adversarial acceptance scenarios | `dume scenarios -v` |
+| Synthetic end-to-end pilot with fault injection | `dume pilot -v` |
+| Proof the engineering discipline was applied | `dume discipline --transcript FILE` |
+| Durable lifecycle for all 54 packages | `dume seed`, `status`, `transition`, `evidence`, `history` |
+
+### The pipeline
+
+```
+READY → packet → cohort → runtime binding → worktree → plan → RED/GREEN
+      → spec review → code review → fresh verification → machine gate
+```
+
+Each review stage is gated on the previous one having passed **on the current
+candidate**, so a package cannot walk the whole pipeline with no verdict and be
+caught only at the end. Verification must be independent of both reviewers.
+
+### What is deployed
+
+- **Buzz relay** — `ghcr.io/block/buzz:sha-0720f53`, Postgres + Redis + MinIO,
+  reached over its NIP-98 HTTP bridge signed from Python
+  ([ADR-0005](docs/adr/ADR-0005-buzz-over-the-http-bridge.md)).
+- **Superpowers 6.3.0** at the pinned `b36e0829`. It enforces nothing, so the
+  harness supplies the machine gate and the discipline verifier
+  ([ADR-0006](docs/adr/ADR-0006-the-harness-supplies-the-proof-superpowers-does-not.md)).
+- **Qwen local** — profile decided: llama.cpp CUDA in Docker, Q4_K_M, single GPU
+  ([ADR-0004](docs/adr/ADR-0004-llama-cpp-cuda-is-the-qwen-serving-profile.md)).
 
 ## Running it
 

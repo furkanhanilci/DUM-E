@@ -1,128 +1,130 @@
 # DUM-E Commissioning Status
 
-**Candidate revision:** recorded in the state store — `python3 -m dume.cli history WP-001`
-(a documentation-only commit on top of a re-pinned candidate is expected; the
-state store, not this sentence, is authoritative)
 **Date:** 2026-08-24
-**Verdict:** `TECH_COMPLETE` for WP-001 — **not accepted**
+**Candidate revision:** recorded in the state store — `python3 -m dume.cli history WP-001`.
+The store, not this document, is authoritative.
 
-## What this says and does not say
+## What is running right now
 
-TECH_COMPLETE means implementation and local checks are complete. It carries no
-independent acceptance authority. The actor that produced this candidate is
-`claude-opus-5/commissioning-implementer`, and the state store refuses to let
-that identity accept its own work or have a bystander accept verification it
-authored (Invariant 6). Acceptance is a separate act by an independent verifier.
+| Component | State | Evidence |
+|---|---|---|
+| **Buzz relay** | **running, healthy** — `ghcr.io/block/buzz:sha-0720f53` pinned, Postgres 17 + Redis 7 + MinIO, port 3000 | `docker ps`, NIP-11 metadata, a seven-identity cohort deployed to a derived channel |
+| **Superpowers** | **installed and enabled** at `b36e0829`, the exact pinned revision | `installed_plugins.json` `gitCommitSha` matches `config/upstream.lock.json` |
+| **Qwen local** | profile decided ([ADR-0004](adr/ADR-0004-llama-cpp-cuda-is-the-qwen-serving-profile.md)); artefact staging | `dume runtime --probe` |
+| **DUM-E harness** | 150 tests green; synthetic pilot 5/5 | `dume pilot`, `pytest -q` |
+| **Obsidian mirror** | 246 notes, live-watched, graph coloured | `mirror_dume.py --check` |
+
+## The harness, as built
+
+| Capability | Command | What it refuses |
+|---|---|---|
+| Host capacity inventory | `dume inventory` | inferring a serving profile from a datasheet |
+| Workspace boundary | `dume workspace --probe` | a symlink out of a read-only workspace; a missing directory counted as a passing control |
+| Credential boundary | `dume secrets PATH` | a credential reaching a packet, a log, evidence or a Buzz message |
+| Toolchain lock | `dume toolchain --verify` | evidence produced under an environment that has since changed |
+| Upstream pins | `dume upstream` | an unreachable upstream reported as agreement |
+| Work-package packet | `dume packet WP-nnn` | a summary standing in for the frozen sources |
+| Cohort compilation | `dume cohort WP-nnn` | assurance derived from an adjective rather than the work |
+| Runtime control | `dume runtime --probe --bind ROLE` | an unqualified or UNKNOWN runtime treated as available |
+| Adversarial scenarios | `dume scenarios -v` | a deferred scenario counted as a pass |
+| Synthetic pilot | `dume pilot -v` | a pipeline that has only ever succeeded |
+| Discipline proof | `dume discipline --transcript …` | a `Skill` invocation standing in for a test that failed first |
+| Lifecycle | `dume status`, `transition`, `evidence`, `history` | self-review, self-acceptance, stale evidence, an empty artefact |
+
+## Lifecycle
+
+`DISCOVERED → READY → PACKAGED → PLANNED → EXECUTING → SPEC_REVIEW → CODE_REVIEW
+→ VERIFYING → TECH_COMPLETE → ACCEPTANCE_READY → ACCEPTED`, with
+`FAILED → RETRY → PLANNED` for corrections.
+
+Each review stage is gated on the previous one having passed **on the current
+candidate**, so a package cannot walk the pipeline with no verdict and be caught
+only at the end. Verification must be independent of both reviewers — a verifier
+who already argued the code was good would be checking their own conclusion.
 
 ## Package state
 
-| WP | Title | State | Why |
-|---|---|---|---|
-| WP-001 | Host hardware, OS and capacity inventory | `TECH_COMPLETE` | deliverables produced on the candidate; awaiting an independent verifier |
-| WP-002 | Three-workspace boundary and read-only specification mount | `BLOCKED` | capability implemented, but WP-001 is not ACCEPTED |
-| WP-003 | Secrets, credentials and local trust foundation | `BLOCKED` | same chain |
-| WP-004 | Pinned toolchain and provenance lock | `BLOCKED` | same chain |
-| WP-005 … WP-054 | 50 packages | `NOT_STARTED` | later waves |
+WP-001 is `EXECUTING` on a recorded candidate. It is **not** TECH_COMPLETE,
+because the stricter lifecycle requires three independent review verdicts on
+that candidate and none exist: the actor that built the foundation is the only
+actor present. WP-002/003/004 are `BLOCKED` on the WP-001 chain. The remaining
+fifty are `DISCOVERED`.
 
-The blocked state is the control working, not a problem to route around. The
-code for WP-002–004 exists and is tested; the *packages* cannot be READY while
-their hard dependency awaits acceptance.
+**Nothing here is ACCEPTED.** That is the blocking fact, and it is not a
+technical one: no independent verifier is bound.
 
-## Measured host facts (WP-001)
+## Measured host facts
 
 | Fact | Value |
 |---|---|
 | Host class | `SINGLE_GPU_CONSTRAINED` |
-| GPUs | 2 × NVIDIA RTX A5000, driver 535.309.01, CUDA 12.2 |
-| VRAM total / usable for weights | 48.0 GiB / **41.1 GiB** |
-| Interconnect | PCIe/NODE — no NVLink |
+| GPUs | 2 × RTX A5000, driver 535.309.01, CUDA 12.2, **no NVLink** |
+| VRAM total / usable | 48.0 GiB / **41.1 GiB** |
 | CPU / RAM | 2 × Xeon Gold 5220R, 96 threads / 251 GiB |
-| Root filesystem free | 40 GiB — **cannot host bf16 27B weights** |
-| Model-cache candidate | `/media/otonom/DATADRIVE1` — 834 GiB free |
+| Root filesystem | ~38 GiB free, 90% used |
+| Bulk storage | `/media/otonom/DATADRIVE1` — 834 GiB, **NTFS, cannot enforce chmod** |
 
-Consequence, recorded as [ADR-0002](adr/ADR-0002-quantised-serving-is-a-first-class-candidate.md):
-a 27B model in bf16 needs 50.3 GiB and does not fit. Quantised serving is a
-first-class candidate for WP-005, not a fallback. No serving stack is installed
-until WP-005 records a host-compatible profile.
+## Adversarial results
 
-## Upstream lock
-
-| Upstream | Pin | Live | Status |
-|---|---|---|---|
-| block/buzz | `0720f5380ce8` | `0720f5380ce8` | NO_DRIFT |
-| obra/superpowers | `b36e0829c6d0` | `b36e0829c6d0` | NO_DRIFT |
-| QwenLM/Qwen3.8 | `2ea10dc72582` | `2ea10dc72582` | NO_DRIFT |
-| vLLM · SGLang · llama.cpp · Hermes · ACP | unpinned | resolved | pinned at their decision gate |
-
-Verified live with `dume upstream`. Hermes moved between two checks minutes
-apart, which is the argument for pinning rather than a reason to worry.
-
-AETHRION is deliberately absent from the lock
-([ADR-0003](adr/ADR-0003-aethrion-workspaces-are-unbound.md)).
-
-## Adversarial acceptance scenarios
-
-7 executed, 7 passed. 29 deferred and named, never counted as passes.
-
-| Scenario | Result |
-|---|---|
-| ACC-D001 sealed specification mutation | PASS — denied by the boundary, through a planted symlink, and by the OS |
-| ACC-D002 DUM-E self-modification from a target task | PASS |
-| ACC-D013 producer equals reviewer | PASS — self-acceptance and rubber-stamping both refused |
-| ACC-D022 candidate changed after review | PASS |
-| ACC-D023 stale green evidence | PASS |
-| ACC-D024 empty evidence artefact | PASS — zero-byte, missing and digest-mismatched all refused |
-| ACC-D025 upstream drift | PASS — and an unreachable upstream never reports agreement |
+Seven acceptance scenarios executed, seven passed. Twenty-nine deferred and
+named — never counted as passes. The synthetic pilot runs five cases: one happy
+path to `MERGE_ELIGIBLE` and four deliberate failures, including a candidate
+that edits its own frozen acceptance and is caught before any reviewer wastes
+effort on it.
 
 ## Findings raised against this candidate
 
-Three defects were found by running the controls against the harness itself
-rather than by inspection, and all three are fixed on this candidate:
+Every one came from running a control against a real deployment, not from
+reading it:
 
-1. A missing directory was reported as a holding write control. It now reports
-   `INCONCLUSIVE`.
-2. `ACC-D024` had no control behind it — evidence accepted an artefact path
-   without checking the file. Now refused, with the digest computed rather than
-   trusted from the caller.
-3. The secret-scan report wrote a credential into evidence, quoted inside its
-   own suppression reason. Redaction now happens in `json_dump`, where evidence
-   becomes a file.
+1. A missing directory was reported as a holding write control → now `INCONCLUSIVE`.
+2. `ACC-D024` had no control behind it — evidence accepted an artefact path without
+   opening the file → zero-byte, missing and digest-mismatched artefacts refused.
+3. The secret-scan report wrote a credential into evidence, quoted inside its own
+   suppression reason → redaction moved to where evidence becomes a file.
+4. The pipeline check ran only at `TECH_COMPLETE`, so a package could walk every
+   stage with no verdict → each stage transition is now gated on the previous one.
+5. Identity independence was conflated with runtime independence, which would have
+   demanded one provider per role → role, agent identity and runtime separated.
+6. Cohort signals were read from card boilerplate every package shares, making all
+   54 look identical → signals narrowed to package-specific sections.
+7. Two implementers collapsed into one Buzz identity → one identity per role slot.
+8. **The bulk filesystem is NTFS and silently discards `chmod`** → secrets moved to
+   ext4 ([ADR-0007](adr/ADR-0007-secrets-need-a-filesystem-that-enforces-permissions.md)).
+9. **The credential scanner reported a directory holding a private-key vault and five
+   live passwords as clean** — it anchored on a word boundary that `POSTGRES_PASSWORD`
+   does not have → rule rewritten, seventeen regression cases both directions.
 
 ## Residual risks
 
-| Risk | Severity | Trigger to revisit |
+| Risk | Severity | Revisit when |
 |---|---|---|
-| `cargo`/`rustc` absent; Buzz builds from Rust source | Medium | before WP-011 (wave 4) |
-| Root filesystem at 89% — 40 GiB free | Medium | before any WP that writes build output; WP-006 must not target it |
-| `sqlite3` CLI absent (Python's module is present, so DUM-E works) | Low | only affects hand inspection |
-| `gh` is 2.4.0 from 2022 | Low | before any WP needing GitHub API behaviour |
-| No independent verifier is bound yet | **High** | blocks every acceptance; the next real decision |
+| No independent verifier bound | **High** | blocks every acceptance — the next real decision |
+| `cargo`/`rustc` absent; `buzz` CLI and `buzz-acp` unbuilt | Medium | before a real ACP runtime is needed (~10–14 GiB) |
+| Root filesystem at 90% | Medium | before any build that writes to it |
+| Qwen 4-bit tool-calling accuracy unmeasured | Medium | WP-009 must measure, not inherit |
+| `sha-0720f53` is a branch build, not a release | Low | mirror the image locally |
+| Buzz `switch_model` ahead of its own spec | Low | treat runtime switching as unstable |
+| AETHRION's graph generator removes DUM-E colours | Low | re-run `mirror_dume.py` |
 
 ## What an independent verifier needs
 
-Nothing from the producer's conversation. Everything required is in the
-repository:
+Nothing from the producer's conversation:
 
 ```bash
-git checkout 062dfd96fe6a9f8eb2e0922f3503c542ab621c0e
-python3 -m dume.cli inventory      # reproduce the host profile
-python3 -m dume.cli upstream       # re-check every pin
-python3 -m dume.cli scenarios -v   # re-run the attacks
-uv venv .venv && uv pip install pytest && .venv/bin/python -m pytest -q
-python3 -m dume.cli history WP-001 # every transition, with actor and reason
+python3 -m dume.cli status
+python3 -m dume.cli history WP-001      # the authoritative candidate
+python3 -m dume.cli upstream            # re-check every pin
+python3 -m dume.cli scenarios -v        # re-run the attacks
+python3 -m dume.cli pilot -v            # re-run the end-to-end pilot
+uv venv .venv && uv pip install pytest coincurve && .venv/bin/python -m pytest -q
 ```
 
-Then, as an identity that is **not** `claude-opus-5/commissioning-implementer`:
+Then, as an identity that is **not** the producer, record a verdict for each of
+the three stages. The store refuses anything else.
 
-```bash
-python3 -m dume.cli evidence WP-001 --add --kind verification \
-  --candidate "$CANDIDATE" --actor "<verifier>" --verdict PASS \
-  --artefact <their own test record> --detail "<what they ran>"
-python3 -m dume.cli transition WP-001 ACCEPTED --actor "<verifier>"
-```
+## Next
 
-## Next step
-
-WP-005 — local Qwen deployment profile decision — is the first package that
-needs a decision rather than an implementation, and ADR-0002 has already
-narrowed it. It is gated on the WP-001 acceptance chain.
+WP-005 is decided in ADR-0004 and needs only the artefact staged and the server
+started. It remains gated on the WP-001 acceptance chain, which is where a human
+is needed.
