@@ -185,3 +185,33 @@ def test_a_generated_env_file_is_not_reported_as_clean(tmp_path):
     assert len(hits) >= 4, [h.preview for h in hits]
     # ...and the public half is still not among them.
     assert all("9f907217" not in h.preview for h in hits)
+
+
+def test_a_credential_derived_at_run_time_is_not_a_credential():
+    """`TOKEN = generateToken()` names where a value comes from, not the value.
+
+    Regression: the vendored Superpowers brainstorming server does exactly this,
+    and the scanner reported the repository dirty over it. A scanner that flags
+    correct code teaches the reader to skim its findings, which is how the one
+    real finding gets waved through.
+    """
+    from dume.secrets import scan
+    derived = [
+        "TOKEN = generateToken();",
+        'secret = os.environ["BUZZ_SECRET_KEY"]',
+        "const apiKey = buildKey.from(seed)",
+        "password = getPassword()",
+        "auth_token = tokens[0]",
+        "private_key = load_key => decode(raw)",
+    ]
+    for line in derived:
+        assert scan(line) == [], f"derived value reported as a credential: {line}"
+
+    literal = [
+        "POSTGRES_PASSWORD=hunter2hunter2hunter2",
+        'api_key = "sk-abcdef0123456789"',
+        "client_secret: 8f3aa91c77bd4e0192aa",
+        "BUZZ_RELAY_PRIVATE_KEY=5c260721ad0a733c8c02eaaca38bb576",
+    ]
+    for line in literal:
+        assert scan(line), f"a real credential stopped being detected: {line}"

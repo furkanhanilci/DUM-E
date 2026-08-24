@@ -60,6 +60,15 @@ PATTERNS: list[tuple[str, re.Pattern]] = [
 # working.
 PUBLIC_BY_NAME = re.compile(r"(?i)\b[A-Za-z0-9_.\-]*(?:public|pub)[_.\-]?key\b|pubkey")
 
+# `TOKEN = generateToken()`, `secret = os.environ["X"]`, `key = other_key`. The
+# right-hand side names where the value comes from; it is not the value. Code
+# that derives a credential at run time is the correct thing to write, and a
+# scanner that flags it teaches the reader that its findings are noise — which
+# is how the one real finding gets waved through. Detected by looking at what
+# follows the matched span rather than by widening the value pattern, because
+# the value pattern is what keeps real secrets in.
+DERIVED_VALUE = re.compile(r"\s*(?:\(|\.|\[|=>|\{)")
+
 # Values that look like credentials but carry no secret. A scanner that cannot
 # be satisfied by a correct configuration gets switched off, which is worse.
 PLACEHOLDERS = re.compile(
@@ -115,6 +124,11 @@ def scan(text: str) -> list[Hit]:
                 continue
             if kind == "credential_assignment" and PUBLIC_BY_NAME.search(m.group(0)):
                 # A public key is published on purpose.
+                continue
+            if kind == "credential_assignment" and DERIVED_VALUE.match(
+                    text[m.end(1):m.end(1) + 4]) and not m.group(0).rstrip().endswith(
+                        ("'", '"')):
+                # The value is an expression, not a literal.
                 continue
             span = m.span()
             # A more specific rule already owns this span.

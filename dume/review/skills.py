@@ -28,6 +28,13 @@ import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+# The skills are vendored into this repository rather than read out of the
+# Claude Code plugin cache at run time. The cache is not ours: it is upgraded,
+# garbage-collected and rewritten by a tool with its own release schedule, and
+# a run whose discipline changed underneath it produces evidence describing a
+# version nobody recorded. VENDOR_ROOT is the pinned copy; PLUGIN_ROOT stays
+# only so `dume skills refresh` can tell us the upstream has moved on.
+VENDOR_ROOT = Path(__file__).resolve().parents[2] / "vendor" / "superpowers"
 PLUGIN_ROOT = Path.home() / ".claude" / "plugins" / "cache" / "claude-plugins-official" / "superpowers"
 PLUGIN_RECORD = Path.home() / ".claude" / "plugins" / "installed_plugins.json"
 PLUGIN_KEY = "superpowers@claude-plugins-official"
@@ -36,13 +43,22 @@ PLUGIN_KEY = "superpowers@claude-plugins-official"
 # in whole, the rest as their own frontmatter description plus overview, because
 # a role needs one discipline in full and awareness of the others.
 ROLE_BUNDLES: dict[str, tuple[str, tuple[str, ...]]] = {
-    "architect": ("brainstorming", ("writing-plans",)),
+    # The orchestrator plans and dispatches; those are the two things it does
+    # that can go wrong in a way no reviewer downstream will catch.
+    "commissioning_orchestrator": ("writing-plans",
+                                   ("dispatching-parallel-agents",
+                                    "executing-plans")),
+    "architect": ("brainstorming", ("writing-plans", "writing-skills")),
     "implementer": ("test-driven-development",
-                    ("systematic-debugging", "verification-before-completion")),
-    "spec_reviewer": ("verification-before-completion", ("brainstorming",)),
-    "code_reviewer": ("requesting-code-review", ("receiving-code-review",)),
-    "verifier": ("verification-before-completion", ("systematic-debugging",)),
-    "specialist": ("systematic-debugging", ()),
+                    ("systematic-debugging", "verification-before-completion",
+                     "using-git-worktrees")),
+    "spec_reviewer": ("verification-before-completion",
+                      ("brainstorming", "receiving-code-review")),
+    "code_reviewer": ("requesting-code-review",
+                      ("receiving-code-review", "systematic-debugging")),
+    "verifier": ("verification-before-completion",
+                 ("systematic-debugging", "using-git-worktrees")),
+    "specialist": ("systematic-debugging", ("test-driven-development",)),
 }
 
 # A budget, because a skill that crowds the frozen packet out of the context
@@ -88,17 +104,61 @@ class SkillBundle:
 
 
 def installed_root() -> Path:
-    """The versioned directory the plugin actually unpacked into."""
+    """The vendored copy the harness actually reads."""
+    if not (VENDOR_ROOT / "skills").is_dir():
+        raise SkillsUnavailable(
+            f"the vendored Superpowers skills are missing from {VENDOR_ROOT}. "
+            "Restore them from the repository rather than pointing the harness "
+            "at the plugin cache: the cache is upgraded out from under a run.")
+    return VENDOR_ROOT
+
+
+def upstream_root() -> Path | None:
+    """Where the plugin cache has Superpowers, if it has it at all.
+
+    Used only to compare against the vendored copy. Nothing in a run reads it.
+    """
     if not PLUGIN_ROOT.is_dir():
-        raise SkillsUnavailable(f"Superpowers is not installed at {PLUGIN_ROOT}")
+        return None
     versions = sorted((p for p in PLUGIN_ROOT.iterdir() if p.is_dir()),
                       key=lambda p: p.name)
-    if not versions:
-        raise SkillsUnavailable(f"no version directory under {PLUGIN_ROOT}")
-    return versions[-1]
+    return versions[-1] if versions else None
+
+
+def lockfile() -> dict[str, str]:
+    path = VENDOR_ROOT / "SKILLS.lock.json"
+    if not path.is_file():
+        raise SkillsUnavailable(f"no skills lock at {path}")
+    return json.loads(path.read_text())
+
+
+def drift() -> list[tuple[str, str]]:
+    """Vendored skills whose bytes no longer match the lock.
+
+    A skill that changed without the lock changing is either an edit nobody
+    recorded or a corrupted file. Either way the run must not proceed on it.
+    """
+    out = []
+    for name, expected in lockfile().items():
+        path = VENDOR_ROOT / "skills" / name / "SKILL.md"
+        if not path.is_file():
+            out.append((name, "missing"))
+            continue
+        actual = hashlib.sha256(path.read_bytes()).hexdigest()
+        if actual != expected:
+            out.append((name, actual))
+    return out
 
 
 def installed_revision() -> str | None:
+    """The revision the vendored copy was taken at."""
+    pinned = VENDOR_ROOT / "REVISION"
+    if pinned.is_file():
+        return pinned.read_text().strip() or None
+    return upstream_revision()
+
+
+def upstream_revision() -> str | None:
     if not PLUGIN_RECORD.is_file():
         return None
     try:
