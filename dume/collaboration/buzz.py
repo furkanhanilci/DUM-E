@@ -101,6 +101,22 @@ def channel_id(kind: str, name: str) -> str:
 
 # The eleven space channels, by the name a person types. Ids are derived, so
 # this table names things rather than holding addresses.
+# What each space is called in the sidebar. The id is derived from the slug,
+# so the title is free to read like a name rather than a key.
+SPACE_TITLES: dict[str, str] = {
+    "dume-control": "DUM-E · control",
+    "dume-implementation": "DUM-E · implementation",
+    "dume-review": "DUM-E · review",
+    "dume-verification": "DUM-E · verification",
+    "research-literature": "Research · literature",
+    "research-questions": "Research · questions",
+    "review-science": "Review · science",
+    "decisions-escalations": "Decisions · escalations",
+    "decisions-records": "Decisions · records",
+    "operations-runtimes": "Operations · runtimes",
+    "operations-incidents": "Operations · incidents",
+}
+
 SPACE_CHANNELS: dict[str, str] = {
     name: channel_id("SPACE", name) for name in (
         "dume-control", "dume-implementation", "dume-review",
@@ -113,6 +129,7 @@ SPACE_CHANNELS: dict[str, str] = {
 KIND_TEXT_NOTE = 1
 KIND_CHANNEL_MESSAGE = 9
 KIND_GROUP_CREATE = 9007
+KIND_GROUP_ADD_MEMBER = 9000
 KIND_METADATA = 0
 
 
@@ -264,6 +281,18 @@ class BuzzClient:
             ["h", channel], ["name", name], ["about", about],
             ["private", "true" if private else "false"]])
 
+    def add_member(self, channel: str, pubkey: str, role: str = "member") -> dict:
+        """Put someone into a channel.
+
+        Creating a channel does not put anyone in it, not even a reader who is
+        allowed to see it. The desktop's sidebar lists channels you belong to,
+        so a channel nobody was added to is one nobody has a way to open —
+        which is how DUM-E reported for a hundred messages into a room the
+        operator could not find.
+        """
+        return self.publish(KIND_GROUP_ADD_MEMBER, "",
+                            [["h", channel], ["p", pubkey, role]])
+
     def announce(self, channel: str, text: str, mentions: list[str] | None = None,
                  *, message_type: str = "STATUS", refs: list[str] | None = None,
                  reply_to: str | None = None, thread_root: str | None = None
@@ -343,6 +372,38 @@ def admit(owner: BuzzClient, identity: Identity, base_url: str) -> BuzzClient:
     member = BuzzClient(base_url, identity)
     member.claim_invite(code)
     return member
+
+
+def ensure_spaces(client: BuzzClient, operator: str | None = None) -> dict[str, str]:
+    """Create the eleven standing channels and put the operator in them.
+
+    Two separate things have to be true before a report is readable, and each
+    was missed once. The channel must be public, or the desktop never lists it;
+    and the operator must be a member, or it is not in their sidebar even so. A
+    channel that is public but memberless looks identical, from the harness's
+    side, to one that works.
+
+    Re-running is the normal case: a channel that exists refuses creation, and
+    adding a member who is already one is not an error.
+    """
+    outcome: dict[str, str] = {}
+    for name, channel in SPACE_CHANNELS.items():
+        try:
+            client.create_channel(channel, SPACE_TITLES.get(name, name),
+                                  "A standing AETHRIONIS space.", private=False)
+            # The relay accepts a create for an id that already exists, so
+            # this says what was asserted, not what was new. Claiming
+            # "created" for eleven channels that were already there reads as
+            # a fresh deployment every time health runs.
+            outcome[name] = "asserted"
+        except BuzzError:
+            outcome[name] = "already there"
+        if operator:
+            try:
+                client.add_member(channel, operator)
+            except BuzzError as exc:
+                outcome[name] += f", but the operator was not added: {exc}"
+    return outcome
 
 
 def deploy_cohort(client: BuzzClient, wp_id: str, roles: list[str]) -> Cohort:

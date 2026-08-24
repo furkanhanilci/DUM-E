@@ -81,6 +81,17 @@ def run(wp_id: str, *, focus: str | None = None,
     # same two the orchestrator starts from. Naming a third here would produce
     # a run that this module admits and the orchestrator then refuses, at a
     # stage with nothing to do with the reason.
+    # Asking to commission a FAILED package is what a retry is. The store
+    # already spells the route — FAILED -> RETRY -> PLANNED — so walk it here
+    # rather than making the operator type two transitions to say the one
+    # thing they meant. Every hop is still recorded, and the reason names who
+    # asked for it.
+    if row["state"] == "FAILED":
+        for to_state in ("RETRY", "PLANNED"):
+            store.transition(wp_id, to_state, actor="operator",
+                             reason=f"recommissioned after a failed run")
+        row = store.get(wp_id)
+
     if row["state"] not in ("READY", "PLANNED"):
         unmet = store.unmet_dependencies(wp_id)
         store.close()

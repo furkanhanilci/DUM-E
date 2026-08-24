@@ -29,7 +29,7 @@ from pathlib import Path
 
 from ..packets.wp_packet_builder import WPPacket
 from ..review.skills import SkillBundle, SkillsUnavailable, bundles_for_cohort
-from ..runtimes.client import ModelClient, ModelError
+from ..runtimes.client import ModelClient, ModelError, ToolCallTruncated
 from .agent_tools import TOOL_SCHEMAS, ToolLog, Toolbox
 
 MAX_TOOL_TURNS = 24
@@ -307,8 +307,26 @@ class ModelExecutor:
         green_exit: int | None = None
         silent = 0
         for turn in range(MAX_TOOL_TURNS):
-            reply = client.chat(messages, tools=TOOL_SCHEMAS,
-                                max_tokens=IMPLEMENTER_MAX_TOKENS)
+            # Truncation mid tool call is a statement about the budget, not
+            # about the model: the arguments were being written correctly and
+            # the count ran out. Failing the run there blamed the implementer
+            # for a file that was merely long, and both runtimes died the same
+            # way on the same turn. Retry the turn once with room, and if it
+            # truncates again say so — a file that will not fit twice the
+            # budget wants splitting, which the model is told to do.
+            try:
+                reply = client.chat(messages, tools=TOOL_SCHEMAS,
+                                    max_tokens=IMPLEMENTER_MAX_TOKENS)
+            except ToolCallTruncated:
+                reply = client.chat(
+                    messages + [{"role": "user", "content":
+                                 "Your last tool call was cut off because it "
+                                 "was too long. Write the same file in smaller "
+                                 "pieces: one write_file per file, and split a "
+                                 "long file into a first write_file and then "
+                                 "append_file calls."}],
+                    tools=TOOL_SCHEMAS,
+                    max_tokens=IMPLEMENTER_MAX_TOKENS * 2)
             if not reply.tool_calls:
                 text = (reply.content or "").strip()
                 if "DONE" in text.upper() and green_exit == 0:

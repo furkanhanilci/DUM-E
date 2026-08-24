@@ -67,6 +67,39 @@ def checks() -> list[Check]:
                      "a community is configured for this host" if status == 200
                      else f"no community for {host}:3000 — {status}"))
 
+    # A report the operator cannot open is not a report. Both halves have to
+    # hold: the channel exists, and they are in it.
+    reachable: bool | None = None
+    detail = "the relay was not reachable, so membership is unknown"
+    if status == 200:
+        try:
+            from .collaboration.buzz import (BuzzClient, SPACE_CHANNELS,
+                                             load_identity)
+            operator_file = Path.home() / ".dume" / "secrets" / "operator"
+            if not operator_file.is_file():
+                detail = ("no operator pubkey recorded, so DUM-E cannot "
+                          "mention anyone; write ~/.dume/secrets/operator")
+            else:
+                operator = operator_file.read_text().strip()
+                client = BuzzClient(f"http://{host}:3000", load_identity(
+                    Path.home() / ".dume" / "secrets" / "buzz-identities.json",
+                    "owner"))
+                # Re-asserting is how this stays true rather than how it is
+                # measured: creating an existing channel and adding an existing
+                # member are both no-ops, so the cheapest honest check is to
+                # put the state back the way it must be and report what it took.
+                from .collaboration.buzz import ensure_spaces
+                outcome = ensure_spaces(client, operator)
+                broke = [n for n, r in outcome.items() if "not added" in r]
+                reachable = not broke
+                detail = (f"{len(SPACE_CHANNELS)} space(s), operator "
+                          f"{operator[:8]} is a member"
+                          + (f"; could not add to {', '.join(broke)}" if broke else ""))
+        except Exception as exc:
+            reachable = False
+            detail = f"the spaces could not be checked: {exc}"
+    out.append(Check("spaces", reachable, detail))
+
     # ---- the models --------------------------------------------------------
     for label, port in (("qwen", 8000), ("mistral", 8001)):
         status, body = _http(f"http://127.0.0.1:{port}/v1/models")

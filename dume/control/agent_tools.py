@@ -33,6 +33,17 @@ TOOL_SCHEMAS = [
             "content": {"type": "string"}},
             "required": ["path", "content"]}}},
     {"type": "function", "function": {
+        "name": "append_file",
+        "description": ("Add text to the end of a file inside the task "
+                        "worktree, creating it if it does not exist. Use this "
+                        "to write a long file in several calls: a single tool "
+                        "call carrying a whole long file gets cut off."),
+        "parameters": {"type": "object", "properties": {
+            "path": {"type": "string",
+                     "description": "Path relative to the worktree root."},
+            "content": {"type": "string"}},
+            "required": ["path", "content"]}}},
+    {"type": "function", "function": {
         "name": "read_file",
         "description": "Read a file inside the task worktree.",
         "parameters": {"type": "object", "properties": {
@@ -109,6 +120,32 @@ class Toolbox:
                         "OK", f"wrote {len(content)} chars")
         return {"ok": True, "path": path, "bytes": len(content.encode())}
 
+    def append_file(self, path: str, content: str) -> dict:
+        """Add to the end of a file.
+
+        A file long enough to be worth splitting is exactly the file that made
+        a single write_file call run out of tokens mid-string. The size limit
+        is checked against the result, not the addition, so appending is not a
+        way around it.
+        """
+        try:
+            target = self._resolve(path)
+        except ToolDenied as exc:
+            self.log.record("append_file", {"path": path}, "DENIED", str(exc))
+            return {"ok": False, "error": str(exc)}
+        existing = target.read_text() if target.is_file() else ""
+        combined = existing + content
+        if len(combined.encode()) > self.max_file_bytes:
+            message = (f"refusing to grow {path} to {len(combined)} chars; "
+                       f"limit is {self.max_file_bytes}")
+            self.log.record("append_file", {"path": path}, "DENIED", message)
+            return {"ok": False, "error": message}
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(combined)
+        self.log.record("append_file", {"path": path, "content": content},
+                        "OK", f"appended {len(content)} chars to {path}")
+        return {"ok": True, "path": path, "bytes": len(combined.encode())}
+
     def read_file(self, path: str) -> dict:
         try:
             target = self._resolve(path)
@@ -144,6 +181,7 @@ class Toolbox:
 
     def dispatch(self, name: str, arguments: dict) -> dict:
         handler = {"write_file": self.write_file, "read_file": self.read_file,
+                   "append_file": self.append_file,
                    "list_files": self.list_files, "run_tests": self.run_tests}.get(name)
         if handler is None:
             self.log.record(name, arguments, "UNKNOWN_TOOL", "no such tool")

@@ -1,34 +1,27 @@
 {
   "accepted_plan": {
     "risks": [
-      "The literal model string Qwen3.8 may not exist upstream; recording a wrong model identity would poison downstream WPs, so the actual current release must be recorded and the discrepancy filed as a finding.",
-      "The host may be marginal (CPU-only or small VRAM), yielding REMOTE_GPU_REQUIRED or SINGLE_GPU_CONSTRAINED, which changes WP-002 through WP-005 assumptions; the envelope must not silently shrink quality, so quantized-inference research is mandatory in that case.",
-      "Usable-VRAM measurement depends on an allocation probe; if no GPU driver is present the probe must fail closed with an explicit blocked state, and any estimated value must be flagged as estimated with its method recorded.",
-      "The disk soak test writes real data; it must be capped by measured free space with guaranteed cleanup, or it risks filling the disk on a shared host.",
-      "Port and firewall probing on a shared host can interfere with running services; restrict to ephemeral-port bind tests and read-only firewall queries.",
-      "Upstream drift between research time and final acceptance can invalidate compatibility claims; the mandatory drift check immediately before acceptance is the control.",
-      "If the allocation probe is unavailable, total VRAM could be misreported as usable; the measurement method must be recorded per value and the context gate must treat unmeasured usable VRAM as unknown, not as total.",
-      "The implementer is not authorized to accept the package; the verification packet must be fully self-contained so the Independent Runtime Verifier can reproduce the verdict without producer conversation history."
+      "Host has no GPU or nvidia-smi is absent, so the gpu block must emit an explicit absent/blocked state rather than a fabricated value; the test must cover this path.",
+      "Confusing total VRAM with usable VRAM: if usable_vram is not measured separately (total minus display/runtime overhead), the packet's second known failure mode is uncontrolled; the schema must force both fields.",
+      "Deriving a context length from model capability instead of host capacity: the module must not emit any context field from capability alone, or the first known failure mode is uncontrolled.",
+      "Probe commands differ across distros (lscpu flags, df vs statvfs, /proc layout); the module must fail closed with a typed error on unexpected output rather than guessing.",
+      "Read-only or restricted filesystems may prevent writing host_inventory.json; the module must surface a legible blocked state instead of silently skipping the deliverable.",
+      "Scope creep: the full WP-001 deliverable set (gpu_probe.log, disk_capacity_report.md, deployment_profile_candidate.md, adversarial T-cases, OS/kernel) is out of this slice and must not be pulled in, or the bounded slice stops being bounded.",
+      "Evidence freshness: if the candidate revision or a probe tool revision drifts after preparation, the recorded evidence becomes stale and must be rejected; the run must re-verify the candidate SHA before acceptance."
     ],
     "satisfiable": true,
     "steps": [
-      "Rebaseline exact target and upstream revisions; record the environment manifest (OS, kernel, distro, tool versions, candidate SHA/digest) and take a package-manager state hash as the no-install baseline for the CUDA/PyTorch/serving control.",
-      "Complete fresh research obligations: current Qwen3-series serving requirements, vLLM/SGLang compatibility matrices, record current revisions/releases, search relevant open issues/PRs, check licensing/provenance; if the literal string Qwen3.8 does not exist upstream, record the actual current release and file a finding rather than guessing.",
-      "Write the RED probe first: a harness that runs the inventory pipeline and asserts all five deliverables exist, are non-empty, parse, and contain the required fields (os, cpu, ram, disk, gpus, capacity_envelope, classification); confirm it fails with missing-file/invalid-schema errors before any implementation.",
-      "Implement the read-only probe toolchain: OS/kernel/distribution, CPU, RAM, disk/free space and filesystem, Docker/Podman, firewall, virtualization, and usable localhost/LAN ports (bind-test on ephemeral ports only; read-only firewall queries).",
-      "Implement GPU enumeration: every GPU, VRAM size, driver, CUDA/ROCm capability, compute mode, and topology (nvidia-smi/rocm-smi, topo -m); if no GPU or driver is present, fail closed with an explicit blocked state and no invented defaults.",
-      "Measure usable VRAM by actual allocation (allocation loop or baseline memory.used plus allocation), recording the measurement method; never report nvidia-smi total VRAM as usable.",
-      "Measure model-cache capacity and sustained storage behavior with a bounded disk soak (write/read at a size capped by free space, with guaranteed cleanup), and record throughput and stability.",
-      "Compute the capacity envelope for model weights, KV cache, builds, Buzz services, and concurrent agents from measured values only; implement the context gate so 262k context is asserted only if the envelope sustains it, otherwise the profile records the capped value and the reason.",
-      "Classify the host as HIGH_THROUGHPUT_GPU, SINGLE_GPU_CONSTRAINED, CPU_HEAVY, or REMOTE_GPU_REQUIRED using explicit recorded thresholds; if the host is marginal, research quantized inference and record it instead of silently shrinking quality.",
-      "Generate the five mandatory deliverables bound to the exact candidate revision, with artifact hashes and timestamps in each record.",
-      "Run the core matrix T01-T08: positive path; missing prerequisite (GPU/driver absent yields explicit blocked state, no invented default); stale revision (change candidate after preparation, mismatch detected, stale evidence rejected); authority/boundary attack (attempt to modify a frozen acceptance artifact, mechanically denied and audited); restart/retry (idempotent re-run, no duplicate unsafe effect); malformed/partial input (contradictory config fails closed with a legible typed error); evidence/observability (a second verifier reconstructs the run from records alone); rollback (restore known safe state, retain historical evidence).",
-      "Run the three package-specific adversarial tests with changed runtime/input conditions: (a) feed a synthetic profile with a 262k-capable model but insufficient measured memory and assert the generator refuses or caps the context; (b) inject a fixture where total VRAM differs from measured usable VRAM and assert the envelope uses usable only; (c) compare package-manager state hashes before and after the full run and assert no CUDA/PyTorch/serving packages were installed.",
-      "Immediately before final acceptance, run the upstream drift check comparing integrated revisions with the upstream lock; any material unreviewed drift blocks acceptance until compatibility/characterization is rerun.",
-      "Build the independent verification packet: frozen obligations, work product, candidate revision, environment manifest, upstream lock entries, artifact locations, and open findings, without the implementer's conversation; record residual risk and rollback; leave acceptance to the Independent Runtime Verifier (no self-acceptance)."
+      "Step 1 - Context and upstream lock: read the repo layout, existing test runner, and pinned tooling; record the exact candidate SHA/digest of the worktree. Lock the probe mechanisms with recorded revisions: nvidia-smi (NVIDIA driver, nvidia-smi --version), lscpu (util-linux), /proc/meminfo, /proc/cpuinfo, and df/statvfs for free disk. Record license/provenance for each. No network, no credentials, no installs.",
+      "Step 2 - Define the machine-readable schema: host_inventory.json with a schema_version field and four top-level resource blocks (gpu, cpu, ram, disk). For gpu, capture per-device total_vram_bytes AND usable_vram_bytes (total minus display/runtime overhead, measured via nvidia-smi), driver, compute capability, and topology; do NOT emit a max_context field from model capability alone. For cpu, capture model, physical/logical cores, and flags. For ram, capture total and available bytes. For disk, capture per-mount total, free, and filesystem type. Every value carries a source command and a captured_at timestamp.",
+      "Step 3 - Write the failing test first (RED): a unit test that monkeypatches the subprocess/OS probes to return fixed fixtures, asserts the module emits the exact schema with usable_vram strictly less than total_vram when overhead is present, and asserts no context field is derived from model capability. Run it and capture the real failure (missing module / missing keys) as the RED observation.",
+      "Step 4 - Implement the minimum GREEN change: a single probe module (e.g. host_inventory.py) with one function per resource class, each returning a dict with value + source + timestamp, and a write_inventory() that serializes to host_inventory.json. Keep it probe-only: no installs, no config mutation, no writes outside the inventory file. Handle the no-GPU and read-only-filesystem cases by emitting an explicit blocked/absent state, never an invented default.",
+      "Step 5 - Refactor with tests green: add unit tests for the no-GPU path, the partial/contradictory probe output path (fail closed with a typed error), and idempotency (running twice yields identical output for an unchanged host). Keep the suite green.",
+      "Step 6 - Live smoke test (T01 positive path): run the module on the real host, confirm host_inventory.json is non-empty, resolves to the candidate revision, and that usable_vram < total_vram on any GPU with a display. Capture command, exit code, timestamp, and artifact hash.",
+      "Step 7 - Evidence and deliverable: emit host_inventory.json (the slice deliverable) plus a short host_inventory.md summary. Record the candidate revision, environment manifest, and upstream lock entries. Note explicitly that gpu_probe.log, disk_capacity_report.md, deployment_profile_candidate.md, and the adversarial T-cases are out of this slice and belong to the follow-on plan.",
+      "Step 8 - Rollback: the change is additive (new module + new file), so rollback is deleting the new files and reverting the worktree to the recorded candidate SHA; demonstrate it and confirm the prior state is restored with no residual writes."
     ],
-    "summary": "Build a read-only, install-free host probe toolchain that produces the five frozen deliverables (host_inventory.json, host_inventory.md, gpu_probe.log, disk_capacity_report.md, deployment_profile_candidate.md) with a measured capacity envelope, a context-length gate, and a four-way host classification, verified by the T01-T08 matrix plus three adversarial tests.",
-    "test_first": "A harness that executes the inventory pipeline and asserts that host_inventory.json, host_inventory.md, gpu_probe.log, disk_capacity_report.md, and deployment_profile_candidate.md all exist, are non-empty, parse, and contain the required fields (os, cpu, ram, disk, gpus, capacity_envelope, classification); before implementation it must fail with missing-file and invalid-schema errors, giving the reproducible RED observation required by the packet."
+    "summary": "Add a small, probe-only Python module that records the host's GPUs, CPU, RAM and free disk into a schema-versioned host_inventory.json, built RED-first with subprocess mocked in unit tests plus one live smoke test, with VRAM and context fields designed so the packet's three known failure modes are mechanically controlled rather than merely warned about.",
+    "test_first": "A unit test that monkeypatches the GPU/CPU/RAM/disk probes to return fixed fixtures and asserts the module emits the exact schema_versioned host_inventory.json, that usable_vram_bytes is strictly less than total_vram_bytes when display/runtime overhead is present, and that no max_context field is derived from model capability; run it before any implementation and capture the real failure (missing module or missing keys) as the RED observation."
   },
   "artefact_refs": [],
   "candidate_sha": null,
@@ -36,14 +29,14 @@
   "context_policy": "task state only. The previous agent's conversation is deliberately excluded: it would double the context, carry over its confusions, and prejudice a role that is supposed to form its own view.",
   "from_binding": {
     "agent_id": "WP-001/implementer",
-    "bound_at": "2026-08-24T19:24:04+00:00",
+    "bound_at": "2026-08-24T19:45:33+00:00",
     "family": "qwen",
     "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
     "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
     "role_id": "implementer",
     "runtime_id": "qwen-local"
   },
-  "issued_at": "2026-08-24T19:30:25+00:00",
+  "issued_at": "2026-08-24T19:51:02+00:00",
   "logical_role": "implementer",
   "open_findings": [],
   "open_steps": [],
@@ -52,13 +45,13 @@
   "task_id": "WP-001-implement",
   "to_binding": {
     "agent_id": "WP-001/implementer@fallback",
-    "bound_at": "2026-08-24T19:30:25+00:00",
+    "bound_at": "2026-08-24T19:51:02+00:00",
     "family": "mistral",
     "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
     "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
     "role_id": "implementer",
     "runtime_id": "mistral-local"
   },
-  "worktree": "/home/otonom/Desktop/FH/DUM-E/worktrees/WP-001__live-66921faa-4",
+  "worktree": "/home/otonom/Desktop/FH/DUM-E/worktrees/WP-001__live-66921faa-5",
   "wp_id": "WP-001"
 }
