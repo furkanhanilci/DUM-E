@@ -544,6 +544,25 @@ def ensure_roles(client: BuzzClient, path: Path | str,
     channels with six participants looked like four channels with one.
     """
     out: dict[str, str] = {}
+
+    # DUM-E's own key speaks in every channel and had no profile at all, so the
+    # harness itself appeared as a hex string next to six named roles. It is
+    # the one participant a reader is most likely to be looking for.
+    try:
+        harness = load_identity(path, "dume_orchestrator")
+        speaker = BuzzClient(client.base_url, harness, client.timeout)
+        if not speaker.is_member():
+            speaker = admit(client, harness, client.base_url)
+        speaker.set_profile(
+            name="DUM-E",
+            about="The commissioning harness. Records what happened; the gate "
+                  "decides, and nothing said in a channel moves a package.")
+        for name in ROLE_CHANNELS["commissioning_orchestrator"]:
+            client.add_member(SPACE_CHANNELS[name], harness.pubkey, role="bot")
+        out["dume"] = harness.pubkey[:12]
+    except BuzzError as exc:
+        out["dume"] = f"not named: {exc}"
+
     for role in roles:
         identity = role_identity(role, path)
         speaker = BuzzClient(client.base_url, identity, client.timeout)
