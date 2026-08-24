@@ -23,6 +23,7 @@ from pathlib import Path
 from ..acceptance.gate import MergeGate
 from ..cohort.compiler import CohortManifest, compile_cohort
 from ..packets.wp_packet_builder import PacketBuilder, WPPacket
+from ..runtimes.client import ModelError
 from ..runtimes.failures import classify, retry_decision
 from ..runtimes.profiles import NoEligibleRuntime, RuntimeBinding, RuntimeRegistry
 from ..state import StateError, json_dump
@@ -206,6 +207,13 @@ class Orchestrator:
                               reason="implementation started")
         try:
             result = executor.implement(packet, plan, worktree)
+        except ModelError as exc:
+            # The model or its server failed to run the work. Invariant 16: that
+            # says nothing about the candidate, and blaming the implementation
+            # would send the wrong person to fix it and burn a retry that cannot
+            # help.
+            step("implement", "FAILED", f"{type(exc).__name__}: {exc}")
+            return self._fail(report, wp_id, "RUNTIME_FAILURE", actor, str(exc))
         except Exception as exc:
             step("implement", "FAILED", f"{type(exc).__name__}: {exc}")
             return self._fail(report, wp_id, "IMPLEMENTATION_FAILURE", actor, str(exc))

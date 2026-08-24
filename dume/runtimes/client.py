@@ -20,6 +20,16 @@ class ModelError(RuntimeError):
     """The model could not be reached, or refused."""
 
 
+class ToolCallTruncated(ModelError):
+    """The model's tool call was cut off by the token limit.
+
+    Worth its own type because the server reports it as an opaque parse error —
+    a tool call carrying a whole file is a long JSON string, and a string cut
+    mid-value is not valid JSON. The fix is a larger budget or a smaller write,
+    and neither is discoverable from "syntax error at column 680".
+    """
+
+
 class ModelQuotaError(ModelError):
     """The provider refused for a quota or rate reason.
 
@@ -72,9 +82,16 @@ class ModelClient:
             with urllib.request.urlopen(request, timeout=self.timeout) as response:
                 data = json.loads(response.read().decode())
         except urllib.error.HTTPError as exc:
-            body = exc.read().decode(errors="replace")[:400]
+            body = exc.read().decode(errors="replace")[:600]
             if exc.code in (401, 402, 403, 429):
                 raise ModelQuotaError(f"HTTP {exc.code}: {body}") from None
+            if ("parse tool call arguments" in body
+                    or "missing closing quote" in body):
+                raise ToolCallTruncated(
+                    "the model's tool call was cut off before its arguments "
+                    f"closed (max_tokens={max_tokens}). Raise the budget or ask "
+                    "for a smaller write. Server said: "
+                    + body[:200]) from None
             raise ModelError(f"HTTP {exc.code}: {body}") from None
         except (urllib.error.URLError, OSError) as exc:
             raise ModelError(f"{type(exc).__name__}: {exc}") from None
@@ -94,9 +111,16 @@ class ModelClient:
             calls.append(ToolCall(id=call.get("id", ""), name=function.get("name", ""),
                                   arguments=arguments if isinstance(arguments, dict) else {},
                                   raw_arguments=raw, parse_error=error))
+        finish = choice.get("finish_reason", "")
+        # A tool call that stopped because it ran out of budget is incomplete
+        # even when it happens to parse, and acting on half a file is worse than
+        # refusing.
+        if finish == "length" and calls:
+            raise ToolCallTruncated(
+                f"the model stopped mid tool call (max_tokens={max_tokens}); "
+                "the arguments are incomplete")
         return Reply(content=message.get("content") or "", tool_calls=calls,
-                     finish_reason=choice.get("finish_reason", ""),
-                     usage=data.get("usage") or {})
+                     finish_reason=finish, usage=data.get("usage") or {})
 
     def json_reply(self, messages: list[dict], schema_hint: str,
                    max_tokens: int = 1024) -> dict:

@@ -10,12 +10,32 @@ from dume.control import model_executor as mx
 from dume.control.agent_tools import ToolDenied, Toolbox
 
 
-def test_red_means_a_failing_test_not_merely_a_nonzero_exit():
-    """pytest exit 5 is an empty suite. Counting it as red would let an
-    implementer claim a test-first cycle it never performed."""
-    source = inspect.getsource(mx)
-    assert "code == 5" in source
-    assert "red_exit is None and code == 1" in source
+def test_red_distinguishes_no_test_from_a_test_that_does_not_pass():
+    """Both narrow readings are wrong, and both were tried.
+
+    Accepting any non-zero exit lets 5 — an empty suite — count as red, so an
+    implementer can claim a cycle it never performed by calling run_tests before
+    writing anything. Accepting only 1 rejects 2, the collection error a correct
+    test-first cycle actually produces first when the test imports a module that
+    does not exist yet; the loop then never terminates while the model correctly
+    reports it is done.
+    """
+    assert mx.RED_EXIT_CODES == {1, 2}
+    assert mx.EMPTY_SUITE_EXIT == 5
+    assert 5 not in mx.RED_EXIT_CODES
+    assert 0 not in mx.RED_EXIT_CODES
+
+
+def test_a_collection_error_is_the_normal_first_red(tmp_path):
+    """The shape a real test-first cycle produces: the test imports a module
+    that is not written yet."""
+    (tmp_path / ".git").mkdir()
+    toolbox = Toolbox(tmp_path)
+    toolbox.write_file("test_thing.py",
+                       "import thing\n\n\ndef test_v():\n    assert thing.v() == 1\n")
+    result = toolbox.run_tests()
+    assert result["exit_code"] == 2
+    assert result["exit_code"] in mx.RED_EXIT_CODES
 
 
 def test_the_implementer_cannot_finish_without_both_phases():
@@ -41,8 +61,12 @@ def test_each_role_gets_its_own_transcript():
 
 
 def test_the_code_reviewer_is_not_handed_the_other_reviewers_question():
-    source = inspect.getsource(mx.ModelExecutor.review)
+    # The comment wraps across lines, so strip the comment markers before
+    # normalising whitespace — otherwise a '#' lands mid-sentence.
+    raw = inspect.getsource(mx.ModelExecutor.review).replace("#", " ")
+    source = " ".join(raw.split())
     assert "not being asked whether the requirement was met" in source
+    assert "answer the other reviewer's question" in source
 
 
 def test_every_role_card_states_one_question_and_its_limits():

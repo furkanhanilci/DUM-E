@@ -42,8 +42,29 @@ def build_clients(bindings: dict) -> dict:
     return clients
 
 
+# One bounded executable slice per package, for characterisation runs. Naming
+# them here rather than inventing one per run keeps a live result comparable
+# with the last one.
+FOCUS = {
+    "WP-040": ("A module `merge_gate.py` with `evaluate(checks)` taking a list "
+               "of {'name': str, 'passed': bool} and returning "
+               "{'verdict': 'MERGE_ELIGIBLE' or 'REFUSED', 'failed': [names]}. "
+               "It is MERGE_ELIGIBLE only when every check passed, and an empty "
+               "list of checks is REFUSED — nothing having been checked is not "
+               "the same as everything having passed."),
+    "WP-042": ("A module `retry_policy.py` with `should_retry(failure_class, "
+               "attempts, limit=3)` returning {'retry': bool, 'reason': str}. "
+               "RUNTIME_FAILURE may retry the same candidate; "
+               "IMPLEMENTATION_FAILURE may retry only after a change; "
+               "ACCEPTANCE_CONTRADICTION never retries."),
+    "WP-001": ("A module `capacity.py` with `usable_bytes(total, "
+               "overhead=0.12)` returning total minus the runtime reserve, "
+               "never below zero."),
+}
+
+
 def run(wp_id: str = "WP-001", *, keep: bool = False,
-        evidence_root: Path | None = None) -> dict:
+        evidence_root: Path | None = None, focus: str | None = None) -> dict:
     root = Path(tempfile.mkdtemp(prefix="dume-live-"))
     evidence = Path(evidence_root) if evidence_root else root / "evidence"
     try:
@@ -72,16 +93,23 @@ def run(wp_id: str = "WP-001", *, keep: bool = False,
 
         executor = ModelExecutor(worktrees=worktrees,
                                  clients=build_clients(bindings),
-                                 evidence_dir=evidence, bindings=bindings)
+                                 evidence_dir=evidence, bindings=bindings,
+                                 focus=focus or FOCUS.get(wp_id))
         report = orchestrator.run(wp_id, executor=executor)
 
         result = report.as_dict()
         result["schema"] = "dume.live_run/1"
         result["bindings"] = {k: v.as_dict() for k, v in bindings.items()}
         result["assurance"] = cohort.assurance_level
-        result["note"] = ("Real models, real worktree, real test runs, against a "
-                          "disposable target created and destroyed inside the "
-                          "run. No real target was touched.")
+        result["focus"] = executor.focus
+        result["note"] = (
+            "Real models, real worktree, real test runs, against a disposable "
+            "target created and destroyed inside the run. No real target was "
+            "touched."
+            + (" The build was narrowed to one executable slice of the package; "
+               "the packet's constraints and acceptance criteria were not. This "
+               "characterises the harness — it does not complete the package."
+               if executor.focus else ""))
         if keep:
             result["kept_at"] = str(root)
         store.close()

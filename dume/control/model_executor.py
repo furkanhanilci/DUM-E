@@ -33,6 +33,16 @@ from .agent_tools import TOOL_SCHEMAS, ToolLog, Toolbox
 
 MAX_TOOL_TURNS = 24
 
+# A tool call that writes a file carries the whole file as a JSON string, so the
+# budget has to fit the file and its escaping — not just the model's prose. At
+# 3000 this truncated a perfectly good four-case test file mid-string, and the
+# server reported it as a parse error at column 680.
+IMPLEMENTER_MAX_TOKENS = 8000
+
+# What counts as having observed a failing test. See the note in `implement`.
+RED_EXIT_CODES = frozenset({1, 2})
+EMPTY_SUITE_EXIT = 5
+
 
 class ImplementationRefused(RuntimeError):
     """The implementer could not produce a red-then-green candidate."""
@@ -76,11 +86,13 @@ ROLE_CARDS = {
         "test-first discipline.\n\n"
         "The order is not negotiable:\n"
         "1. Write a test that captures the required behaviour.\n"
-        "2. Call run_tests. It MUST report a FAILING test — pytest exit code "
-        "1. Exit code 5 means no tests were collected, which is an empty suite "
-        "and not a red phase; if you see 5, your test file is missing or is not "
-        "named test_*.py. A test that passes before the implementation exists "
-        "is testing nothing, and you must fix the test rather than continue.\n"
+        "2. Call run_tests. It MUST show the test not passing — pytest exit "
+        "code 1 (ran and failed) or 2 (collection error, which is what you get "
+        "when the test imports a module you have not written yet). Exit code 5 "
+        "means no tests were collected at all, which is an empty suite and not "
+        "a red phase; if you see 5, your test file is missing or is not named "
+        "test_*.py. A test that passes before the implementation exists is "
+        "testing nothing, and you must fix the test rather than continue.\n"
         "3. Write the smallest implementation that makes it pass.\n"
         "4. Call run_tests again. It MUST pass.\n\n"
         "You have no authority over whether your own work is correct. Do not "
@@ -122,6 +134,17 @@ class ModelExecutor:
     evidence_dir: Path
     bindings: dict = field(default_factory=dict)   # role_id -> RuntimeBinding
     transcripts: dict = field(default_factory=dict)
+    # A bounded, code-shaped slice of the package to actually build.
+    #
+    # The commissioning plan's deliverables are documents and schemas — it
+    # describes what must exist, and the implementation lives in the target
+    # repository. Test-first discipline needs something a test can fail against,
+    # so a live run names one executable slice and says so in the report. The
+    # packet still supplies every constraint, forbidden action and acceptance
+    # criterion the reviewers judge against; what is narrowed is the build, not
+    # the rules. A run with a focus has characterised the harness, not completed
+    # the package, and the result records the difference.
+    focus: str | None = None
 
     def _client(self, role: str) -> ModelClient:
         try:
@@ -147,7 +170,9 @@ class ModelExecutor:
             {"role": "user", "content":
              _packet_brief(packet) + "\n\n"
              f"Assurance level: {cohort.assurance_level}.\n\n"
-             "Produce an implementation plan as JSON with keys: summary (one "
+             + (f"The bounded, executable slice to plan for is:\n{self.focus}\n\n"
+                if self.focus else "")
+             + "Produce an implementation plan as JSON with keys: summary (one "
              "sentence), satisfiable (true/false), steps (array of strings), "
              "test_first (a string describing the failing test to write first), "
              "risks (array of strings)."}]
@@ -179,14 +204,17 @@ class ModelExecutor:
             {"role": "user", "content":
              _packet_brief(packet, limit=3500) + "\n\n"
              "## the accepted plan\n" + json.dumps(plan, indent=2)[:2000] + "\n\n"
-             "Work only through the tools. Start by writing the failing test. "
-             "When run_tests has failed once and then passed once, reply with "
-             "the single word DONE and nothing else."}]
+             + (f"## build exactly this, and nothing more\n{self.focus}\n\n"
+                if self.focus else "")
+             + "Work only through the tools. Start by writing the failing test. "
+               "When run_tests has shown the test not passing and then passing, "
+               "reply with the single word DONE and nothing else."}]
 
         red_exit: int | None = None
         green_exit: int | None = None
         for turn in range(MAX_TOOL_TURNS):
-            reply = client.chat(messages, tools=TOOL_SCHEMAS, max_tokens=3000)
+            reply = client.chat(messages, tools=TOOL_SCHEMAS,
+                                max_tokens=IMPLEMENTER_MAX_TOKENS)
             if not reply.tool_calls:
                 text = (reply.content or "").strip()
                 if "DONE" in text.upper() and green_exit == 0:
@@ -195,8 +223,8 @@ class ModelExecutor:
                 messages.append({"role": "user", "content":
                     "Continue using the tools. "
                     + ("Write the test file with write_file, then call "
-                       "run_tests. It must report a failing test — exit code 1. "
-                       "Exit code 5 means no test file was found."
+                       "run_tests. It must show the test not passing — exit "
+                       "code 1 or 2. Exit code 5 means no test file was found."
                        if red_exit is None else
                        "You have a failing test. Write the implementation with "
                        "write_file, then call run_tests again."
@@ -218,19 +246,30 @@ class ModelExecutor:
                     result = tools.dispatch(call.name, call.arguments)
                 if call.name == "run_tests" and result.get("ok"):
                     code = result["exit_code"]
-                    # pytest's exit codes are not a boolean. 1 means tests ran
-                    # and failed — that is a red phase. 5 means no tests were
-                    # collected, which is an *empty* suite: calling run_tests
-                    # before writing anything produces 5, and counting that as
-                    # red would let an implementer claim a test-first cycle it
-                    # never performed. 0 before any implementation exists is a
-                    # third thing again, and also not progress.
-                    if code == 5:
+                    # pytest's exit codes are not a boolean, and the
+                    # distinction that matters is "no test exists" versus "a
+                    # test exists and does not pass".
+                    #
+                    #   0 — passed
+                    #   1 — tests ran and failed
+                    #   2 — collection error, which for test-first work is the
+                    #       *normal* first red: the test imports a module that
+                    #       does not exist yet
+                    #   5 — no tests collected: an empty suite
+                    #
+                    # Both narrow readings are wrong. Accepting any non-zero
+                    # code lets 5 count as red, so an implementer can claim a
+                    # cycle it never performed by calling run_tests before
+                    # writing anything. Accepting only 1 rejects 2, which is
+                    # what a correct test-first cycle actually produces first —
+                    # and the loop then never terminates while the model
+                    # correctly reports it is done.
+                    if code == EMPTY_SUITE_EXIT:
                         result["harness_note"] = (
                             "No tests were collected. That is an empty suite, "
                             "not a failing test. Write the test file first, "
                             "named test_*.py.")
-                    elif red_exit is None and code == 1:
+                    elif red_exit is None and code in RED_EXIT_CODES:
                         red_exit = code
                         result["harness_note"] = (
                             "Red phase observed. Now write the smallest "

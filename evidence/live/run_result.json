@@ -1,0 +1,360 @@
+{
+  "wp_id": "WP-001",
+  "started_at": "2026-08-24T01:40:08+00:00",
+  "steps": [
+    {
+      "name": "precondition",
+      "outcome": "OK",
+      "detail": "package is READY and dependencies are ACCEPTED",
+      "at": "2026-08-24T01:40:08+00:00"
+    },
+    {
+      "name": "packet",
+      "outcome": "OK",
+      "detail": "3 frozen sections, 0 dependencies, 5 deliverables, digest e9da53962288",
+      "at": "2026-08-24T01:40:08+00:00"
+    },
+    {
+      "name": "cohort",
+      "outcome": "OK",
+      "detail": "BASELINE assurance, roles: commissioning_orchestrator, architect, implementer, implementer, spec_reviewer, code_reviewer, verifier; specialists: security, data, runtime",
+      "at": "2026-08-24T01:40:08+00:00"
+    },
+    {
+      "name": "runtime_binding",
+      "outcome": "OK",
+      "detail": "architect\u2192qwen-local(qwen); implementer\u2192qwen-local(qwen); implementer#2\u2192qwen-local(qwen); spec_reviewer\u2192mistral-local(mistral); code_reviewer\u2192mistral-local(mistral); verifier\u2192mistral-local(mistral)",
+      "at": "2026-08-24T01:40:08+00:00"
+    },
+    {
+      "name": "plan",
+      "outcome": "OK",
+      "detail": "Plan a minimal capacity.py module with a tested usable_bytes function that subtracts a configurable overhead reserve and clamps the result at zero.",
+      "at": "2026-08-24T01:40:59+00:00"
+    },
+    {
+      "name": "worktree",
+      "outcome": "OK",
+      "detail": "dume/WP-001/live-e9da5396 off 8e27d8487dba",
+      "at": "2026-08-24T01:40:59+00:00"
+    },
+    {
+      "name": "implement",
+      "outcome": "OK",
+      "detail": "candidate 0a4bcfb56636, RED\u2192GREEN evidence: RED exit=2, GREEN exit=0, 7 tool calls",
+      "at": "2026-08-24T01:44:46+00:00"
+    },
+    {
+      "name": "protected_paths",
+      "outcome": "OK",
+      "detail": "4 file(s) changed, none protected",
+      "at": "2026-08-24T01:44:46+00:00"
+    },
+    {
+      "name": "specification_compliance",
+      "outcome": "FAILED",
+      "detail": "WP-001/spec_reviewer: FAIL \u2014 The diff does not address the full scope of the requirements.",
+      "at": "2026-08-24T01:44:53+00:00"
+    },
+    {
+      "name": "failure_classification",
+      "outcome": "OK",
+      "detail": "IMPLEMENTATION_FAILURE \u2014 candidate implicated: True; owner: implementer; IMPLEMENTATION_FAILURE: retry 1 of 3; the candidate must change first",
+      "at": "2026-08-24T01:44:53+00:00"
+    }
+  ],
+  "packet_sha256": "e9da53962288807555fa2c13af182e1fd18d393165bf301c2cbb997ec197d90b",
+  "candidate_revision": "0a4bcfb56636bf7c79c4bbe253e4b89785b63838",
+  "cohort": {
+    "wp_id": "WP-001",
+    "packet_sha256": "e9da53962288807555fa2c13af182e1fd18d393165bf301c2cbb997ec197d90b",
+    "assurance_level": "BASELINE",
+    "signals": {
+      "touches_security_boundary": false,
+      "touches_durable_state": true,
+      "touches_external_code": false,
+      "touches_runtime_binding": true,
+      "must_be_reversible": false,
+      "is_architecture_bearing": false,
+      "adversarial_scenarios": 0,
+      "deliverable_count": 5,
+      "known_failure_modes": 3,
+      "dependency_count": 0,
+      "wave": 1
+    },
+    "roles": [
+      {
+        "role_id": "commissioning_orchestrator",
+        "purpose": "Runs the work-package workflow and manages the cohort.",
+        "decides": "Sequencing only. The orchestrator moves work between stages; it does not decide whether a stage passed.",
+        "independence_requirements": [],
+        "qualification_required": false,
+        "fresh_context_required": false,
+        "skill_bundle": [
+          "brainstorming",
+          "writing-plans"
+        ],
+        "task": null,
+        "reason": "every package needs sequencing"
+      },
+      {
+        "role_id": "architect",
+        "purpose": "Turns a frozen packet into an implementation plan.",
+        "decides": "The shape of the change, and whether the requirement is satisfiable as written.",
+        "independence_requirements": [],
+        "qualification_required": true,
+        "fresh_context_required": false,
+        "skill_bundle": [
+          "brainstorming",
+          "writing-plans",
+          "systems-architecture"
+        ],
+        "task": null,
+        "reason": "the plan is a separate artefact from the code, and the packet is frozen input to it"
+      },
+      {
+        "role_id": "implementer",
+        "purpose": "Produces the candidate under Superpowers discipline.",
+        "decides": "Nothing about its own correctness.",
+        "independence_requirements": [
+          "must not be the same identity as spec_reviewer",
+          "must not be the same identity as code_reviewer",
+          "must not be the same identity as verifier"
+        ],
+        "qualification_required": true,
+        "fresh_context_required": false,
+        "skill_bundle": [
+          "test-driven-development",
+          "systematic-debugging",
+          "verification-before-completion"
+        ],
+        "task": "host_inventory.json",
+        "reason": "produces the candidate"
+      },
+      {
+        "role_id": "implementer",
+        "purpose": "Produces the candidate under Superpowers discipline.",
+        "decides": "Nothing about its own correctness.",
+        "independence_requirements": [
+          "must not be the same identity as spec_reviewer",
+          "must not be the same identity as code_reviewer",
+          "must not be the same identity as verifier"
+        ],
+        "qualification_required": true,
+        "fresh_context_required": false,
+        "skill_bundle": [
+          "test-driven-development",
+          "systematic-debugging",
+          "verification-before-completion"
+        ],
+        "task": "host_inventory.md, disk_capacity_report.md, deployment_profile_candidate.md",
+        "reason": "produces the candidate"
+      },
+      {
+        "role_id": "spec_reviewer",
+        "purpose": "Compares the candidate against the frozen specification.",
+        "decides": "Was the requirement met? Nothing about code quality.",
+        "independence_requirements": [
+          "must not be the same identity as implementer",
+          "must not share a model family with implementer"
+        ],
+        "qualification_required": true,
+        "fresh_context_required": false,
+        "skill_bundle": [
+          "requirements-analysis",
+          "verification-before-completion"
+        ],
+        "task": null,
+        "reason": "answers: was the requirement met?"
+      },
+      {
+        "role_id": "code_reviewer",
+        "purpose": "Judges implementation quality and architectural fit.",
+        "decides": "Is the implementation good? Nothing about whether it runs.",
+        "independence_requirements": [
+          "must not be the same identity as implementer",
+          "must not be the same identity as spec_reviewer",
+          "must not share a model family with implementer"
+        ],
+        "qualification_required": true,
+        "fresh_context_required": false,
+        "skill_bundle": [
+          "code-review",
+          "systems-architecture"
+        ],
+        "task": null,
+        "reason": "answers: is the implementation good?"
+      },
+      {
+        "role_id": "verifier",
+        "purpose": "Runs the acceptance suite from a fresh checkout and environment.",
+        "decides": "Does it actually work? This is the only role whose PASS is evidence of behaviour.",
+        "independence_requirements": [
+          "must not be the same identity as implementer",
+          "must not be the same identity as spec_reviewer",
+          "must not be the same identity as code_reviewer",
+          "must not share a model family with implementer"
+        ],
+        "qualification_required": true,
+        "fresh_context_required": true,
+        "skill_bundle": [
+          "verification-before-completion",
+          "systematic-debugging"
+        ],
+        "task": null,
+        "reason": "answers: does it actually work?"
+      }
+    ],
+    "specialists": [
+      {
+        "specialist": "security",
+        "trigger": "the package touches credentials, capability or trust boundaries",
+        "matched": [
+          "capability"
+        ],
+        "authority": "raises findings only; never a gate verdict"
+      },
+      {
+        "specialist": "data",
+        "trigger": "the package changes durable state or evidence",
+        "matched": [
+          "evidence"
+        ],
+        "authority": "raises findings only; never a gate verdict"
+      },
+      {
+        "specialist": "runtime",
+        "trigger": "the package binds or switches models and runtimes",
+        "matched": [
+          "model",
+          "runtime"
+        ],
+        "authority": "raises findings only; never a gate verdict"
+      }
+    ],
+    "communication_topology": {
+      "channel": "DUME-WP-001",
+      "threads": [
+        "plan",
+        "implementation",
+        "review",
+        "verification"
+      ],
+      "rule": "operational only \u2014 a message is never a gate verdict",
+      "human_addressing": [
+        "@commissioning_orchestrator",
+        "@architect",
+        "@implementer",
+        "@implementer",
+        "@spec_reviewer",
+        "@code_reviewer",
+        "@verifier"
+      ]
+    },
+    "context_projection": {
+      "every_role_receives": [
+        "the frozen packet",
+        "the candidate revision",
+        "its own role card"
+      ],
+      "implementer_also_receives": [
+        "its worktree path",
+        "the accepted plan"
+      ],
+      "reviewer_receives": [
+        "the candidate diff",
+        "the frozen acceptance"
+      ],
+      "verifier_receives": [
+        "a fresh checkout",
+        "the acceptance suite"
+      ],
+      "nobody_receives": [
+        "another agent's conversation history",
+        "an earlier reviewer's verdict before forming their own",
+        "any credential"
+      ],
+      "embargo": "independent-first \u2014 a reviewer's verdict is not visible to the next reviewer until their own is recorded, so the second opinion is a second opinion"
+    },
+    "independence_matrix": [
+      "identity: implementer \u2260 spec_reviewer",
+      "identity: implementer \u2260 code_reviewer",
+      "identity: implementer \u2260 verifier",
+      "identity: implementer \u2260 spec_reviewer",
+      "identity: implementer \u2260 code_reviewer",
+      "identity: implementer \u2260 verifier",
+      "identity: spec_reviewer \u2260 implementer",
+      "identity: code_reviewer \u2260 implementer",
+      "identity: code_reviewer \u2260 spec_reviewer",
+      "identity: verifier \u2260 implementer",
+      "identity: verifier \u2260 spec_reviewer",
+      "identity: verifier \u2260 code_reviewer",
+      "family: spec_reviewer \u2260 implementer",
+      "family: code_reviewer \u2260 implementer",
+      "family: verifier \u2260 implementer"
+    ]
+  },
+  "bindings": {
+    "architect": {
+      "role_id": "architect",
+      "agent_id": "WP-001/architect",
+      "runtime_id": "qwen-local",
+      "model": "Qwen3.8-27B (quantised \u2014 profile decided by WP-005)",
+      "family": "qwen",
+      "reason": "cheapest qualified runtime for architect",
+      "bound_at": "2026-08-24T01:40:08+00:00"
+    },
+    "implementer": {
+      "role_id": "implementer",
+      "agent_id": "WP-001/implementer",
+      "runtime_id": "qwen-local",
+      "model": "Qwen3.8-27B (quantised \u2014 profile decided by WP-005)",
+      "family": "qwen",
+      "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+      "bound_at": "2026-08-24T01:40:08+00:00"
+    },
+    "implementer#2": {
+      "role_id": "implementer",
+      "agent_id": "WP-001/implementer#2",
+      "runtime_id": "qwen-local",
+      "model": "Qwen3.8-27B (quantised \u2014 profile decided by WP-005)",
+      "family": "qwen",
+      "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+      "bound_at": "2026-08-24T01:40:08+00:00"
+    },
+    "spec_reviewer": {
+      "role_id": "spec_reviewer",
+      "agent_id": "WP-001/spec_reviewer",
+      "runtime_id": "mistral-local",
+      "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
+      "family": "mistral",
+      "reason": "cheapest qualified runtime for spec_reviewer; identity must differ from implementer, family-independent of implementer",
+      "bound_at": "2026-08-24T01:40:08+00:00"
+    },
+    "code_reviewer": {
+      "role_id": "code_reviewer",
+      "agent_id": "WP-001/code_reviewer",
+      "runtime_id": "mistral-local",
+      "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
+      "family": "mistral",
+      "reason": "cheapest qualified runtime for code_reviewer; identity must differ from implementer, spec_reviewer, family-independent of implementer",
+      "bound_at": "2026-08-24T01:40:08+00:00"
+    },
+    "verifier": {
+      "role_id": "verifier",
+      "agent_id": "WP-001/verifier",
+      "runtime_id": "mistral-local",
+      "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
+      "family": "mistral",
+      "reason": "cheapest qualified runtime for verifier; identity must differ from implementer, spec_reviewer, code_reviewer, family-independent of implementer",
+      "bound_at": "2026-08-24T01:40:08+00:00"
+    }
+  },
+  "gate": null,
+  "verdict": "FAILED",
+  "schema": "dume.live_run/1",
+  "assurance": "BASELINE",
+  "focus": "A module `capacity.py` with `usable_bytes(total, overhead=0.12)` returning total minus the runtime reserve, never below zero.",
+  "note": "Real models, real worktree, real test runs, against a disposable target created and destroyed inside the run. No real target was touched. The build was narrowed to one executable slice of the package; the packet's constraints and acceptance criteria were not. This characterises the harness \u2014 it does not complete the package.",
+  "elapsed_seconds": 284.8
+}

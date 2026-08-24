@@ -1,0 +1,14 @@
+{
+  "verdict": "FAIL",
+  "reason": "The diff does not address the full scope of the requirements.",
+  "findings": [
+    {
+      "severity": "CRITICAL",
+      "summary": "The diff only implements a small part of the required functionality for calculating usable bytes, but does not cover the full scope of the host inventory requirements."
+    },
+    {
+      "severity": "HIGH",
+      "summary": "The diff does not include any of the mandatory deliverables such as host_inventory.json, host_inventory.md, gpu_probe.log, disk_capacity_report.md, or deployment_profile_candidate.md."
+    }
+  ]
+}
