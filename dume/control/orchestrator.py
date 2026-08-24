@@ -22,6 +22,7 @@ from pathlib import Path
 
 from ..acceptance.gate import MergeGate
 from ..cohort.compiler import CohortManifest, compile_cohort
+from ..cohort.role_registry import ROLES
 from ..packets.wp_packet_builder import PacketBuilder, WPPacket
 from ..runtimes.client import ModelError
 from ..runtimes.failures import classify, retry_decision
@@ -148,7 +149,6 @@ class Orchestrator:
         Bound in dependency order so that the independence constraints of the
         later roles can actually see what the earlier ones took.
         """
-        from ..cohort.role_registry import ROLES
         bindings: dict[str, RuntimeBinding] = {}
         order = ["commissioning_orchestrator", "architect", "implementer",
                  "spec_reviewer", "code_reviewer", "verifier", "specialist"]

@@ -49,7 +49,11 @@ class Profile:
     gpu_index: int
     family: str
     context: int = 65536
-    parallel: int = 4
+    # Two slots, not four. Each slot gets context/parallel, so four slots left
+    # 16384 per conversation — and a six-thousand-token prompt plus a tool call
+    # carrying a whole file does not fit in that. We commission one package at a
+    # time; the other two slots bought nothing and cost the budget that matters.
+    parallel: int = 2
     kv_type: str = "q8_0"
 
     def model_path(self) -> Path:

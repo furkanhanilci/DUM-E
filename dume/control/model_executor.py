@@ -38,7 +38,12 @@ MAX_TOOL_TURNS = 24
 # budget has to fit the file and its escaping — not just the model's prose. At
 # 3000 this truncated a perfectly good four-case test file mid-string, and the
 # server reported it as a parse error at column 680.
-IMPLEMENTER_MAX_TOKENS = 8000
+IMPLEMENTER_MAX_TOKENS = 12000
+
+# A ceiling stated to the model, well under what the budget can carry. A tool
+# call is one JSON string containing the whole file plus its escaping, so a file
+# that outgrows the budget is not a large file — it is a failed turn.
+MAX_WRITE_CHARS = 6000
 
 # What counts as having observed a failing test. See the note in `implement`.
 RED_EXIT_CODES = frozenset({1, 2})
@@ -239,6 +244,14 @@ class ModelExecutor:
         tools = Toolbox(worktree.path, log)
         root = Path(worktree.path)
 
+        # The worktree listing is handed over rather than discovered. A turn
+        # spent on list_files is a turn not spent writing, and at roughly a
+        # minute a turn against a six-thousand-token prompt that is not a
+        # rounding error.
+        existing = sorted(
+            str(f.relative_to(root)) for f in root.rglob("*")
+            if f.is_file() and ".git" not in f.parts)
+
         messages = [
             {"role": "system", "content": self.system_prompt("implementer")},
             {"role": "user", "content":
@@ -246,9 +259,13 @@ class ModelExecutor:
              "## the accepted plan\n" + json.dumps(plan, indent=2)[:2000] + "\n\n"
              + (f"## build exactly this, and nothing more\n{self.focus}\n\n"
                 if self.focus else "")
-             + "Work only through the tools. Start by writing the failing test. "
-               "When run_tests has shown the test not passing and then passing, "
-               "reply with the single word DONE and nothing else."}]
+             + "## the worktree already contains\n"
+             + ("\n".join(f"- {f}" for f in existing[:60]) or "- (nothing)")
+             + "\n\nYou do not need to list or read these unless you intend to "
+               "change one. Work only through the tools, and begin by writing "
+               "the failing test with write_file. When run_tests has shown the "
+               "test not passing and then passing, reply with the single word "
+               "DONE and nothing else."}]
 
         red_exit: int | None = None
         green_exit: int | None = None
