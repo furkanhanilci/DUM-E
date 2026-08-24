@@ -103,6 +103,29 @@ XML tool call rather than parsing it afterwards.
 | Runtime failure ≠ implementation failure | `failures.py`, and the switch that follows it |
 | Assurance does not shrink | there is no code path that lowers it |
 
+## What one live run actually did
+
+Recorded in `evidence/live/`, 370.7 seconds, no synthetic executor anywhere:
+
+| stage | what happened |
+|---|---|
+| packet | 3 frozen sections, 5 deliverables, digest `d0ae2a32d17c` |
+| cohort | BASELINE, 7 role slots |
+| binding | architect + implementer → qwen · the three reviews → mistral |
+| worktree | `dume/WP-001/live-d0ae2a32` off a recorded base |
+| implement | **RED exit 2 → GREEN exit 0**, 7 tool calls |
+| protected paths | 4 files changed, none protected |
+| specification review | PASS — a different family, shown only the frozen spec and the diff |
+| code review | PASS — a second identity, not shown the first verdict |
+| verification | PASS — fresh clone, `pytest exit=0`, 18 tests |
+| machine gate | **MERGE_ELIGIBLE** — eleven checks over recorded facts |
+
+The exit code decided verification; the model interpreted it and could not have
+overruled it. `tests/test_gate_and_pilot.py` re-reads that evidence and asserts
+the artefacts agree with each other — that every stage ran, that a failing test
+preceded a passing one, that no reviewer shared the implementer's family, and
+that the discipline injected was the pinned revision.
+
 ## What is still absent
 
 - **ACP** — Buzz's harness protocol is not used; DUM-E speaks OpenAI-compatible

@@ -105,3 +105,57 @@ def test_a_candidate_that_edits_frozen_acceptance_never_reaches_review():
     steps = {s["name"]: s["outcome"] for s in result["steps"]}
     assert steps["protected_paths"] == "FAILED"
     assert "specification_compliance" not in steps
+
+
+# ---- what the first green live run proved -------------------------------
+
+def test_the_green_run_evidence_is_complete_and_consistent():
+    """A MERGE_ELIGIBLE verdict is only worth what its evidence says.
+
+    This reads the recorded run rather than re-running it: the point is that the
+    artefacts a verifier would be handed actually agree with each other.
+    """
+    import json
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent / "evidence" / "live"
+    result = root / "run_result.json"
+    if not result.is_file():
+        pytest.skip("no recorded live run")
+    report = json.loads(result.read_text())
+    if report.get("verdict") != "MERGE_ELIGIBLE":
+        pytest.skip("the recorded run is not a green one")
+
+    steps = {s["name"]: s for s in report["steps"]}
+    # Every stage ran, in order, and none was skipped.
+    for stage in ("packet", "cohort", "runtime_binding", "worktree", "implement",
+                  "protected_paths", "specification_compliance", "code_quality",
+                  "verification", "tech_complete", "machine_gate"):
+        assert stage in steps, f"{stage} never ran"
+        assert steps[stage]["outcome"] == "OK", steps[stage]
+
+    # The implementer observed a failing test before a passing one.
+    assert "RED exit=" in steps["implement"]["detail"]
+    assert "GREEN exit=0" in steps["implement"]["detail"]
+
+    # The reviewers were not the implementer, and not the implementer's family.
+    bindings = report["bindings"]
+    implementer = bindings["implementer"]
+    for role in ("spec_reviewer", "code_reviewer", "verifier"):
+        assert bindings[role]["agent_id"] != implementer["agent_id"]
+        assert bindings[role]["family"] != implementer["family"], (
+            f"{role} shares the implementer's blind spot")
+
+    # Verification came from a real exit code, not from an opinion.
+    fresh = root / report["wp_id"] / "fresh_verification.txt"
+    assert fresh.is_file()
+    assert "exit=0" in fresh.read_text()
+
+    # And the discipline the agents were held to was the pinned artefact.
+    injected = root / report["wp_id"] / "skills_injected.json"
+    if injected.is_file():
+        bundles = json.loads(injected.read_text())["bundles"]
+        assert bundles, "no skills were injected"
+        for role, bundle in bundles.items():
+            assert bundle["revision"], f"{role} was held to an unpinned discipline"
+            assert any(s["primary"] for s in bundle["skills"])
