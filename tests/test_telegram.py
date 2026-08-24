@@ -216,3 +216,34 @@ def test_naming_an_account_says_which_one_is_meant():
     assert strip_address("@dume durum nedir") == "durum nedir"
     assert belongs_to("commission") == "dume"
     assert belongs_to("spaces") == "aethrionis"
+
+
+def test_only_readings_are_narrated():
+    """A narration is a paraphrase, and a paraphrase of a record is a second
+    account of it sitting next to the real one.
+
+    So `retry`, `decide`, `kill` and `commission` are never narrated: their
+    answers say what happened, and the only safe number of accounts of that is
+    one. Readings are narrated, because a reader who asked "durum nedir" wanted
+    to know how it is going and a table is not an answer to that.
+    """
+    from dume.control.narrate import NARRATABLE
+
+    for command in ("status", "next", "show", "findings", "open", "read"):
+        assert command in NARRATABLE
+
+    for command in ("retry", "decide", "kill", "commission", "pause", "block",
+                    "say", "challenge", "bind_workspace"):
+        assert command not in NARRATABLE, f"{command} must not be paraphrased"
+
+
+def test_a_narration_that_cannot_be_produced_is_simply_absent():
+    """The command already answered. A model being slow or unreachable must not
+    turn a working answer into an error, so every failure returns None and the
+    caller shows the output alone."""
+    from dume.control.narrate import narrate
+
+    # Not a reading: refused before anything is asked of a model.
+    assert narrate("x", "kill", "output") is None
+    # Nothing to explain.
+    assert narrate("x", "status", "   ") is None

@@ -187,3 +187,25 @@ def test_the_worktree_listing_is_read_by_the_key_git_emits():
     listing = inspect.getsource(WorktreeManager.list)
     assert "porcelain" in listing, (
         "if the listing stops being porcelain output, this key changes with it")
+
+
+def test_a_commit_that_fails_fails_the_step():
+    """`git commit` ran with check=False and its output captured and dropped.
+
+    The target repository had no author identity, so every commit failed with
+    "Please tell me who you are" and the candidate came back silently equal to
+    the base. Six files written, tests red then green, and nothing recorded —
+    and the failure that surfaced was "the candidate diff is empty", which
+    names the diff rather than the commit and sent two investigations at the
+    implementer instead of at git.
+    """
+    import inspect
+
+    from dume.control.model_executor import ModelExecutor
+
+    source = inspect.getsource(ModelExecutor.implement)
+    commit = source.split('"commit"', 1)[1][:600]
+    assert "returncode != 0" in commit, "a failed commit must fail the step"
+    assert "ImplementationRefused" in commit
+    # And the author is named, because the repository is not any one agent's.
+    assert "user.name=" in source and "agent_id" in source

@@ -65,9 +65,24 @@ class ModelClient:
         self.temperature = temperature
 
     def chat(self, messages: list[dict], tools: list[dict] | None = None,
-             max_tokens: int = 2048, response_format: dict | None = None) -> Reply:
+             max_tokens: int = 2048, response_format: dict | None = None,
+             think: bool = True) -> Reply:
+        """One turn.
+
+        `think` is on by default because the work this client mostly does —
+        planning, implementing, reviewing — is what the reasoning budget is
+        for. It is turned off for the short paraphrases the operator reads on a
+        phone: with thinking on, a two-sentence summary took over a minute and
+        sometimes returned finish_reason=length with an empty string, having
+        spent the whole budget before writing a word. Off, the same summary
+        takes two seconds.
+        """
         payload: dict = {"model": self.model, "messages": messages,
                          "temperature": self.temperature, "max_tokens": max_tokens}
+        if not think:
+            # llama.cpp passes this through to the chat template; Qwen3 reads
+            # it and skips the thinking block entirely.
+            payload["chat_template_kwargs"] = {"enable_thinking": False}
         if tools:
             payload["tools"] = tools
             payload["tool_choice"] = "auto"

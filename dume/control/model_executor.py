@@ -410,8 +410,28 @@ class ModelExecutor:
 
         subprocess.run(["git", "-C", str(root), "add", "-A"],
                        capture_output=True, check=False)
-        subprocess.run(["git", "-C", str(root), "commit", "-qm",
-                        f"{packet.wp_id}: candidate"], capture_output=True, check=False)
+        # The author is the agent that wrote it, named per commit rather than
+        # configured globally: the repository is not any one agent's, and a
+        # commit that says who produced it is the difference between a
+        # candidate and an anonymous change.
+        producer = getattr(self.bindings.get("implementer"), "agent_id",
+                           f"{packet.wp_id}/implementer")
+        commit = subprocess.run(
+            ["git", "-C", str(root),
+             "-c", f"user.name={producer}",
+             "-c", "user.email=dume@aethrionis.local",
+             "commit", "-qm", f"{packet.wp_id}: candidate"],
+            capture_output=True, text=True, check=False)
+        # Not swallowed. This ran with check=False and no output, so a commit
+        # that failed for want of an identity produced a candidate silently
+        # equal to the base — six files written, tests red then green, and
+        # nothing recorded. Every run failed the same way and the message named
+        # the diff rather than the commit.
+        if commit.returncode != 0:
+            raise ImplementationRefused(
+                "the work was written but could not be committed: "
+                + (commit.stderr or commit.stdout or "git said nothing"
+                   ).strip().splitlines()[0][:200])
         candidate = self.worktrees.candidate_revision(worktree)
 
         red_log = discipline_dir / "red.txt"

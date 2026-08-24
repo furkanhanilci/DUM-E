@@ -308,11 +308,23 @@ class TelegramBridge:
         to = addressee(text)
         reading, _ = interpret(text)
         if reading:
-            self.send(chat_id,
-                      f"Read as: {reading}\n\n"
-                      + (self._answer(actor_id, chat_id, reading, thread_id)
-                         or "(no output)"),
-                      thread_id)
+            answer = self._answer(actor_id, chat_id, reading, thread_id)
+            # One message: the reading, the numbers, and what they mean. It was
+            # two, because the paraphrase took over a minute and arriving late
+            # in its own message was better than delaying the answer. With the
+            # thinking phase off it takes about two seconds, so the reason for
+            # splitting them is gone — and a single message is what somebody
+            # asking a question expects to get back.
+            said = None
+            try:
+                from .narrate import narrate
+                said = narrate(text, reading, answer or "")
+            except Exception:
+                said = None
+            body = f"{answer or '(no output)'}"
+            if said:
+                body = f"{said}\n\n———\n{body}"
+            self.send(chat_id, body, thread_id)
             return {"outcome": "EXECUTED", "actor": actor_id, "chat": chat_id,
                     "action": reading.split()[0]}
         if to:
