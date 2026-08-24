@@ -346,6 +346,31 @@ class TelegramBridge:
                 actor_id=actor_id, channel=f"telegram:{chat_id}", text=text,
                 forwarded=forwarded, verified=bool(actor_id))
         except CommandRefused as exc:
+            # A sentence that is not a command is usually a question, not an
+            # attempt to run something. Refusing it with the whole vocabulary
+            # printed underneath answered "ne durumda" with a list of words the
+            # person was allowed to use instead. Read the state and talk about
+            # it — this runs nothing and decides nothing, so it needs none of
+            # the authority the refusal was protecting.
+            # Only a question from an authorised person in their own words.
+            # A forwarded message is text somebody else wrote, and answering it
+            # would let a screenshot pasted into the chat put words in front of
+            # the harness — the exact reading the forwarding guard exists to
+            # refuse. An unverified actor gets the refusal too: conversing
+            # reads the work's state aloud, which is not public.
+            said = None
+            if (not forwarded and str(actor_id) in self.config.principals()
+                    and not text.strip().startswith("/")):
+                try:
+                    from .narrate import converse
+                    said = converse(text, self._answer(actor_id, chat_id,
+                                                       "status", thread_id) or "")
+                except Exception:
+                    said = None
+            if said:
+                self.send(chat_id, said, thread_id)
+                return {"outcome": "ANSWERED", "actor": actor_id,
+                        "chat": chat_id, "reason": "read the state and answered"}
             self.send(chat_id, f"refused: {exc}", thread_id)
             return {"outcome": "REFUSED", "actor": actor_id, "chat": chat_id,
                     "reason": str(exc)}

@@ -164,11 +164,15 @@ def checks() -> list[Check]:
     except TelegramError as exc:
         out.append(Check("telegram", False, str(exc)[:140]))
 
-    out.append(Check("bot_running",
-                     bool(shutil.which("pgrep")) and subprocess.run(
-                         ["pgrep", "-f", "dume.cli telegram"],
-                         capture_output=True).returncode == 0,
-                     "the bridge is polling" ))
+    # The detail used to read "the bridge is polling" whether or not it was.
+    # A check that says the same thing when it passes and when it fails is not
+    # a check, and this one reported a dead bridge as healthy prose for hours.
+    polling = bool(shutil.which("pgrep")) and subprocess.run(
+        ["pgrep", "-f", "dume.cli telegram"], capture_output=True).returncode == 0
+    out.append(Check("bot_running", polling,
+                     "the bridge is polling" if polling else
+                     "the bridge is not running — nothing is reading Telegram; "
+                     "start it with: systemctl --user start dume-telegram"))
     return out
 
 

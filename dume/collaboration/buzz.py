@@ -335,9 +335,15 @@ class BuzzClient:
         return self.query(kinds=[KIND_CHANNEL_MESSAGE], tags={"h": [channel]},
                           limit=limit)
 
-    def set_profile(self, about: str = "") -> dict:
+    def set_profile(self, about: str = "", name: str | None = None) -> dict:
+        """Publish who this key is.
+
+        Without it a channel shows a hex string where a name belongs, and six
+        roles are six indistinguishable strangers.
+        """
         return self.publish(KIND_METADATA, json.dumps(
-            {"name": self.identity.name, "about": about}, separators=(",", ":")))
+            {"name": name or self.identity.name, "about": about},
+            separators=(",", ":")))
 
 
 @dataclass
@@ -352,6 +358,12 @@ class Cohort:
     channel: str
     identities: dict[str, Identity] = field(default_factory=dict)
     created_at: str = ""
+    # Which identities could not be admitted, named or seated. Kept rather than
+    # raised: a substrate problem is not an implementation problem, and a run
+    # that stops because a profile failed to publish has stopped for the wrong
+    # reason. Recorded so the silence that produced an anonymous cohort is not
+    # what happens next time either.
+    faults: list[str] = field(default_factory=list)
 
     def public(self) -> dict:
         return {"wp_id": self.wp_id, "channel": self.channel,
@@ -434,6 +446,26 @@ def deploy_cohort(client: BuzzClient, wp_id: str, roles: list[str]) -> Cohort:
         # Already created by an earlier run. Deriving the id is what makes this
         # safe to re-run rather than something that needs a guard flag.
         pass
+
+    # Each identity is admitted, named and seated before it says anything.
+    # Without this a cohort was six unnamed keys: the relay showed hex strings
+    # where participants belong, and a reader could not tell the implementer
+    # from the reviewer who refused its candidate. Failures here are not fatal
+    # — the run has nothing wrong with it — but they are visible rather than
+    # silent, because an anonymous cohort is what silence produced before.
+    for key, identity in cohort.identities.items():
+        role = key.split("#")[0]
+        try:
+            speaker = BuzzClient(client.base_url, identity, client.timeout)
+            if not speaker.is_member():
+                speaker = admit(client, identity, client.base_url)
+            speaker.set_profile(
+                name=f"{role.replace('_', ' ')} · {wp_id}",
+                about=ROLE_ABOUT.get(role, f"A DUM-E {role}.")
+                      + f" Deployed for {wp_id}.")
+            client.add_member(channel, identity.pubkey)
+        except BuzzError as exc:
+            cohort.faults.append(f"{key}: {exc}")
     client.announce(
         channel,
         f"{wp_id} commissioning channel opened. Roles: {', '.join(roles)}. "
@@ -441,6 +473,93 @@ def deploy_cohort(client: BuzzClient, wp_id: str, roles: list[str]) -> Cohort:
         "moves the package.",
         mentions=[i.pubkey for i in cohort.identities.values()])
     return cohort
+
+
+# Which of DUM-E's standing channels each role belongs in. A role that never
+# speaks in a space has no business appearing in its member list.
+ROLE_CHANNELS: dict[str, tuple[str, ...]] = {
+    "commissioning_orchestrator": ("dume-control", "dume-implementation",
+                                   "dume-review", "dume-verification"),
+    "architect": ("dume-control", "dume-implementation"),
+    "implementer": ("dume-implementation",),
+    "spec_reviewer": ("dume-review",),
+    "code_reviewer": ("dume-review",),
+    "verifier": ("dume-verification",),
+}
+
+ROLE_ABOUT: dict[str, str] = {
+    "commissioning_orchestrator": "Runs the commissioning pipeline. Records "
+                                  "what happened; decides nothing on its own.",
+    "architect": "Turns a frozen packet into a plan. Does not implement it and "
+                 "does not judge it afterwards.",
+    "implementer": "Writes the failing test, then the code that passes it. "
+                   "Never reviews its own candidate.",
+    "spec_reviewer": "Asks only whether the candidate does what the packet "
+                     "said. Independent of whoever wrote it.",
+    "code_reviewer": "Asks only whether the candidate is sound as code.",
+    "verifier": "Runs the evidence from a fresh checkout. The only role whose "
+                "answer comes from execution rather than reading.",
+}
+
+
+def role_identity(role: str, path: Path | str) -> Identity:
+    """The identity a role speaks with, stable across runs.
+
+    `Identity.create` mints a fresh keypair every time it is called, so every
+    run introduced six strangers into the channels: the architect who planned
+    yesterday's package and the one who planned today's had no visible relation
+    to each other. A reader cannot follow a conversation between participants
+    who are new each time.
+
+    Persisted rather than derived from a seed, because a derived key is only as
+    stable as the derivation, and changing it later would silently orphan every
+    message the old key signed.
+    """
+    path = Path(path)
+    data = json.loads(path.read_text()) if path.is_file() else {}
+    key = f"role:{role}"
+    entry = data.get(key)
+    if entry:
+        return Identity(name=role, private_hex=entry["private"],
+                        pubkey=entry["pubkey"])
+    identity = Identity.create(role)
+    data[key] = {"private": identity.private_hex, "pubkey": identity.pubkey}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2))
+    path.chmod(0o600)
+    return identity
+
+
+def ensure_roles(client: BuzzClient, path: Path | str,
+                 roles: tuple[str, ...] = tuple(ROLE_CHANNELS)) -> dict[str, str]:
+    """Give each role a name, a description and a seat in its channels.
+
+    Three separate things, each of which was missing. Without a profile the
+    channel shows a hex string; without membership the role is not in the
+    participant list even though it posts there; and without both, four
+    channels with six participants looked like four channels with one.
+    """
+    out: dict[str, str] = {}
+    for role in roles:
+        identity = role_identity(role, path)
+        speaker = BuzzClient(client.base_url, identity, client.timeout)
+        # A key that is not a relay member cannot publish at all, so the
+        # profile — the first thing a role does — is refused before anything
+        # else is tried. Admission first, and it is the owner's decision.
+        if not speaker.is_member():
+            speaker = admit(client, identity, client.base_url)
+        speaker.set_profile(name=role.replace("_", " "),
+                            about=ROLE_ABOUT.get(role, f"A DUM-E {role}."))
+        for name in ROLE_CHANNELS.get(role, ()):
+            try:
+                # Added by the owner: a role cannot put itself in a room.
+                client.add_member(SPACE_CHANNELS[name], identity.pubkey)
+            except BuzzError as exc:
+                out[role] = f"not seated in {name}: {exc}"
+                break
+        else:
+            out[role] = identity.pubkey[:12]
+    return out
 
 
 def load_identity(path: Path | str, name: str = "dume_orchestrator") -> Identity:

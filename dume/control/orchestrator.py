@@ -126,9 +126,46 @@ class Orchestrator:
             return None
         return path.read_text().strip() or None
 
+    # Whose voice each step is in. A review that arrives under the same name as
+    # the implementation it refuses reads as one participant arguing with
+    # itself, and the independence the cohort is compiled for stops being
+    # visible in the only place a person actually watches it.
+    STEP_SPEAKER = {
+        "plan": "architect",
+        "worktree": "implementer", "implement": "implementer",
+        "protected_paths": "implementer",
+        # Not the implementer's: whether a named file exists is the harness's
+        # own finding about the candidate, and putting it in the implementer's
+        # voice would have a role report on itself.
+        "specification_compliance": "spec_reviewer",
+        "code_quality": "code_reviewer",
+        "verification": "verifier",
+    }
+
+    def _speaker(self, role: str | None):
+        """A client bound to a role's own key, or the orchestrator's."""
+        if not role or not self.buzz:
+            return self.buzz
+        cached = getattr(self, "_speakers", None)
+        if cached is None:
+            cached = self._speakers = {}
+        if role not in cached:
+            try:
+                from ..collaboration.buzz import BuzzClient, role_identity
+                identity = role_identity(
+                    role, Path.home() / ".dume" / "secrets" / "buzz-identities.json")
+                cached[role] = BuzzClient(self.buzz.base_url, identity,
+                                          self.buzz.timeout)
+            except Exception:
+                # A role without a usable key still gets its step recorded,
+                # under the orchestrator's name. Losing the attribution is bad;
+                # losing the step is worse.
+                cached[role] = self.buzz
+        return cached[role]
+
     def _say(self, text: str, mentions: list[str] | None = None, *,
              message_type: str = "STATUS", refs: list[str] | None = None,
-             channel: str | None = None) -> None:
+             channel: str | None = None, speaker: str | None = None) -> None:
         """Post an operational message. Never allowed to stop the run.
 
         A substrate outage is not an implementation failure, so this swallows
@@ -154,8 +191,9 @@ class Orchestrator:
         # dependency must be too.
         from ..collaboration.buzz import BuzzError
         try:
-            self.buzz.announce(target, text, mentions=mentions,
-                               message_type=message_type, refs=refs)
+            self._speaker(speaker).announce(
+                target, text, mentions=mentions,
+                message_type=message_type, refs=refs)
         except BuzzError as exc:
             self._buzz_faults.append(str(exc)[:200])
 

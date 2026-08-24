@@ -99,3 +99,60 @@ def narrate(question: str, command: str, output: str,
     # the finish reason as well as the text, because the executor needs those.
     text = (getattr(reply, "text", None) or getattr(reply, "content", "") or "").strip()
     return text or None
+
+
+ANSWER = """Somebody asked you a question about the work you are running.
+
+You are given the current state of the work. Answer their question from it, in
+the language they asked in, the way a colleague would across a desk.
+
+Rules, in order of importance:
+1. Say only what the state in front of you supports. If it does not answer the
+   question, say plainly that you do not have it — never fill the gap.
+2. You decide nothing and you change nothing. If they are asking you to do
+   something rather than to explain something, say which command does it.
+3. Three or four sentences. Plain language, no headings.
+
+You are reading a record, not writing one."""
+
+
+def converse(question: str, state: str, *, timeout: float = 25.0) -> str | None:
+    """Answer a free-form question from the current state.
+
+    A sentence that matches no command used to be refused with the whole
+    vocabulary printed underneath. That is the right answer to `sudo rm`, and
+    the wrong one to "ne durumda" — a person asking a question in their own
+    words got a list of words they were allowed to use instead.
+
+    This never runs anything. It reads the state it was handed and talks about
+    it, which is why an unmatched sentence can be answered without any of the
+    authority a command would need.
+    """
+    if not question.strip():
+        return None
+    try:
+        from ..runtimes.client import ModelClient
+        from ..runtimes.profiles import RuntimeRegistry
+        from .live import ENDPOINTS
+
+        registry = RuntimeRegistry.load()
+        rows = registry.runtimes
+        rows = rows() if callable(rows) else rows
+        endpoint = next(
+            (ENDPOINTS[rid] for rid, r in rows.items()
+             if rid in ENDPOINTS and getattr(r, "status", "") == "AVAILABLE"),
+            None)
+        if endpoint is None:
+            return None
+        client = ModelClient(endpoint, model="local", timeout=timeout)
+        reply = client.chat(
+            [{"role": "system", "content": ANSWER},
+             {"role": "user",
+              "content": f"They asked: {question}\n\n"
+                         f"The work right now:\n\n{state[:3000]}"}],
+            max_tokens=500, think=False)
+    except Exception:
+        return None
+
+    text = (getattr(reply, "text", None) or getattr(reply, "content", "") or "").strip()
+    return text or None

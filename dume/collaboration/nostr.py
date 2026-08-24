@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import secrets
 import json
 import time
 from dataclasses import dataclass, field
@@ -97,7 +98,12 @@ def nip98_header(private_hex: str, url: str, method: str,
     also enforces a ±60s window and rejects a replayed event id, which is why
     these are minted per call rather than cached.
     """
-    tags = [["u", url], ["method", method.upper()]]
+    # A nonce, because the event id is a hash of everything else in it and
+    # nothing else varies: two identical POSTs to the same URL inside the same
+    # second produce the same id, and the relay correctly calls the second one
+    # a replay. Minting six invites in a loop failed on the second.
+    tags = [["u", url], ["method", method.upper()],
+            ["nonce", secrets.token_hex(16)]]
     if body is not None:
         tags.append(["payload", hashlib.sha256(body).hexdigest()])
     event = sign_event(private_hex, HTTP_AUTH_KIND, "", tags)
