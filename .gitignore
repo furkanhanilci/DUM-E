@@ -16,3 +16,4 @@ config/secrets.*
 state/*.db
 state/*.db-wal
 state/*.db-shm
+evidence/**/fresh/
