@@ -72,3 +72,18 @@ def test_a_candidate_that_changed_nothing_is_not_a_candidate():
     # output was empty.
     empty = source.split("candidate == worktree.base_revision", 1)[1][:600]
     assert "IMPLEMENTATION_FAILURE" in empty
+
+
+def test_every_step_goes_to_a_channel_the_operator_can_read():
+    """A step routed to an unknown name silently falls back to the package's
+    own private channel, which is where a hundred messages sat unread. The
+    four standing channels are the ones the desktop subscribes to."""
+    from dume.collaboration.buzz import SPACE_CHANNELS
+    from dume.control.orchestrator import Orchestrator
+
+    readable = {"dume-control", "dume-implementation",
+                "dume-review", "dume-verification"}
+    unreadable = set(Orchestrator.STEP_CHANNEL.values()) - readable
+    assert not unreadable, f"steps the operator cannot read: {sorted(unreadable)}"
+    for name in Orchestrator.STEP_CHANNEL.values():
+        assert name in SPACE_CHANNELS, f"{name} has no channel id"

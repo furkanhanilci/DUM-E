@@ -97,15 +97,56 @@ class Orchestrator:
 
     # ---- collaboration --------------------------------------------------
 
+    # Which of DUM-E's standing channels a step belongs in. The same routing
+    # the phone gets, for the same reason: a review and a fresh checkout are
+    # different conversations, and one stream of everything is not readable.
+    STEP_CHANNEL = {
+        "precondition": "dume-control", "packet": "dume-control",
+        "cohort": "dume-control", "tech_complete": "dume-control",
+        "machine_gate": "dume-control", "failure_classification": "dume-control",
+        "findings_superseded": "dume-control",
+        "runtime_binding": "dume-implementation", "plan": "dume-implementation",
+        "worktree": "dume-implementation", "implement": "dume-implementation",
+        "protected_paths": "dume-implementation",
+        "runtime_switch": "dume-implementation",
+        "specification_compliance": "dume-review", "code_quality": "dume-review",
+        "verification": "dume-verification",
+    }
+
+    @staticmethod
+    def _operator() -> str | None:
+        """The person this harness reports to.
+
+        Mentioned on the few messages that need them. A mention is what puts a
+        message in their inbox, and a harness that mentions them on every step
+        of every run has given them an inbox they will stop opening.
+        """
+        path = Path.home() / ".dume" / "secrets" / "operator"
+        if not path.is_file():
+            return None
+        return path.read_text().strip() or None
+
     def _say(self, text: str, mentions: list[str] | None = None, *,
-             message_type: str = "STATUS", refs: list[str] | None = None) -> None:
+             message_type: str = "STATUS", refs: list[str] | None = None,
+             channel: str | None = None) -> None:
         """Post an operational message. Never allowed to stop the run.
 
         A substrate outage is not an implementation failure, so this swallows
         the error and records it as a step rather than raising into a pipeline
         that has nothing wrong with it.
+
+        `channel` names one of DUM-E's standing channels. Without it the
+        message goes to the work package's own channel, which is private — the
+        cohort's working surface, and not somewhere the operator can read. A
+        hundred messages sat in one before this existed.
         """
-        if not (self.buzz and self.channel):
+        if not self.buzz:
+            return
+        target = self.channel
+        if channel:
+            from ..collaboration.buzz import SPACE_CHANNELS
+            target = SPACE_CHANNELS.get(channel, self.channel)
+        if not target:
             return
         # Imported here, not at module scope: the collaboration layer needs a
         # signature library, and ADR-0001 promises the foundation commands run
@@ -113,7 +154,7 @@ class Orchestrator:
         # dependency must be too.
         from ..collaboration.buzz import BuzzError
         try:
-            self.buzz.announce(self.channel, text, mentions=mentions,
+            self.buzz.announce(target, text, mentions=mentions,
                                message_type=message_type, refs=refs)
         except BuzzError as exc:
             self._buzz_faults.append(str(exc)[:200])
@@ -206,7 +247,13 @@ class Orchestrator:
             report.steps.append(Step(name, outcome, detail))
             # Every stage transition is narrated where a human can watch it and
             # address a role by name. Operational only.
-            self._say(f"{icon.get(outcome, '•')} {name}: {detail[:600]}")
+            # The operator is mentioned only when something stopped. A mention
+            # is what puts a message in their inbox, and one on every step of
+            # every run is an inbox nobody opens.
+            operator = self._operator()
+            self._say(f"{icon.get(outcome, '•')} {name}: {detail[:600]}",
+                      mentions=[operator] if operator and outcome != "OK" else None,
+                      channel=self.STEP_CHANNEL.get(name, "dume-control"))
             phone.step(wp_id, name, outcome, detail)
             if outcome == "BLOCKED":
                 phone.needs_you(f"{wp_id} is blocked at {name}", detail)
@@ -450,6 +497,14 @@ class Orchestrator:
                  else ": " + "; ".join(f"{c.name} — {c.detail}" for c in gate.failed)))
 
         report.verdict = gate.verdict
+        operator = self._operator()
+        self._say(
+            f"{wp_id}: {gate.verdict}\n\n"
+            "This reports the gate's record. It is not the record, and nothing "
+            "said here moves the package.",
+            mentions=[operator] if operator else None,
+            message_type="EVIDENCE", refs=[f"{wp_id}/gate/{candidate[:12]}"],
+            channel="dume-control")
         phone.verdict(wp_id, gate.verdict, time.monotonic() - started)
         if self.channel:
             report.channel = self.channel
