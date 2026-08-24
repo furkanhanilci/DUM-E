@@ -70,6 +70,17 @@ class SyntheticExecutor:
             "def test_zero_capacity_is_not_negative():\n"
             "    assert target_package.usable_bytes(0) == 0\n")
         module.write_text("# not implemented yet\n")
+        # The packet's named deliverables. The pilot exists to walk the same
+        # path the real run walks, and the real run now refuses a candidate
+        # that is missing one — a synthetic candidate that skips them would
+        # prove a route nothing takes.
+        for name in packet.deliverables:
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if not target.exists():
+                target.write_text(
+                    f"# {name}\n\nProduced by the pilot for {packet.wp_id}.\n")
+
         red = self._pytest(root)
         if red.returncode == 0:
             raise RuntimeError(

@@ -1,9 +1,9 @@
-exit=2
+exit=1
 [
   {
     "tool": "run_tests",
     "arguments": {},
-    "outcome": "EXIT_5",
-    "detail": "\nno tests ran in 0.00s\n"
+    "outcome": "EXIT_1",
+    "detail": "at 0x700721b71ea0> = <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'>.exists\nE            +      where <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'> = os.path\n\ntest_wp001.py:17: AssertionError\n=========================== short test summary info ============================\nFAILED test_wp001.py::test_mandatory_deliverables_exist_and_are_valid - Asser...\n1 failed in 0.02s\n"
   }
 ]

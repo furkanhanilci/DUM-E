@@ -79,7 +79,11 @@ def _packet_brief(packet: WPPacket, limit: int = 6000) -> str:
             body = body[:limit] + f"\n[…{len(section.text) - limit} more characters]"
         parts += [f"## {section.name} ({section.path})", body, ""]
     if packet.deliverables:
-        parts += ["## mandatory deliverables"] + \
+        # Named as paths, because they are. A reviewer refused a candidate of
+        # thirteen files for missing five deliverables that the implementer had
+        # read as a description of the work rather than as filenames.
+        parts += ["## mandatory deliverables — each is a file that must exist "
+                  "in the worktree, at exactly this name"] + \
                  [f"- {d}" for d in packet.deliverables] + [""]
     if packet.known_failure_modes:
         parts += ["## known failure modes that must be controlled"] + \

@@ -1,22 +1,18 @@
 {
   "verdict": "FAIL",
-  "reason": "The candidate does not meet the scope requirements for GPU enumeration and capacity envelope production.",
+  "reason": "The diff does not include all mandatory deliverables and lacks evidence of required tests.",
   "findings": [
     {
       "severity": "CRITICAL",
-      "summary": "The candidate does not produce a capacity envelope for model weights, KV cache, builds, Buzz services, and concurrent agents as required by the scope."
+      "summary": "Missing mandatory deliverables: host_inventory.json, host_inventory.md, gpu_probe.log, disk_capacity_report.md, deployment_profile_candidate.md."
     },
     {
       "severity": "CRITICAL",
-      "summary": "The candidate does not classify the host as HIGH_THROUGHPUT_GPU, SINGLE_GPU_CONSTRAINED, CPU_HEAVY, or REMOTE_GPU_REQUIRED as required by the scope."
+      "summary": "No evidence of mandatory core and package-specific adversarial tests being executed."
     },
     {
       "severity": "HIGH",
-      "summary": "The candidate does not include a disk_capacity_report.md deliverable as required by the mandatory deliverables."
-    },
-    {
-      "severity": "HIGH",
-      "summary": "The candidate does not include a deployment_profile_candidate.md deliverable as required by the mandatory deliverables."
+      "summary": "No evidence of Superpowers discipline being followed (e.g., no RED-GREEN cycle, no verification before completion)."
     }
   ]
 }

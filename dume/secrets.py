@@ -183,8 +183,12 @@ def scan_file(path: Path | str) -> list[Hit]:
 
 # Directories whose contents are reproduced from elsewhere. Scanning them
 # reports the same finding twice and buries the one that matters.
+# `worktrees` holds a run's scratch checkouts. What a model wrote there is not
+# this repository's code, it is gitignored, and a finding against it reads as
+# "DUM-E committed a credential" when nothing was committed at all.
 SKIP_DIRS = (".git", "__pycache__", ".venv", "node_modules", ".pytest_cache",
-             ".mypy_cache", ".ruff_cache", "dist", "build", ".tox")
+             ".mypy_cache", ".ruff_cache", "dist", "build", ".tox",
+             "worktrees")
 
 ALLOWLIST_PATH = Path(__file__).resolve().parent.parent / "config" / "secret_scan_allowlist.json"
 

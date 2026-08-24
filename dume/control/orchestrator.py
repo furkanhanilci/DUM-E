@@ -104,7 +104,7 @@ class Orchestrator:
         "precondition": "dume-control", "packet": "dume-control",
         "cohort": "dume-control", "tech_complete": "dume-control",
         "machine_gate": "dume-control", "failure_classification": "dume-control",
-        "findings_superseded": "dume-control", "prior_findings": "dume-control",
+        "findings_superseded": "dume-control", "prior_findings": "dume-control", "deliverables": "dume-review",
         "runtime_binding": "dume-implementation", "plan": "dume-implementation",
         "worktree": "dume-implementation", "implement": "dume-implementation",
         "protected_paths": "dume-implementation",
@@ -448,6 +448,22 @@ class Orchestrator:
             step("protected_paths", "FAILED", str(exc))
             self.store.add_finding(wp_id, "CRITICAL", str(exc))
             return self._fail(report, wp_id, "IMPLEMENTATION_FAILURE", actor, str(exc))
+
+        # Whether a named file exists is a fact, and asking a model to check it
+        # costs a review cycle to learn something `Path.is_file` knows. The
+        # spec reviewer spent two runs reporting exactly this, and its finding
+        # arrived after the candidate was already committed.
+        missing = [d for d in packet.deliverables
+                   if not (Path(worktree.path) / d).is_file()]
+        if missing:
+            detail = ("the candidate does not contain "
+                      + ", ".join(missing)
+                      + " — each is a mandatory deliverable of the packet")
+            step("deliverables", "FAILED", detail)
+            self.store.add_finding(wp_id, "CRITICAL", detail, candidate=candidate)
+            return self._fail(report, wp_id, "IMPLEMENTATION_FAILURE", actor, detail)
+        step("deliverables", "OK",
+             f"all {len(packet.deliverables)} mandatory deliverable(s) present")
 
         # 7–9. The three questions, asked by three identities.
         stages = (("SPEC_REVIEW", "specification_compliance", "spec_reviewer"),
