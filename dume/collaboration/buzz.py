@@ -290,8 +290,12 @@ class BuzzClient:
         which is how DUM-E reported for a hundred messages into a room the
         operator could not find.
         """
+        # The role travels in its own tag. Put inside the `p` tag it is simply
+        # ignored, and the relay records the default — which is how six agents
+        # were seated as ordinary members and never appeared under Agents,
+        # where only the bot role is looked up.
         return self.publish(KIND_GROUP_ADD_MEMBER, "",
-                            [["h", channel], ["p", pubkey, role]])
+                            [["h", channel], ["p", pubkey], ["role", role]])
 
     def announce(self, channel: str, text: str, mentions: list[str] | None = None,
                  *, message_type: str = "STATUS", refs: list[str] | None = None,
@@ -463,7 +467,7 @@ def deploy_cohort(client: BuzzClient, wp_id: str, roles: list[str]) -> Cohort:
                 name=f"{role.replace('_', ' ')} · {wp_id}",
                 about=ROLE_ABOUT.get(role, f"A DUM-E {role}.")
                       + f" Deployed for {wp_id}.")
-            client.add_member(channel, identity.pubkey)
+            client.add_member(channel, identity.pubkey, role="bot")
         except BuzzError as exc:
             cohort.faults.append(f"{key}: {exc}")
     client.announce(
@@ -553,7 +557,8 @@ def ensure_roles(client: BuzzClient, path: Path | str,
         for name in ROLE_CHANNELS.get(role, ()):
             try:
                 # Added by the owner: a role cannot put itself in a room.
-                client.add_member(SPACE_CHANNELS[name], identity.pubkey)
+                client.add_member(SPACE_CHANNELS[name], identity.pubkey,
+                              role="bot")
             except BuzzError as exc:
                 out[role] = f"not seated in {name}: {exc}"
                 break

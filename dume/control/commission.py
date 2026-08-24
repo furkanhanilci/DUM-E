@@ -16,6 +16,8 @@ the boundary refuses the write rather than trusting the agents not to try.
 """
 from __future__ import annotations
 
+import os
+
 import json
 import time
 from pathlib import Path
@@ -40,6 +42,31 @@ class NotCommissionable(RuntimeError):
     the wrong state is a fact about the deployment, and a run that invents a
     directory to write into produces a candidate nobody can find again.
     """
+
+
+LOCK = ROOT / "state" / "commissioning.pid"
+
+
+def _lock_holder() -> int | None:
+    """The pid of a live run, or None.
+
+    Written on the way in and removed on the way out, so a file that outlives
+    its process is exactly the case this exists to recognise. `os.kill(pid, 0)`
+    asks the kernel rather than matching a command line — matching one caught
+    the waiting shells that were looking for it, twice.
+    """
+    try:
+        pid = int(LOCK.read_text().strip())
+    except (OSError, ValueError):
+        return None
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return None
+    except PermissionError:
+        # Alive and owned by somebody else. Still alive.
+        return pid
+    return pid
 
 
 def target_repo() -> Path:
@@ -86,6 +113,22 @@ def run(wp_id: str, *, focus: str | None = None,
     # rather than making the operator type two transitions to say the one
     # thing they meant. Every hop is still recorded, and the reason names who
     # asked for it.
+    # A run that was killed leaves the package EXECUTING and nothing ever puts
+    # it back: the harness only writes that state on the way in, and the way
+    # out is written by the run that is no longer alive. The lock says whether
+    # a run actually holds it — a stale one is recovered, a live one is
+    # refused, and the difference is a pid rather than a guess.
+    if row["state"] == "EXECUTING":
+        holder = _lock_holder()
+        if holder is not None:
+            store.close()
+            raise NotCommissionable(
+                f"{wp_id} is EXECUTING and process {holder} holds the run. "
+                "Wait for it, or stop it first.")
+        store.transition(wp_id, "FAILED", actor="operator",
+                         reason="a previous run did not finish; no process holds it")
+        row = store.get(wp_id)
+
     if row["state"] == "FAILED":
         for to_state in ("RETRY", "PLANNED"):
             store.transition(wp_id, to_state, actor="operator",
@@ -129,7 +172,15 @@ def run(wp_id: str, *, focus: str | None = None,
                                  clients=build_clients(bindings),
                                  evidence_dir=evidence, bindings=bindings,
                                  skills=skills, focus=focus)
-        report = orchestrator.run(wp_id, executor=executor)
+        # Held for exactly as long as the run. Written here rather than at the
+        # gate above so a refusal never leaves a lock behind that the next
+        # invocation would have to reason about.
+        LOCK.parent.mkdir(parents=True, exist_ok=True)
+        LOCK.write_text(str(os.getpid()))
+        try:
+            report = orchestrator.run(wp_id, executor=executor)
+        finally:
+            LOCK.unlink(missing_ok=True)
         result = report.as_dict()
         result["schema"] = "dume.commission/1"
         result["assurance"] = cohort.assurance_level
