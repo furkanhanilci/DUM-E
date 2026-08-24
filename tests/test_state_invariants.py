@@ -183,3 +183,36 @@ def test_unknown_state_is_refused(store):
 def test_unknown_review_stage_is_refused(store):
     with pytest.raises(StateError, match="unknown review stage"):
         store.record_review("WP-001", "vibes", "cand-1", VERIFIER, "PASS")
+
+
+def test_a_finding_refuses_a_candidate_not_a_package(tmp_path):
+    """"No changes were made to implement the requirements" was raised against
+    an empty candidate. It then blocked the gate for every candidate after it —
+    including one that seven files changed, two independent reviewers passed
+    and a fresh checkout verified.
+
+    A reviewer refuses a candidate. A finding that outlives its subject and
+    goes on refusing everything is not a record of a judgement; it is a
+    permanent veto nobody cast.
+    """
+    from dume.state import Store
+
+    store = Store(tmp_path / "s.db")
+    from dume.catalogue import seed
+    seed(store)
+    store.transition("WP-001", "READY", actor="human")
+
+    store.set_candidate("WP-001", "aaaaaaaa")
+    store.add_finding("WP-001", "CRITICAL", "nothing was written")
+    assert len(store.open_blocking_findings("WP-001")) == 1
+
+    # A candidate that replaces it does not inherit its refusal.
+    store.set_candidate("WP-001", "bbbbbbbb")
+    assert store.supersede_findings("WP-001", "bbbbbbbb") == 1
+    assert store.open_blocking_findings("WP-001") == []
+
+    # A finding about the current candidate is untouched.
+    store.add_finding("WP-001", "CRITICAL", "still wrong")
+    assert store.supersede_findings("WP-001", "bbbbbbbb") == 0
+    assert len(store.open_blocking_findings("WP-001")) == 1
+    store.close()

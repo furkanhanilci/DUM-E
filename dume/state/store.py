@@ -119,7 +119,16 @@ CREATE TABLE IF NOT EXISTS finding (
     severity  TEXT NOT NULL,
     summary   TEXT NOT NULL,
     status    TEXT NOT NULL,
-    at        TEXT NOT NULL
+    at        TEXT NOT NULL,
+    -- Which candidate the finding is about. A reviewer refuses a candidate,
+    -- not a package: "no changes were made" was true of one empty candidate
+    -- and false of the one that replaced it, and without this column it went
+    -- on blocking the gate for every candidate after it, forever.
+    --
+    -- Nullable, because findings recorded before this existed cannot be
+    -- attributed now. Those keep blocking, which is the safe reading of a
+    -- finding whose subject is unknown.
+    candidate TEXT
 );
 """
 
@@ -151,6 +160,7 @@ class Store:
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.conn.execute("PRAGMA journal_mode = WAL")
         self.conn.executescript(SCHEMA)
+        self._migrate()
         self.conn.commit()
         self._check_lifecycle_version()
 
@@ -284,14 +294,56 @@ class Store:
 
     # ---- findings -------------------------------------------------------
 
+    def _migrate(self) -> None:
+        """Bring an existing store up to the current schema.
+
+        `CREATE TABLE IF NOT EXISTS` leaves an existing table exactly as it
+        was, so a column added to the schema never appears in a store that
+        already has the table — the code then reads a column that is not there,
+        or writes one that is silently dropped. Each step here is guarded by
+        what the table actually has rather than by a version number, so running
+        it twice is harmless and a store at any age converges.
+        """
+        columns = {row[1] for row in
+                   self.conn.execute("PRAGMA table_info(finding)")}
+        if columns and "candidate" not in columns:
+            with self.conn:
+                self.conn.execute("ALTER TABLE finding ADD COLUMN candidate TEXT")
+
     def add_finding(self, wp_id: str, severity: str, summary: str,
-                    status: str = "OPEN") -> int:
+                    status: str = "OPEN", candidate: str | None = None) -> int:
+        """Record a finding, and what it is about.
+
+        `candidate` defaults to whatever the package's candidate is now, which
+        is what a reviewer was looking at when it raised this.
+        """
         severity = severity.upper()
+        if candidate is None:
+            row = self.conn.execute(
+                "SELECT candidate_revision FROM wp WHERE wp_id=?", (wp_id,)
+            ).fetchone()
+            candidate = row["candidate_revision"] if row else None
         with self.conn:
             cur = self.conn.execute(
-                "INSERT INTO finding (wp_id,severity,summary,status,at) VALUES (?,?,?,?,?)",
-                (wp_id, severity, summary, status, _now()))
+                "INSERT INTO finding (wp_id,severity,summary,status,at,candidate) "
+                "VALUES (?,?,?,?,?,?)",
+                (wp_id, severity, summary, status, _now(), candidate))
         return int(cur.lastrowid)
+
+    def supersede_findings(self, wp_id: str, candidate: str) -> int:
+        """Mark findings about earlier candidates as superseded.
+
+        Not deleted: a finding is a record that somebody refused something, and
+        the refusal happened whether or not the thing it refused still exists.
+        It stops blocking; it stays readable.
+        """
+        with self.conn:
+            cur = self.conn.execute(
+                "UPDATE finding SET status='SUPERSEDED' "
+                "WHERE wp_id=? AND status='OPEN' "
+                "AND candidate IS NOT NULL AND candidate != ?",
+                (wp_id, candidate))
+        return cur.rowcount
 
     def open_blocking_findings(self, wp_id: str) -> list[sqlite3.Row]:
         marks = ",".join("?" * len(BLOCKING_SEVERITIES))

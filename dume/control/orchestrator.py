@@ -368,6 +368,16 @@ class Orchestrator:
         # EXECUTING is already the current state, so the candidate is recorded
         # directly rather than by inventing a self-transition.
         self.store.set_candidate(wp_id, candidate)
+        # Findings about candidates this one replaces stop blocking. A reviewer
+        # refuses a candidate, not a package: "no changes were made" was true
+        # of one empty candidate and false of the one that replaced it, and
+        # without this it blocked the gate for every candidate afterwards. They
+        # are superseded rather than deleted — the refusal happened, whether or
+        # not the thing it refused still exists.
+        superseded = self.store.supersede_findings(wp_id, candidate)
+        if superseded:
+            step("findings_superseded", "OK",
+                 f"{superseded} finding(s) were about an earlier candidate")
         step("implement", "OK",
              f"candidate {candidate[:12]}, RED→GREEN evidence: "
              f"{result.get('discipline', 'not recorded')}")

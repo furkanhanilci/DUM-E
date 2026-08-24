@@ -1,0 +1,4 @@
+candidate=dc7cd5f0c54d099795c758240e7f737cfccf89d8
+exit=0
+.                                                                        [100%]
+1 passed in 0.02s

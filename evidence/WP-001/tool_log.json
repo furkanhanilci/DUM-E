@@ -3,62 +3,62 @@
     {
       "tool": "write_file",
       "arguments": {
-        "path": "test_host_probe.py",
-        "content": "<875 chars>"
+        "path": "test_inventory.py",
+        "content": "<2088 chars>"
       },
       "outcome": "OK",
-      "detail": "wrote 875 chars"
+      "detail": "wrote 2088 chars"
     },
     {
       "tool": "run_tests",
       "arguments": {},
       "outcome": "EXIT_1",
-      "detail": "729915f71ea0> = <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'>.exists\nE            +      where <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'> = os.path\n\ntest_host_probe.py:16: AssertionError\n=========================== short test summary info ============================\nFAILED test_host_probe.py::test_host_probe_deliverables - AssertionError: Fil...\n1 failed in 0.02s\n"
+      "detail": " at 0x7ee4edd71ea0> = <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'>.exists\nE        +      where <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'> = os.path\n\ntest_inventory.py:7: AssertionError\n=========================== short test summary info ============================\nFAILED test_inventory.py::test_deliverables_exist_and_valid - AssertionError:...\n1 failed in 0.02s\n"
     },
     {
       "tool": "write_file",
       "arguments": {
         "path": "host_inventory.json",
-        "content": "<171 chars>"
+        "content": "<521 chars>"
       },
       "outcome": "OK",
-      "detail": "wrote 171 chars"
+      "detail": "wrote 521 chars"
     },
     {
       "tool": "write_file",
       "arguments": {
         "path": "host_inventory.md",
-        "content": "<169 chars>"
+        "content": "<364 chars>"
       },
       "outcome": "OK",
-      "detail": "wrote 169 chars"
+      "detail": "wrote 364 chars"
     },
     {
       "tool": "write_file",
       "arguments": {
         "path": "gpu_probe.log",
-        "content": "<17 chars>"
+        "content": "<1288 chars>"
       },
       "outcome": "OK",
-      "detail": "wrote 17 chars"
+      "detail": "wrote 1288 chars"
     },
     {
       "tool": "write_file",
       "arguments": {
         "path": "disk_capacity_report.md",
-        "content": "<93 chars>"
+        "content": "<320 chars>"
       },
       "outcome": "OK",
-      "detail": "wrote 93 chars"
+      "detail": "wrote 320 chars"
     },
     {
       "tool": "write_file",
       "arguments": {
         "path": "deployment_profile_candidate.md",
-        "content": "<121 chars>"
+        "content": "<409 chars>"
       },
       "outcome": "OK",
-      "detail": "wrote 121 chars"
+      "detail": "wrote 409 chars"
     },
     {
       "tool": "run_tests",
