@@ -73,3 +73,52 @@ def test_relative_markdown_links_become_wikilinks_that_resolve():
 def test_external_links_are_left_alone():
     text = "See [the repo](https://github.com/block/buzz)."
     assert m.rewrite_links(text, "03_BUZZ") == text
+
+
+def test_the_watchers_fingerprint_does_not_perturb_what_it_watches():
+    """Opening a SQLite database touches the file. A watcher that timestamps the
+    state store therefore re-triggers on its own read and mirrors forever — which
+    it did, every five seconds, until the fingerprint was taken over the states
+    themselves rather than the file's mtime."""
+    first = m.source_fingerprint()
+    second = m.source_fingerprint()
+    assert first == second
+
+
+def test_the_fingerprint_moves_when_a_package_moves(tmp_path, monkeypatch):
+    before = m.source_fingerprint()
+    fake = {"WP-001": {"state": "ACCEPTED", "candidate_revision": "deadbeef"}}
+    monkeypatch.setattr(m, "read_states", lambda: fake)
+    assert m.source_fingerprint() != before
+
+
+def test_the_colour_groups_are_mutually_exclusive_and_documented():
+    """Obsidian applies one group per node and the resolution order between
+    overlapping groups is not dependable."""
+    queries = [q for _label, q, _c, _w in m.DUME_GROUPS]
+    assert len(queries) == len(set(queries))
+    for label, query, colour, why in m.DUME_GROUPS:
+        assert colour.startswith("#") and len(colour) == 7
+        assert why, f"{label} has no stated reason to exist"
+        assert "dume/" in query
+
+
+def test_applying_colours_preserves_groups_it_did_not_write(tmp_path):
+    """Another project's graph configuration is not this one's to discard."""
+    import json
+    obsidian = tmp_path / ".obsidian"
+    obsidian.mkdir()
+    (obsidian / "graph.json").write_text(json.dumps({
+        "colorGroups": [{"query": "tag:#aethrion/work-package",
+                         "color": {"a": 1, "rgb": 111}}],
+        "scale": 1.0}))
+    result = m.apply_colour_groups(tmp_path)
+    assert result["status"] == "WRITTEN"
+    assert result["foreign_groups_preserved"] == 1
+    after = json.loads((obsidian / "graph.json").read_text())
+    assert any("aethrion" in g["query"] for g in after["colorGroups"])
+    assert after["scale"] == 1.0, "unrelated settings must survive"
+    # ...and running it twice does not duplicate.
+    m.apply_colour_groups(tmp_path)
+    again = json.loads((obsidian / "graph.json").read_text())
+    assert len(again["colorGroups"]) == len(after["colorGroups"])

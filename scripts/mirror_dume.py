@@ -494,9 +494,15 @@ def source_fingerprint() -> str:
         for path in sorted(root.rglob("*")):
             if path.is_file():
                 material.append(f"{path}:{path.stat().st_mtime_ns}")
-    for path in (REPO / "README.md", REPO / "state" / "dume.db"):
-        if path.is_file():
-            material.append(f"{path}:{path.stat().st_mtime_ns}")
+    if (REPO / "README.md").is_file():
+        material.append(f"README:{(REPO / 'README.md').stat().st_mtime_ns}")
+
+    # The state store is fingerprinted by *content*, not modification time.
+    # Opening a SQLite database touches the file, so a watcher that timestamps
+    # it perturbs exactly what it is watching and re-mirrors forever. Reading
+    # the states costs one query and is what actually matters anyway.
+    for wp_id, row in sorted(read_states().items()):
+        material.append(f"{wp_id}:{row['state']}:{row.get('candidate_revision')}")
     return hashlib.sha256("\n".join(material).encode()).hexdigest()
 
 
