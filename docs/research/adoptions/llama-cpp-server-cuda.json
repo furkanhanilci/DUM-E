@@ -1,0 +1,14 @@
+{
+  "attribution": null,
+  "authority_boundary": "runs a model; role eligibility comes from qualification",
+  "capability": "OpenAI-compatible serving with grammar-constrained tool calls",
+  "characterisation_tests": [],
+  "copied_files": [],
+  "licence": "MIT",
+  "name": "llama.cpp-server-cuda",
+  "pinned_revision": "ghcr.io/ggml-org/llama.cpp:server-cuda",
+  "recorded_at": "2026-08-24T07:34:04+00:00",
+  "reuse_class": "OPTIONAL_BACKEND",
+  "schema": "dume.adoption/1",
+  "upstream": "https://github.com/ggml-org/llama.cpp"
+}

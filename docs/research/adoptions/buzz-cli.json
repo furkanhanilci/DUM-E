@@ -1,0 +1,14 @@
+{
+  "attribution": null,
+  "authority_boundary": "deferred: 10-14 GiB of build for what 200 lines of Python already reaches",
+  "capability": "JSON-over-stdout wrapper around the same three bridge endpoints",
+  "characterisation_tests": [],
+  "copied_files": [],
+  "licence": null,
+  "name": "buzz-cli",
+  "pinned_revision": null,
+  "recorded_at": "2026-08-24T07:34:04+00:00",
+  "reuse_class": "DEFER",
+  "schema": "dume.adoption/1",
+  "upstream": "https://github.com/block/buzz.git"
+}

@@ -1,0 +1,45 @@
+{
+  "adr": "ADR-0005",
+  "changed_the_plan": true,
+  "findings": [
+    {
+      "answer": "Yes, crates/buzz-relay, and no — ghcr.io/block/buzz:sha-0720f53 is published and anonymously pullable, ~250 MB on disk.",
+      "disposition": "STILL_VALID",
+      "question": "Is there a self-hostable relay, and does it need a Rust build?",
+      "source": "deploy/compose/compose.yml, run.sh, verified by pulling"
+    },
+    {
+      "answer": "No. Both are authored in the Tauri desktop app and stored at ~/.local/share/xyz.block.buzz.app/agents/. `buzz agents draft-create` only opens a prefilled form; there is no `teams` subcommand. Kind 30177 is a redacted public projection and cannot make an agent runnable.",
+      "disposition": "STILL_VALID",
+      "question": "Can an orchestrator create a managed agent or a team headlessly?",
+      "source": "crates/buzz-cli/src/lib.rs:264, docs/nips/NIP-PMA.md"
+    },
+    {
+      "answer": "No. get_agent_models is a Tauri desktop command, not a relay or CLI feature. The design's premise is wrong at this revision. Headless, the equivalent is `buzz-acp models`, which asks the harness rather than the provider.",
+      "disposition": "SUPERSEDED",
+      "question": "Does Buzz give us model discovery for free, as the design assumed?",
+      "source": "desktop/src-tauri/src/commands/agent_models.rs:37"
+    },
+    {
+      "answer": "The relay's NIP-98 HTTP bridge: POST /events, /query, /count. Enough for identity, channel and mention.",
+      "disposition": "STILL_VALID",
+      "question": "What is reachable without building 31 Rust crates?",
+      "source": "crates/buzz-relay/src/router.rs:72-74"
+    },
+    {
+      "answer": "No. v0.5.2+ AppImages have a glibc 2.39 floor; this host is 2.35.",
+      "disposition": "STILL_VALID",
+      "question": "Can the desktop app run on this host?",
+      "source": "docs/linux-rendering-troubleshooting.md"
+    }
+  ],
+  "recorded_at": "2026-08-24T07:34:04+00:00",
+  "revision": "0720f5380ce8a6c050afac159f8462c06cd51ab5",
+  "schema": "dume.research_log/1",
+  "topic": "Buzz collaboration substrate",
+  "unresolved": [
+    "Whether buzz-acp is worth its 10-14 GiB build to reach ACP and kind-24200 runtime switching (WP-015/WP-016).",
+    "Whether the sha-0720f53 image tag survives retention — it is a branch build, not a semver release."
+  ],
+  "upstream": "https://github.com/block/buzz.git"
+}

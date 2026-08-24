@@ -78,6 +78,86 @@ class Config:
                 for uid, entry in self.allowed.items()}
 
 
+def write_config(token: str, path: Path | str | None = None) -> Path:
+    """Create the configuration with the mode set before the content.
+
+    `install -m 600 /dev/null` first, then write: creating the file empty and
+    protected and only then filling it means the token never exists on disk
+    under a permissive mode, not even for the moment between the two calls.
+    """
+    import os
+    path = Path(path) if path else SECRETS
+    path.parent.mkdir(parents=True, exist_ok=True)
+    os.chmod(path.parent, 0o700)
+    existing = {}
+    if path.is_file():
+        try:
+            existing = json.loads(path.read_text())
+        except json.JSONDecodeError:
+            existing = {}
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as fh:
+        json.dump({"token": token,
+                   "allowed": existing.get("allowed", {}),
+                   "poll_timeout": existing.get("poll_timeout", 25)},
+                  fh, indent=2)
+    return path
+
+
+def authorise(user_id: str, name: str, max_class: str = "CONTROL",
+              path: Path | str | None = None) -> Path:
+    """Add a principal. Separate from writing the token because they are two
+    decisions: which bot, and who may drive it."""
+    import os
+    path = Path(path) if path else SECRETS
+    data = json.loads(path.read_text())
+    data.setdefault("allowed", {})[str(user_id)] = {"name": name,
+                                                    "max_class": max_class}
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as fh:
+        json.dump(data, fh, indent=2)
+    return path
+
+
+def discover_senders(token: str, timeout: int = 5) -> list[dict]:
+    """Who has messaged this bot? Used to find your own numeric id.
+
+    Telegram identifies people by a number, not by @username — a username can be
+    changed and reused, so the bridge authenticates on the id. Rather than
+    sending you to a third-party bot to look it up, this reads the bot's own
+    pending updates: message it once, run this, and it tells you who you are.
+    """
+    url = f"{API}/bot{token}/getUpdates"
+    request = urllib.request.Request(url, data=urllib.parse.urlencode(
+        {"timeout": timeout}).encode())
+    try:
+        with urllib.request.urlopen(request, timeout=timeout + 10) as response:
+            payload = json.loads(response.read().decode())
+    except urllib.error.HTTPError as exc:
+        raise TelegramError(_redact(
+            f"getUpdates: HTTP {exc.code}", token)) from None
+    except (urllib.error.URLError, OSError, json.JSONDecodeError) as exc:
+        raise TelegramError(_redact(f"getUpdates: {exc}", token)) from None
+    if not payload.get("ok"):
+        raise TelegramError(_redact(str(payload.get("description")), token))
+
+    seen: dict[str, dict] = {}
+    for update in payload.get("result") or []:
+        message = update.get("message") or update.get("edited_message") or {}
+        sender = message.get("from") or {}
+        if not sender.get("id"):
+            continue
+        seen[str(sender["id"])] = {
+            "id": str(sender["id"]),
+            "username": sender.get("username"),
+            "name": " ".join(filter(None, (sender.get("first_name"),
+                                           sender.get("last_name")))),
+            "chat_id": (message.get("chat") or {}).get("id"),
+            "said": (message.get("text") or "")[:60],
+        }
+    return list(seen.values())
+
+
 class TelegramBridge:
     def __init__(self, config: Config, gateway: CommandGateway, handler):
         self.config = config

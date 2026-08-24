@@ -1,0 +1,14 @@
+{
+  "attribution": null,
+  "authority_boundary": "supplies method; supplies no gate and claims none",
+  "capability": "engineering skills, injected verbatim into agent prompts",
+  "characterisation_tests": [],
+  "copied_files": [],
+  "licence": "MIT",
+  "name": "superpowers",
+  "pinned_revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+  "recorded_at": "2026-08-24T07:34:04+00:00",
+  "reuse_class": "DEPENDENCY",
+  "schema": "dume.adoption/1",
+  "upstream": "https://github.com/obra/superpowers.git"
+}

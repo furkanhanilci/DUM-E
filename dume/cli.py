@@ -380,6 +380,43 @@ def cmd_live(args) -> int:
     return 0 if report.get("verdict") == "MERGE_ELIGIBLE" else 1
 
 
+def cmd_view(args) -> int:
+    from .observability import serve, snapshot
+    if args.once:
+        _emit(snapshot(), True)
+        return 0
+    serve(args.host, args.port)
+    return 0
+
+
+def cmd_research(args) -> int:
+    from . import research
+    if args.adr:
+        print("An ADR is written, not generated. Use the module directly so the "
+              "evidence is yours:\n"
+              "  from dume.research import draft_adr\n"
+              "  draft_adr(title=..., context=..., decision=..., "
+              "consequences=..., evidence=...)")
+        return 1
+    report = research.survey()
+    print(f"research logs   {len(report['logs'])}")
+    for name in report["logs"]:
+        print(f"   {name}")
+    print(f"\nadoptions")
+    for klass, names in sorted(report["adoptions_by_class"].items()):
+        print(f"   {klass:<20} {', '.join(names)}")
+    if report["unpinned_adoptions"]:
+        print(f"\nunpinned: {', '.join(report['unpinned_adoptions'])}")
+        print("   (a STANDARD or a REJECTED needs no pin; a DEPENDENCY does)")
+    print(f"\nADRs            {len(report['adrs'])}")
+    if report["open_questions"]:
+        print(f"\nopen questions  {len(report['open_questions'])}")
+        for question in report["open_questions"]:
+            print(f"   · {question}")
+    _emit(report, args.json)
+    return 0
+
+
 def cmd_pilot(args) -> int:
     out = EVIDENCE / "synthetic_pilot.json"
     report = pilot_module.run_all(out)
@@ -471,7 +508,54 @@ def cmd_command(args) -> int:
 
 
 def cmd_telegram(args) -> int:
+    from .control import telegram as tg
     from .control.telegram import Config, TelegramBridge, TelegramError
+
+    if args.token:
+        path = tg.write_config(args.token)
+        print(f"token written to {path} (mode 0600, on ext4 where the mode holds)")
+        try:
+            bot = TelegramBridge(Config.load(), None, None).whoami()
+        except TelegramError as exc:
+            print(f"but Telegram refused it: {exc}", file=sys.stderr)
+            return 1
+        print(f"verified: @{bot['username']} ({bot['id']})")
+        print("\nNow message that bot anything, then run:")
+        print("  python3 -m dume.cli telegram --discover")
+        return 0
+
+    if args.discover:
+        try:
+            config = Config.load()
+            senders = tg.discover_senders(config.token)
+        except TelegramError as exc:
+            print(f"{exc}", file=sys.stderr)
+            return 1
+        if not senders:
+            print("nobody has messaged the bot yet. Send it any message, then "
+                  "run this again.")
+            return 1
+        for sender in senders:
+            marker = "authorised" if sender["id"] in config.allowed else "NOT authorised"
+            print(f"  {sender['id']:<14} @{sender['username'] or '—':<18} "
+                  f"{sender['name']:<24} {marker}")
+            print(f"                 said: {sender['said']!r}")
+        print("\nAuthorise yourself with:")
+        print(f"  python3 -m dume.cli telegram --authorise {senders[0]['id']} "
+              f"--name '{senders[0]['name'] or 'operator'}' "
+              "--max-class DANGEROUS_ACTION")
+        return 0
+
+    if args.authorise:
+        try:
+            path = tg.authorise(args.authorise, args.name or "operator",
+                                args.max_class)
+        except (OSError, ValueError, json.JSONDecodeError) as exc:
+            print(f"{exc}", file=sys.stderr)
+            return 1
+        print(f"{args.authorise} may now command up to {args.max_class} ({path})")
+        return 0
+
     try:
         config = Config.load()
     except TelegramError as exc:
@@ -647,10 +731,19 @@ def build_parser() -> argparse.ArgumentParser:
     cm.add_argument("--confirm", help="confirmation reference for a dangerous action")
     cm.set_defaults(func=cmd_command)
 
-    tg = sub.add_parser("telegram", help="the Telegram control bridge")
-    tg.add_argument("--check", action="store_true",
-                    help="verify the bot and the allowlist, then exit")
-    tg.set_defaults(func=cmd_telegram)
+    tgp = sub.add_parser("telegram", help="the Telegram control bridge")
+    tgp.add_argument("--token", help="write the bot token and verify it")
+    tgp.add_argument("--discover", action="store_true",
+                     help="show who has messaged the bot, with their numeric id")
+    tgp.add_argument("--authorise", metavar="USER_ID",
+                     help="let a numeric Telegram id command this harness")
+    tgp.add_argument("--name", help="display name for --authorise")
+    tgp.add_argument("--max-class", default="CONTROL",
+                     choices=["READ", "CONTROL", "HUMAN_DECISION",
+                              "DANGEROUS_ACTION"])
+    tgp.add_argument("--check", action="store_true",
+                     help="verify the bot and the allowlist, then exit")
+    tgp.set_defaults(func=cmd_telegram)
 
     sk = sub.add_parser("skills", help="what discipline each role is held to")
     sk.add_argument("--show", metavar="ROLE", help="print one role's whole bundle")
@@ -664,6 +757,16 @@ def build_parser() -> argparse.ArgumentParser:
     rl.add_argument("--wp", default="WP-001")
     rl.add_argument("--runs", type=int, default=5)
     rl.set_defaults(func=cmd_reliability)
+
+    vw = sub.add_parser("view", help="the operator status view")
+    vw.add_argument("--host", default="127.0.0.1")
+    vw.add_argument("--port", type=int, default=8080)
+    vw.add_argument("--once", action="store_true", help="print the snapshot and exit")
+    vw.set_defaults(func=cmd_view)
+
+    rs = sub.add_parser("research", help="the research area: logs, adoptions, ADRs")
+    rs.add_argument("--adr", action="store_true", help="how to write one")
+    rs.set_defaults(func=cmd_research)
 
     pl = sub.add_parser("pilot", help="run the synthetic end-to-end pilot")
     pl.add_argument("-v", "--verbose", action="store_true")

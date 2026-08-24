@@ -1,0 +1,38 @@
+{
+  "adr": "ADR-0006",
+  "changed_the_plan": true,
+  "findings": [
+    {
+      "answer": "Yes — the official marketplace's sha field is exactly b36e0829, so the official install is the pinned install.",
+      "disposition": "STILL_VALID",
+      "question": "Does the official marketplace pin the revision we locked?",
+      "source": "~/.claude/plugins/marketplaces/claude-plugins-official/.claude-plugin/marketplace.json"
+    },
+    {
+      "answer": "No. Every gate is prose the model may skip, and it ships no machine gate — finishing-a-development-branch runs the local suite and then presents a human menu.",
+      "disposition": "STILL_VALID",
+      "question": "Does it enforce any stage boundary?",
+      "source": "skills/finishing-a-development-branch/SKILL.md:14-26"
+    },
+    {
+      "answer": "No. It is a plugin for those harnesses. Agents behind a raw OpenAI-compatible endpoint get nothing unless the skill text is injected by the caller, which is what WP-021 now does.",
+      "disposition": "STILL_VALID",
+      "question": "Does it reach agents that are not Claude Code, Codex or Hermes?",
+      "source": ".claude-plugin/plugin.json, .codex-plugin/plugin.json"
+    },
+    {
+      "answer": "The SessionStart hook matches startup|clear|compact and re-injects the bootstrap; an SDD ledger with machine-parseable lines carries progress. Codex ships hooks:{} and has neither.",
+      "disposition": "STILL_VALID",
+      "question": "What survives a compaction?",
+      "source": "hooks/hooks.json, skills/subagent-driven-development/SKILL.md:124"
+    }
+  ],
+  "recorded_at": "2026-08-24T07:34:04+00:00",
+  "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+  "schema": "dume.research_log/1",
+  "topic": "Superpowers engineering discipline",
+  "unresolved": [
+    "Whether the marketplace sha moves on the next release, which would silently unpin the discipline."
+  ],
+  "upstream": "https://github.com/obra/superpowers.git"
+}

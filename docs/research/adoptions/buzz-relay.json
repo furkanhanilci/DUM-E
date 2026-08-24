@@ -1,0 +1,14 @@
+{
+  "attribution": null,
+  "authority_boundary": "operational only; a message is never a gate verdict",
+  "capability": "signed event log: identities, channels, threads, mentions",
+  "characterisation_tests": [],
+  "copied_files": [],
+  "licence": "Apache-2.0",
+  "name": "buzz-relay",
+  "pinned_revision": "0720f5380ce8a6c050afac159f8462c06cd51ab5",
+  "recorded_at": "2026-08-24T07:34:04+00:00",
+  "reuse_class": "DEPENDENCY",
+  "schema": "dume.adoption/1",
+  "upstream": "https://github.com/block/buzz.git"
+}

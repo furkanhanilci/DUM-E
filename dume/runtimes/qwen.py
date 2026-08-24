@@ -55,6 +55,16 @@ class Profile:
     # time; the other two slots bought nothing and cost the budget that matters.
     parallel: int = 2
     kv_type: str = "q8_0"
+    # A reasoning model in a tool loop needs its thinking budgeted.
+    #
+    # Qwen3.8 deliberates before answering, and with an unrestricted budget that
+    # deliberation is charged against the same max_tokens the tool call has to
+    # fit inside. Observed: 8000+ tokens of a single response spent thinking, at
+    # 30 tokens a second, with the write_file call never arriving — and then the
+    # response truncated for length, which the server reports as a tool-call
+    # parse error. The budget below leaves room to think and guarantees room to
+    # act.
+    reasoning_budget: int = 1500
 
     def model_path(self) -> Path:
         return MODEL_DIR / self.model_file
@@ -253,6 +263,11 @@ def serve_command(profile: "Profile" = None) -> list[str]:
         "-ctk", profile.kv_type, "-ctv", profile.kv_type,  # must match or
                                     # flash attention silently disables
         "--jinja",                  # required for tool-call grammar
+        # Thoughts go to message.reasoning_content rather than into content,
+        # where they would be parsed as the answer, and are capped so they
+        # cannot consume the budget the tool call needs.
+        "--reasoning-format", "deepseek",
+        "--reasoning-budget", str(profile.reasoning_budget),
     ]
 
 

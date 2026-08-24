@@ -1,0 +1,39 @@
+{
+  "adr": "ADR-0004",
+  "changed_the_plan": true,
+  "findings": [
+    {
+      "answer": "Qwen3_5ForConditionalGeneration, multimodal, 64 layers of which only 16 are full-attention. bf16 is 51.8 GiB and does not fit.",
+      "disposition": "STILL_VALID",
+      "question": "What is the architecture, and does bf16 fit 48 GiB?",
+      "source": "huggingface.co/Qwen/Qwen3.8-27B/config.json"
+    },
+    {
+      "answer": "Concurrency. KV is 64 KiB/token and only the 16 full-attention layers grow with it; the 48 Gated-DeltaNet layers cost ~78 MB per sequence regardless of length.",
+      "disposition": "STILL_VALID",
+      "question": "Is context or concurrency the binding constraint?",
+      "source": "derived from config.json layer counts"
+    },
+    {
+      "answer": "Not by pip. vLLM >=0.20 defaults to CUDA 13, which needs driver >=580. A +cu129 release asset works but is not on PyPI. There is also an open CUDA-graph hang on exactly the RTX A5000.",
+      "disposition": "STILL_VALID",
+      "question": "Can vLLM be installed on driver 535?",
+      "source": "vllm issues #52544 and #52682"
+    },
+    {
+      "answer": "Only llama.cpp, which grammar-constrains it. vLLM and SGLang parse Qwen's XML after the fact from unconstrained output.",
+      "disposition": "STILL_VALID",
+      "question": "Which stack guarantees a well-formed tool call?",
+      "source": "llama.cpp common/chat.cpp:3589"
+    }
+  ],
+  "recorded_at": "2026-08-24T07:34:04+00:00",
+  "revision": "2ea10dc725823bf7c3e21ce8557cbe15245132ae",
+  "schema": "dume.research_log/1",
+  "topic": "Qwen3.8 local serving",
+  "unresolved": [
+    "Whether 4-bit quantisation degrades tool-calling accuracy — no published data either way; WP-009 must measure it rather than inherit an assumption.",
+    "Whether upgrading to driver 580 to unlock vLLM's measured 85-95 tok/s is worth a host-wide change."
+  ],
+  "upstream": "https://github.com/QwenLM/Qwen3.8.git"
+}
