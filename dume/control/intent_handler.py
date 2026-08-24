@@ -104,6 +104,85 @@ class IntentHandler:
             f"{r['actor'][:28]:<28} {(r['candidate_revision'] or '')[:10]}"
             for r in rows[-15:])
 
+    def _roles(self) -> str:
+        from ..cohort.role_registry import ROLES
+        lines = ["The logical roles. A role is not an agent, an agent is not a "
+                 "runtime, and none of them is a person.", ""]
+        for name, role in ROLES.items():
+            binding = self._binding_for(name)
+            lines.append(f"@{name}")
+            lines.append(f"   decides: {role.decides}")
+            if not role.needs_runtime:
+                lines.append("   runs on: the harness itself — it sequences and "
+                             "decides nothing about whether a stage passed")
+            else:
+                lines.append(f"   bound to: {binding or 'nothing right now'}")
+            if role.independent_of:
+                lines.append("   must differ from: " + ", ".join(role.independent_of))
+        return "\n".join(lines)
+
+    def _binding_for(self, role: str) -> str | None:
+        """What the last recorded run bound this role to."""
+        import json
+        from pathlib import Path
+        report = Path(__file__).resolve().parents[2] / "evidence" / "live" / "run_result.json"
+        if not report.is_file():
+            return None
+        try:
+            data = json.loads(report.read_text())
+        except json.JSONDecodeError:
+            return None
+        for key, binding in (data.get("bindings") or {}).items():
+            if key.split("#")[0] == role:
+                return f"{binding['runtime_id']} ({binding['family']})"
+        return None
+
+    def _ask(self, role: str, question: str) -> str:
+        """Answer for a role from what it actually did.
+
+        Deliberately not a fresh model call. A role's answer in a chat window
+        would be a new opinion with no evidence behind it, and the one thing a
+        commissioning record must not acquire is a second, softer version of a
+        verdict. What comes back is the work that role recorded.
+        """
+        from ..cohort.role_registry import ROLES
+        role = role.lstrip("@").replace("-", "_")
+        if role not in ROLES:
+            return (f"there is no role called {role!r}. The roles are: "
+                    + ", ".join(f"@{r}" for r in ROLES))
+
+        kind = {"spec_reviewer": "specification_compliance",
+                "code_reviewer": "code_quality",
+                "verifier": "verification"}.get(role)
+        lines = [f"@{role} — {ROLES[role].decides}"]
+        binding = self._binding_for(role)
+        if binding:
+            lines.append(f"currently bound to {binding}")
+        lines.append("")
+
+        found = False
+        for row in self.store.all_wps():
+            if row["state"] == "DISCOVERED":
+                continue
+            records = [e for e in self.store.evidence(row["wp_id"])
+                       if kind is None or e["kind"] == kind]
+            for record in records[-3:]:
+                found = True
+                lines.append(
+                    f"{row['wp_id']} · {record['kind']} · "
+                    f"{record['verdict'] or '—'} · candidate "
+                    f"{(record['candidate_revision'] or '')[:12]}")
+                if record["detail"]:
+                    lines.append(f"   {record['detail'][:400]}")
+                if record["artefact_path"]:
+                    lines.append(f"   evidence: {record['artefact_path']}")
+        if not found:
+            lines.append("This role has recorded nothing yet.")
+        lines.append("")
+        lines.append(f"(you asked: {question[:120]!r} — answered from the record, "
+                     "not by asking the model again)")
+        return "\n".join(lines)
+
     # ---- control --------------------------------------------------------
 
     def _pause(self, actor: str) -> str:
@@ -195,6 +274,8 @@ class IntentHandler:
                 "runtimes": lambda: self._runtimes(),
                 "next": lambda: self._next(),
                 "evidence": lambda: self._evidence(args["wp"]),
+                "roles": lambda: self._roles(),
+                "ask": lambda: self._ask(args["role"], args["question"]),
                 "pause": lambda: self._pause(actor),
                 "resume": lambda: self._resume(),
                 "retry": lambda: self._retry(args["wp"], actor),

@@ -54,6 +54,10 @@ ACTIONS: dict[str, Action] = {a.name: a for a in (
     Action("runtimes", READ, "Runtime status, mode and qualification."),
     Action("next", READ, "Which packages are READY, and what blocks the rest."),
     Action("evidence", READ, "Evidence recorded for one package.", ("wp",)),
+    Action("roles", READ, "Every logical role, what it decides, and what it is "
+                          "currently bound to."),
+    Action("ask", READ, "Put a question to a role. The answer is that role's "
+                        "recorded work, not a new opinion.", ("role", "question")),
 
     Action("pause", CONTROL, "Stop starting new work. Running work finishes."),
     Action("resume", CONTROL, "Allow new work to start again."),
@@ -196,6 +200,13 @@ class CommandGateway:
             self._refuse(actor_id, channel, text,
                          "the message contains instruction-shaped or shell-shaped "
                          "content; it is data, not a command")
+
+        # `@role question` is the addressing form the design uses. It is
+        # rewritten into `ask role question` rather than given its own parser,
+        # so a role-addressed message goes through exactly the same
+        # authorisation, rate limiting and audit as everything else.
+        if text.startswith("@"):
+            text = "ask " + text[1:].replace("-", "_")
 
         # Only the first token can name an action, and it must be in the table.
         parts = text.lstrip("/").split()
