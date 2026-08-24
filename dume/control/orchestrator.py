@@ -27,6 +27,7 @@ from ..cohort.compiler import CohortManifest, compile_cohort
 from ..cohort.role_registry import ROLES
 from ..packets.wp_packet_builder import PacketBuilder, WPPacket
 from ..runtimes.client import ModelError
+from .model_executor import ImplementationRefused
 from ..runtimes.failures import classify, retry_decision
 from ..runtimes.handoff import RuntimeSwitcher, SwitchRefused
 from ..runtimes.profiles import NoEligibleRuntime, RuntimeBinding, RuntimeRegistry
@@ -412,11 +413,19 @@ class Orchestrator:
                               reason="implementation started")
         try:
             result = executor.implement(packet, plan, worktree, findings=prior)
-        except ModelError as exc:
+        except (ModelError, ImplementationRefused) as exc:
             # The model or its server failed to run the work. Invariant 16: that
             # says nothing about the candidate. Rather than failing the package,
             # rebind the role to another runtime and hand over the task — not
             # the conversation — then try once more.
+            #
+            # ImplementationRefused belongs here too, and did not: a model that
+            # answers in prose for two turns without touching a tool, or never
+            # reaches a red-then-green cycle, has produced no candidate at all.
+            # There is nothing for a candidate-implicating verdict to be about.
+            # It failed the package outright and named the implementer as owner
+            # while the other runtime, which had done the same work minutes
+            # earlier, was never asked.
             step("implement", "FAILED", f"{type(exc).__name__}: {exc}")
             switch, why = self.switcher.should_switch(
                 "RUNTIME_FAILURE", bindings.get("implementer"))
@@ -449,7 +458,8 @@ class Orchestrator:
             if hasattr(executor, "rebind"):
                 executor.rebind("implementer", new_id, handoff)
             try:
-                result = executor.implement(packet, plan, worktree, findings=prior)
+                result = executor.implement(packet, plan, worktree,
+                                            findings=prior)
             except Exception as second:
                 step("implement", "FAILED", f"after switch: {second}")
                 return self._fail(report, wp_id, "RUNTIME_FAILURE", actor,

@@ -16,8 +16,8 @@
     {
       "id": "ADR-0003",
       "path": "/home/otonom/Desktop/FH/DUM-E/docs/adr/ADR-0003-aethrion-workspaces-are-unbound.md",
-      "sha256": "ab4ac3a3ed86a326226882e3c776bb193153b16801e7699ad881cbe2dd0e7e5e",
-      "title": "DUME-ADR-0003 — AETHRION workspaces are declared but unbound"
+      "sha256": "6ca2d4816bcb843f08a90d9ead0a9805511275f3d74d22f24a44110753514f8e",
+      "title": "DUME-ADR-0003 — AETHRIONIS workspaces are declared but unbound"
     },
     {
       "id": "ADR-0004",
@@ -116,7 +116,7 @@
     "DUM-E stays small enough not to require itself to commission itself."
   ],
   "owner": "Platform Engineer",
-  "packet_sha256": "d0ae2a32d17c26a082b74c17a43e59c04b640e9cc396d1ee58a0458e50a1b02c",
+  "packet_sha256": "66921faa41f496cde827432d5d4b25cd6303cda657be1d2103f91c347903500d",
   "protected_paths": [
     "AETHRION_SPEC/**",
     "evidence/**"

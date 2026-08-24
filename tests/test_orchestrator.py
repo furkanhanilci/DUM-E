@@ -114,3 +114,16 @@ def test_a_deliverable_of_headings_is_not_a_deliverable(tmp_path):
     broken = tmp_path / "broken.json"
     broken.write_text("{not json")
     assert not _is_hollow(broken)
+
+
+def test_a_model_that_will_not_use_tools_gets_the_other_runtime():
+    """The implementer answered in prose for two turns without touching a
+    tool. No candidate existed, so nothing candidate-implicating could be
+    about it -- yet the run failed the package and named the implementer as
+    owner, while the other runtime was never asked."""
+    import inspect
+    from dume.control import orchestrator
+
+    source = inspect.getsource(orchestrator.Orchestrator.run)
+    assert "except (ModelError, ImplementationRefused)" in source, (
+        "a refusal still fails the package instead of switching runtime")
