@@ -258,11 +258,17 @@ class ModelExecutor:
         silently deleted.
         """
         base = f"live-{packet.packet_sha256[:8]}"
-        existing = {tree["path"] for tree in self.worktrees.list()}
+        # `git worktree list --porcelain` names the path under the key
+        # "worktree". Reading it as "path" raised KeyError inside the very step
+        # this was meant to fix, and the run failed at `worktree` again — with a
+        # different message, which is the only reason it was not mistaken for
+        # the original bug.
+        known = {tree.get("worktree") for tree in self.worktrees.list()}
         attempt, task_id = 1, base
-        while (self.worktrees.worktree_root / f"{packet.wp_id}__{task_id}").exists() \
-                or str(self.worktrees.worktree_root
-                       / f"{packet.wp_id}__{task_id}") in existing:
+        while True:
+            path = self.worktrees.worktree_root / f"{packet.wp_id}__{task_id}"
+            if not path.exists() and str(path) not in known:
+                break
             attempt += 1
             task_id = f"{base}-{attempt}"
         return self.worktrees.create(task_id, packet.wp_id)

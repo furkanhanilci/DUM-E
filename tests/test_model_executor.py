@@ -160,3 +160,30 @@ def test_a_second_attempt_gets_its_own_worktree(tmp_path):
     assert "attempt" in source, "a second attempt must not ask for the first's path"
     assert "packet.packet_sha256" in source, (
         "the digest must stay, so a tree still says which packet it belongs to")
+
+
+def test_the_worktree_listing_is_read_by_the_key_git_emits():
+    """`git worktree list --porcelain` names the path under "worktree".
+
+    Reading it as "path" raised KeyError inside the step that had just been
+    fixed to avoid a collision, so the run failed at `worktree` again. The
+    message was different, which is the only reason it was not mistaken for the
+    original bug.
+    """
+    import inspect
+
+    from dume.control.model_executor import ModelExecutor
+    from dume.worktrees.manager import WorktreeManager
+
+    # Comments and docstrings mention "path" while explaining the bug, so the
+    # assertion looks at the code. A test that reads prose is a test that
+    # fails when the prose improves.
+    source = inspect.getsource(ModelExecutor.prepare_worktree)
+    code = "\n".join(line.split("#")[0] for line in source.splitlines())
+    code = code.split('"""')[0] + code.split('"""')[-1]
+    assert '"worktree"' in code, "the listing must be read by the key git emits"
+    assert '"path"' not in code, "\"path\" is not a key in that listing"
+
+    listing = inspect.getsource(WorktreeManager.list)
+    assert "porcelain" in listing, (
+        "if the listing stops being porcelain output, this key changes with it")
