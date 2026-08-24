@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-08-23T23:39:12+00:00",
+  "checked_at": "2026-08-24T00:29:03+00:00",
   "drift_count": 0,
   "results": [
     {
@@ -44,7 +44,7 @@
     },
     {
       "license": null,
-      "live_revision": "95f5ecd3d26665423d3e6577a2a00c04f5cde733",
+      "live_revision": "20064623ab46e7db603ec8efc7a5e4c8e8994fc1",
       "name": "sglang",
       "pinned_revision": null,
       "reuse_class": "OPTIONAL_BACKEND",
@@ -64,7 +64,7 @@
     },
     {
       "license": "MIT",
-      "live_revision": "4a3e5c4094d96c2e184dead99bccb4f4aabb2e1b",
+      "live_revision": "19e56b446b9d94e390394a803ca78e9f73094c4a",
       "name": "hermes-agent",
       "pinned_revision": null,
       "reuse_class": "OPTIONAL_BACKEND",

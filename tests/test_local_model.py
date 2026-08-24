@@ -69,8 +69,8 @@ def test_the_chat_template_is_read_from_metadata_not_grepped():
     template = chat_template(qwen.model_path())
     assert template and len(template) > 1000
     report = qwen.template_asserts()
-    assert report["template_found_in_window"], \
-        "the scan did not reach the metadata, so a clean result proves nothing"
+    assert report["checked"], "the metadata must be read, not guessed at"
+    assert report["raise_exception_count"] == template.count("raise_exception")
 
 
 @needs_artefact
@@ -135,3 +135,26 @@ def test_one_local_model_cannot_commission_anything_alone():
     message = str(exc.value)
     assert "same model family" in message
     assert "assurance does not shrink" in message
+
+
+def test_the_container_serves_where_the_images_healthcheck_looks():
+    """Serving on a different port leaves a working server permanently marked
+    unhealthy, which then teaches everyone to ignore the health column."""
+    command = qwen.serve_command()
+    assert f"{qwen.PORT}:{qwen.INTERNAL_PORT}" in command
+    assert command[command.index("--port") + 1] == str(qwen.INTERNAL_PORT)
+
+
+@needs_artefact
+def test_template_guards_are_classified_not_merely_counted():
+    """Most of these guards refuse a genuinely malformed request, and a
+    template that accepted those would be worse. What matters is which ones
+    refuse a legitimate pattern."""
+    report = qwen.template_asserts()
+    assert report["checked"]
+    total = (len(report["hazards"]) + report["multimodal_only"]
+             + report["legitimate_validation"])
+    assert total == report["raise_exception_count"]
+    assert report["needs_patch"] == bool(report["hazards"])
+    for hazard in report["hazards"]:
+        assert hazard["why"], "a hazard must say why it is one"

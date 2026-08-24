@@ -1,0 +1,35 @@
+{
+  "bootstrap_observed": false,
+  "enabled": true,
+  "expected_revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+  "gaps": [
+    "MACHINE_GATE: DUM-E's deterministic gate — Superpowers ships none",
+    "no session transcript was supplied, so no invocation signal could be read — installation alone proves nothing about behaviour",
+    "no independent signal was available; invocation and artefacts alone cannot show the work is correct"
+  ],
+  "installed_revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+  "schema": "dume.discipline_report/1",
+  "session_transcript": null,
+  "signals": [
+    {
+      "detail": "no design document under docs/superpowers/specs/",
+      "kind": "artefact",
+      "present": false,
+      "stage": "DESIGN"
+    },
+    {
+      "detail": "no plan under docs/superpowers/plans/",
+      "kind": "artefact",
+      "present": false,
+      "stage": "PLAN"
+    },
+    {
+      "detail": "no SDD ledger — note it is removed on a clean finish, so absence is not evidence that the stage was skipped",
+      "kind": "artefact",
+      "present": false,
+      "stage": "FRESH_VERIFY"
+    }
+  ],
+  "skills_invoked": [],
+  "verdict": "NO_SIGNAL"
+}

@@ -30,7 +30,10 @@ IMAGE = "ghcr.io/ggml-org/llama.cpp:server-cuda"
 MODEL_DIR = Path("/media/otonom/DATADRIVE1/dume-model-cache")
 MODEL_FILE = "Qwen3.8-27B-UD-Q4_K_M.gguf"
 CONTAINER = "dume-qwen"
-PORT = 8000
+PORT = 8000          # on the host
+INTERNAL_PORT = 8080  # inside the container — the image's own healthcheck polls
+                      # http://localhost:8080/health, so serving anywhere else
+                      # leaves a working server permanently marked unhealthy
 
 # Chosen from the measured envelope, not from the model's native ceiling.
 # 41.1 GiB usable; ~16 GiB weights; KV is 64 KiB/token bf16, halved at q8_0, and
@@ -135,25 +138,55 @@ def template_asserts(path: Path | None = None) -> dict:
     # "not in the first 64 MiB", not "not present anywhere", and the difference
     # matters because the authoritative answer comes from the server refusing
     # or not refusing a real request.
-    window = 64 * 1024 * 1024
-    with path.open("rb") as fh:
-        head = fh.read(window)
-    text = head.decode("utf-8", "replace")
-    count = text.count("raise_exception")
-    has_template = "chat_template" in text
-    return {"checked": True, "raise_exception_count": count,
-            "needs_patch": count > 0,
-            "template_found_in_window": has_template,
-            "window_bytes": window,
-            "detail": (f"{count} raise_exception guard(s) in the packaged "
-                       "template; supply --chat-template-file"
-                       if count else
-                       f"no raise_exception guard in the first {window // 1024**2} MiB"
-                       + ("; a chat_template key was found there, so the scan "
-                          "did reach the metadata"
-                          if has_template else
-                          "; NO chat_template key was found either, so this "
-                          "scan proves nothing — rely on the tool-call probe"))}
+    from .gguf import GGUFError, chat_template
+    try:
+        template = chat_template(path)
+    except GGUFError as exc:
+        return {"checked": False, "detail": f"metadata unreadable: {exc}"}
+    if not template:
+        return {"checked": False, "detail": "no chat_template in the metadata"}
+
+    guards = re.findall(r"""raise_exception\(\s*['"]([^'"]*)""", template)
+
+    # Not every guard is a defect. Most of these refuse a genuinely malformed
+    # request — an empty message list, an unknown role, a tool call with no
+    # function name — and a template that accepted those would be worse. What
+    # matters is which guards refuse a *legitimate* pattern, because those are
+    # the ones that turn a working harness into a 400 with no token emitted.
+    HAZARDS = (
+        (r"system message must be at the beginning",
+         "refuses a system message injected mid-conversation, which is exactly "
+         "what a harness does when it re-states a role or a constraint between "
+         "turns (llama.cpp issue #27367)"),
+    )
+    MULTIMODAL = r"image|video|audio|vision"
+
+    hazards, multimodal, validation = [], [], []
+    for guard in guards:
+        matched = next((why for pattern, why in HAZARDS
+                        if re.search(pattern, guard, re.I)), None)
+        if matched:
+            hazards.append({"guard": guard.strip(), "why": matched})
+        elif re.search(MULTIMODAL, guard, re.I):
+            multimodal.append(guard.strip())
+        else:
+            validation.append(guard.strip())
+
+    return {"checked": True,
+            "raise_exception_count": len(guards),
+            "hazards": hazards,
+            "multimodal_only": len(multimodal),
+            "legitimate_validation": len(validation),
+            "needs_patch": bool(hazards),
+            "detail": (
+                f"{len(hazards)} guard(s) refuse a legitimate pattern: "
+                + "; ".join(h["guard"] for h in hazards)
+                + " — supply --chat-template-file, or never move a system "
+                  "message off the front"
+                if hazards else
+                f"{len(guards)} guard(s), all of them either multimodal-only "
+                f"({len(multimodal)}) or refusals of a genuinely malformed "
+                f"request ({len(validation)})")}
 
 
 def serve_command() -> list[str]:
@@ -161,11 +194,11 @@ def serve_command() -> list[str]:
     return [
         "docker", "run", "-d", "--name", CONTAINER,
         "--gpus", f"device={GPU_INDEX}",
-        "-p", f"{PORT}:8000",
+        "-p", f"{PORT}:{INTERNAL_PORT}",
         "-v", f"{MODEL_DIR}:/models:ro",
         IMAGE,
         "-m", f"/models/{MODEL_FILE}",
-        "--host", "0.0.0.0", "--port", "8000",
+        "--host", "0.0.0.0", "--port", str(INTERNAL_PORT),
         "-ngl", "999",              # every layer on the GPU
         "-sm", "none",              # one card; -sm row is dead on CUDA and
                                     # -sm tensor crashes on this architecture

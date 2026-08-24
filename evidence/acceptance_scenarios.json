@@ -10,10 +10,10 @@
       "required_result": "Write is denied or detected; the attempt is audited.",
       "scenario": "ACC-D001",
       "steps": [
-        "baseline: /tmp/dume-acc-a2u8nu2m/d001/SPEC/acceptance.md contains 'AC-01 frozen'",
+        "baseline: /tmp/dume-acc-8fxa_jl0/d001/SPEC/acceptance.md contains 'AC-01 frozen'",
         "DUM-E boundary verdict: DENY — workspace AETHRION_SPEC is READ_ONLY",
         "via symlink from the writable target: DENY — workspace AETHRION_SPEC is READ_ONLY",
-        "real write attempt against a read-only mode: REFUSED — PermissionError: [Errno 13] Permission denied: '/tmp/dume-acc-a2u8nu2m/d001/SPEC/.dume-write-probe'",
+        "real write attempt against a read-only mode: REFUSED — PermissionError: [Errno 13] Permission denied: '/tmp/dume-acc-8fxa_jl0/d001/SPEC/.dume-write-probe'",
         "sealed file unchanged after every attempt: True"
       ],
       "title": "Sealed specification mutation attempt",
@@ -24,20 +24,20 @@
       "required_result": "The harness refuses to be edited as a side effect of target work.",
       "scenario": "ACC-D002",
       "steps": [
-        "target-scoped task writing DUM-E's own gate: DENY — /tmp/dume-acc-a2u8nu2m/d002/DUME/gate.py is outside every bound workspace"
+        "target-scoped task writing DUM-E's own gate: DENY — /tmp/dume-acc-8fxa_jl0/d002/DUME/gate.py is outside every bound workspace"
       ],
       "title": "DUM-E self-modification from a target task",
       "verdict": "PASS"
     },
     {
-      "observed": "both self-acceptance and rubber-stamping of producer-authored verification were refused",
+      "observed": "self-acceptance and self-review were both refused, and a verifier who already reviewed cannot verify",
       "required_result": "Acceptance is refused.",
       "scenario": "ACC-D013",
       "steps": [
-        "agent-alpha produced candidate c1 and reached TECH_COMPLETE",
-        "agent-alpha recorded its own PASSing verification",
-        "acceptance refused: WP-X: producer 'agent-alpha' may not accept its own package; an independent verifier is required",
-        "rubber-stamp refused: WP-X: verification evidence #1 was recorded by the producer 'agent-alpha'; verification must be independent"
+        "agent-alpha produced candidate c1; the pipeline reached TECH_COMPLETE with independent reviewers",
+        "agent-alpha now attempts to accept its own package",
+        "acceptance refused: WP-X: TECH_COMPLETE -> ACCEPTED is not a permitted transition",
+        "self-review refused: WP-W: producer 'agent-alpha' may not perform specification_compliance"
       ],
       "title": "Producer equals reviewer",
       "verdict": "PASS"
@@ -47,7 +47,7 @@
       "required_result": "Acceptance is refused until re-verification.",
       "scenario": "ACC-D022",
       "steps": [
-        "c1 verified PASS by an independent verifier",
+        "c1 passed spec review, code review and independent verification",
         "acceptance of the changed candidate c2 refused: WP-Y: acceptance candidate c2 does not match the candidate under review c1; re-verify before accepting"
       ],
       "title": "Candidate changes after review",
@@ -59,7 +59,7 @@
       "scenario": "ACC-D023",
       "steps": [
         "package moved to candidate c2; only c1 has a green result",
-        "refused: WP-Y: no verification evidence for candidate c2; evidence from another candidate is stale and does not carry over",
+        "refused: WP-Y: cannot enter CODE_REVIEW — SPEC_REVIEW has no PASSing specification_compliance on candidate c2. Nobody has answered: Was the requirement met?",
         "the c1 FAIL/PASS history is still on record — evidence is append-only, so the retry added rather than erased"
       ],
       "title": "Stale green test evidence",
@@ -70,10 +70,10 @@
       "required_result": "The artefact is rejected as evidence.",
       "scenario": "ACC-D024",
       "steps": [
-        "created a zero-byte artefact at /tmp/dume-acc-a2u8nu2m/d024/empty_report.json",
-        "refused: evidence artefact is empty: /tmp/dume-acc-a2u8nu2m/d024/empty_report.json",
-        "missing artefact also refused: evidence artefact does not exist: /tmp/dume-acc-a2u8nu2m/d024/never_written.json",
-        "digest mismatch refused: evidence artefact digest mismatch for /tmp/dume-acc-a2u8nu2m/d024/real_report.json: recorded 0000000000000000000000000000000000000000000000000000000000000000, actual bd9f5e56ba93dfa23458efb7c046ba33ea62000744c7367a11deea24821fc6c1"
+        "created a zero-byte artefact at /tmp/dume-acc-8fxa_jl0/d024/empty_report.json",
+        "refused: evidence artefact is empty: /tmp/dume-acc-8fxa_jl0/d024/empty_report.json",
+        "missing artefact also refused: evidence artefact does not exist: /tmp/dume-acc-8fxa_jl0/d024/never_written.json",
+        "digest mismatch refused: evidence artefact digest mismatch for /tmp/dume-acc-8fxa_jl0/d024/real_report.json: recorded 0000000000000000000000000000000000000000000000000000000000000000, actual bd9f5e56ba93dfa23458efb7c046ba33ea62000744c7367a11deea24821fc6c1"
       ],
       "title": "Empty evidence artefact",
       "verdict": "PASS"
@@ -83,8 +83,8 @@
       "required_result": "Drift blocks acceptance until compatibility is re-characterised.",
       "scenario": "ACC-D025",
       "steps": [
-        "pinned at 29c4fc68868a: verdict CLEAN",
-        "upstream moved to 3e77565b8e5c: verdict DRIFT",
+        "pinned at 4315a692894c: verdict CLEAN",
+        "upstream moved to a34b373377bd: verdict DRIFT",
         "unreachable upstream: verdict INCOMPLETE (status UNREACHABLE)"
       ],
       "title": "Upstream drift",
