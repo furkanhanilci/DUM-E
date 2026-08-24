@@ -44,8 +44,10 @@ AETHRIONIS_COMMANDS = frozenset({
 PHRASES: tuple[tuple[str, str], ...] = (
     # Turkish and English, because both get typed here.
     (r"\b(durum|ne durumda|nasıl gidiyor|how is it going|state of play)\b", "status"),
-    (r"\b(hangi paketler|ne başlayabilir|what can start|what.s next|sırada ne)\b", "next"),
-    (r"\b(kim bekliyor|cevap bekleyen|what.s waiting|unanswered)\b", "open"),
+    (r"\b(hangi paketler|ne başlayabilir|what can start|what.s next"
+     r"|sırada ne|sıradaki|hangisi başlayabilir|next up)\b", "next"),
+    (r"\b(kim bekliyor|cevap bekleyen|bekleyen var mı|what.s waiting"
+     r"|unanswered|waiting on me)\b", "open"),
     (r"\b(alanlar|kanallar|spaces|channels)\b", "spaces"),
     (r"\b(ne yapabilirim|komutlar|what can i do|vocabulary|help)\b", "commands"),
     (r"\b(çalışma zamanları|runtimes|modeller|models)\b", "runtimes"),
