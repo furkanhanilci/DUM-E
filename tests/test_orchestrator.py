@@ -87,3 +87,30 @@ def test_every_step_goes_to_a_channel_the_operator_can_read():
     assert not unreadable, f"steps the operator cannot read: {sorted(unreadable)}"
     for name in Orchestrator.STEP_CHANNEL.values():
         assert name in SPACE_CHANNELS, f"{name} has no channel id"
+
+
+def test_a_deliverable_of_headings_is_not_a_deliverable(tmp_path):
+    """A reviewer spent a whole run reporting "mandatory deliverables exist but
+    are empty or incomplete". host_inventory.json was the two characters {}."""
+    from dume.control.orchestrator import _is_hollow
+
+    hollow = tmp_path / "report.md"
+    hollow.write_text("# Disk Capacity Report\n\n## Throughput\n\n## Headroom\n")
+    assert _is_hollow(hollow)
+
+    filled = tmp_path / "filled.md"
+    filled.write_text("# Disk Capacity Report\n\nThe root disk has 40 GiB.\n")
+    assert not _is_hollow(filled)
+
+    empty_json = tmp_path / "inventory.json"
+    empty_json.write_text("{}")
+    assert _is_hollow(empty_json)
+
+    real_json = tmp_path / "real.json"
+    real_json.write_text('{"gpus": 2}')
+    assert not _is_hollow(real_json)
+
+    # Malformed JSON is a different complaint, and the reviewer's to make.
+    broken = tmp_path / "broken.json"
+    broken.write_text("{not json")
+    assert not _is_hollow(broken)

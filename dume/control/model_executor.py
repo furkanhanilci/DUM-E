@@ -332,8 +332,11 @@ class ModelExecutor:
                "the failing test with write_file. When run_tests has shown the "
                "test not passing and then passing, write every mandatory "
                "deliverable listed above that does not exist yet — each one is "
-               "a file, at exactly the path given — and only then reply with "
-               "the single word DONE and nothing else."}]
+               "a file, at exactly the path given, and each must contain what "
+               "the packet asks it to contain. A heading with nothing under it "
+               "is not a deliverable, and an empty JSON object is not an "
+               "inventory. Only then reply with the single word DONE and "
+               "nothing else."}]
 
         def _fits(conversation: list[dict]) -> list[dict]:
             """Drop the oldest exchanges when the conversation outgrows the

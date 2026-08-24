@@ -4,6 +4,6 @@ exit=1
     "tool": "run_tests",
     "arguments": {},
     "outcome": "EXIT_1",
-    "detail": "ists at 0x707fd9771ea0> = <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'>.exists\nE        +      where <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'> = os.path\n\ntest_wp001.py:6: AssertionError\n=========================== short test summary info ============================\nFAILED test_wp001.py::test_mandatory_deliverables_exist - AssertionError: hos...\n1 failed in 0.02s\n"
+    "detail": "at 0x7d4569371ea0> = <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'>.exists\nE            +      where <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'> = os.path\n\ntest_wp001.py:16: AssertionError\n=========================== short test summary info ============================\nFAILED test_wp001.py::test_mandatory_deliverables_exist - AssertionError: Fil...\n1 failed in 0.02s\n"
   }
 ]

@@ -1,34 +1,26 @@
 {
   "verdict": "FAIL",
-  "reason": "The implementation does not meet the specification requirements.",
+  "reason": "Mandatory deliverables exist but are empty or incomplete.",
   "findings": [
     {
       "severity": "CRITICAL",
-      "summary": "The implementation does not include the required adversarial tests targeting known failure modes."
+      "summary": "host_inventory.json is empty."
     },
     {
       "severity": "CRITICAL",
-      "summary": "The implementation does not include the required upstream drift check."
+      "summary": "host_inventory.md contains only section headers without actual data."
+    },
+    {
+      "severity": "CRITICAL",
+      "summary": "disk_capacity_report.md contains only section headers without actual data."
+    },
+    {
+      "severity": "CRITICAL",
+      "summary": "deployment_profile_candidate.md contains only section headers without actual data."
     },
     {
       "severity": "HIGH",
-      "summary": "The implementation does not include the required evidence for each test case."
-    },
-    {
-      "severity": "HIGH",
-      "summary": "The implementation does not include the required rollback/disable evidence."
-    },
-    {
-      "severity": "MEDIUM",
-      "summary": "The implementation does not include the required environment manifest."
-    },
-    {
-      "severity": "MEDIUM",
-      "summary": "The implementation does not include the required verifier binding."
-    },
-    {
-      "severity": "LOW",
-      "summary": "The implementation does not include the required timestamp for each test case."
+      "summary": "test_wp001.py contains duplicate test functions."
     }
   ]
 }

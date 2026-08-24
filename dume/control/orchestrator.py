@@ -512,15 +512,25 @@ class Orchestrator:
         # arrived after the candidate was already committed.
         missing = [d for d in packet.deliverables
                    if not (Path(worktree.path) / d).is_file()]
-        if missing:
-            detail = ("the candidate does not contain "
-                      + ", ".join(missing)
-                      + " — each is a mandatory deliverable of the packet")
+        # A file of headings with nothing under them is not a deliverable, and
+        # a reviewer spent a run saying so: "mandatory deliverables exist but
+        # are empty or incomplete". host_inventory.json was the two characters
+        # `{}`. Emptiness is a fact about bytes, so the harness can say it.
+        hollow = [d for d in packet.deliverables
+                  if d not in missing and _is_hollow(Path(worktree.path) / d)]
+        if missing or hollow:
+            detail = "; ".join(filter(None, [
+                ("the candidate does not contain " + ", ".join(missing))
+                if missing else "",
+                (", ".join(hollow) + " exist but say nothing — a heading with "
+                 "nothing under it is not a deliverable") if hollow else "",
+            ]))
             step("deliverables", "FAILED", detail)
             self.store.add_finding(wp_id, "CRITICAL", detail, candidate=candidate)
             return self._fail(report, wp_id, "IMPLEMENTATION_FAILURE", actor, detail)
         step("deliverables", "OK",
-             f"all {len(packet.deliverables)} mandatory deliverable(s) present")
+             f"all {len(packet.deliverables)} mandatory deliverable(s) "
+             "present and not empty")
 
         # 7–9. The three questions, asked by three identities.
         stages = (("SPEC_REVIEW", "specification_compliance", "spec_reviewer"),
@@ -628,3 +638,34 @@ class Orchestrator:
         path = self.evidence_dir / report.wp_id / "run_report.json"
         json_dump(report.as_dict(), path)
         return path
+
+
+def _is_hollow(path: Path) -> bool:
+    """Whether a file says nothing, whatever it is shaped like.
+
+    Not a length threshold: a two-line answer can be complete and a page of
+    boilerplate can be empty. What is stripped is the scaffolding a model
+    produces when it means to fill something in later — markdown headings,
+    comment markers, list bullets with nothing after them — and JSON that
+    parses to an empty container.
+    """
+    try:
+        text = path.read_text(errors="replace")
+    except OSError:
+        return True
+    if path.suffix == ".json":
+        import json as _json
+        try:
+            return not _json.loads(text or "null")
+        except _json.JSONDecodeError:
+            # Malformed is a different complaint, and the reviewer's to make.
+            return False
+    body = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith(("#", "//", "<!--")):
+            continue
+        if stripped in ("-", "*", "|", "---"):
+            continue
+        body.append(stripped)
+    return not body
