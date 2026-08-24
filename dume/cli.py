@@ -568,6 +568,28 @@ def cmd_telegram(args) -> int:
     from .control import telegram as tg
     from .control.telegram import Config, TelegramBridge, TelegramError
 
+    if args.broadcast:
+        # Where the harness narrates. Written to the same file as the token but
+        # a separate decision: this chat is told things, it is not thereby
+        # authorised to command anything.
+        import json as _json
+        path = tg.SECRETS
+        data = _json.loads(path.read_text()) if path.is_file() else {}
+        data["broadcast"] = str(args.broadcast)
+        path.write_text(_json.dumps(data, indent=2))
+        path.chmod(0o600)
+        print(f"AETHRION will narrate to chat {args.broadcast}")
+        from .control.announce import Announcer
+        announcer = Announcer.from_config()
+        if announcer.say("AETHRION will narrate here.\n\n"
+                         "Narration only — nothing posted here moves anything."):
+            print("test message delivered")
+        else:
+            print(f"test message NOT delivered: "
+                  f"{announcer.faults[0] if announcer.faults else 'unknown'}")
+            return 1
+        return 0
+
     if args.token:
         path = tg.write_config(args.token)
         print(f"token written to {path} (mode 0600, on ext4 where the mode holds)")
@@ -798,6 +820,9 @@ def build_parser() -> argparse.ArgumentParser:
     tgp.add_argument("--max-class", default="CONTROL",
                      choices=["READ", "CONTROL", "HUMAN_DECISION",
                               "DANGEROUS_ACTION"])
+    tgp.add_argument("--broadcast", metavar="CHAT_ID",
+                     help="where AETHRION narrates; send /here in the chat to "
+                          "find its id")
     tgp.add_argument("--check", action="store_true",
                      help="verify the bot and the allowlist, then exit")
     tgp.set_defaults(func=cmd_telegram)

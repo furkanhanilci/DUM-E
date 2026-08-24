@@ -55,6 +55,15 @@ class Config:
     token: str
     allowed: dict[str, dict] = field(default_factory=dict)
     poll_timeout: int = 25
+    # Where the harness narrates. A run that only answers when asked makes the
+    # operator poll a machine that already knows when something happened; the
+    # one thing a phone is genuinely better at than a desktop is being told.
+    #
+    # Separate from `allowed` because they are different questions: who may
+    # drive this, and where it speaks. A broadcast chat is not thereby
+    # authorised to command anything — narration goes out, commands still come
+    # from a principal.
+    broadcast: str | None = None
 
     @classmethod
     def load(cls, path: Path | str | None = None) -> "Config":
@@ -68,7 +77,8 @@ class Config:
         if not data.get("token"):
             raise TelegramError(f"{path} has no token")
         return cls(token=data["token"], allowed=data.get("allowed") or {},
-                   poll_timeout=int(data.get("poll_timeout", 25)))
+                   poll_timeout=int(data.get("poll_timeout", 25)),
+                   broadcast=data.get("broadcast") or None)
 
     def principals(self) -> dict[str, Principal]:
         return {str(uid): Principal(
@@ -99,7 +109,8 @@ def write_config(token: str, path: Path | str | None = None) -> Path:
     with os.fdopen(fd, "w") as fh:
         json.dump({"token": token,
                    "allowed": existing.get("allowed", {}),
-                   "poll_timeout": existing.get("poll_timeout", 25)},
+                   "poll_timeout": existing.get("poll_timeout", 25),
+                   "broadcast": existing.get("broadcast")},
                   fh, indent=2)
     return path
 
@@ -224,6 +235,21 @@ class TelegramBridge:
             handled.append(self.handle(message))
         return handled
 
+    # Telegram's own front door. A bot that answers "/start" with a refusal
+    # teaches its first-time reader that it is broken; answering with what this
+    # place is costs one branch.
+    GREETING = (
+        "AETHRION\n\n"
+        "Five spaces, and DUM-E is one of them — the harness that builds the "
+        "rest, not the product.\n\n"
+        "  spaces      the spaces and their channels\n"
+        "  commands    everything you may do\n"
+        "  open        what nobody has answered\n\n"
+        "Messages here are messages. Nothing said in this chat constitutes a "
+        "review, a verification or an acceptance — those are records, and they "
+        "come from the gate."
+    )
+
     def handle(self, message: dict) -> dict:
         chat_id = (message.get("chat") or {}).get("id")
         sender = message.get("from") or {}
@@ -232,6 +258,19 @@ class TelegramBridge:
         actor_id = str(sender.get("id", ""))
         text = message.get("text") or ""
         forwarded = self.is_forwarded(message)
+
+        if text.strip().lower() in ("/start", "start", "/help", "help", "?"):
+            self.send(chat_id, self.GREETING)
+            return {"outcome": "GREETED", "actor": actor_id}
+
+        # Where this chat is, so the operator can make it the broadcast target
+        # without hunting for a numeric id in a settings screen.
+        if text.strip().lower() in ("/here", "here"):
+            self.send(chat_id,
+                      f"This chat is {chat_id}.\n\n"
+                      "To have AETHRION narrate here, run on the host:\n"
+                      f"  dume telegram --broadcast {chat_id}")
+            return {"outcome": "GREETED", "actor": actor_id}
 
         try:
             intent = self.gateway.translate(

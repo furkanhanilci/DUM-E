@@ -316,16 +316,59 @@ class IntentHandler:
         raise KeyError(
             f"{name!r} is not a channel. Try: " + ", ".join(sorted(self.CHANNELS)))
 
+    # What each space decides, in its own words. Carried here because a list of
+    # channel names tells a reader where to type and not what the place is for,
+    # and the distinction between spaces is an authority distinction rather
+    # than a filing one.
+    SPACE_PURPOSE = {
+        "DUM-E": "The commissioning harness that builds AETHRION. Decides "
+                 "merge eligibility, and that by a deterministic gate.",
+        "Research": "Sources and open questions. Decides nothing — the Source "
+                    "Registry owns bibliographic truth.",
+        "Review": "Claims, evidence and rebuttal. A verdict is a record bound "
+                  "to a candidate, not something said here.",
+        "Decisions": "What could not be settled below. Signed, then announced.",
+        "Operations": "Runtimes, quota, health. Availability is not "
+                      "eligibility.",
+    }
+
     def _spaces(self) -> str:
-        lines = []
+        """AETHRION's spaces. DUM-E is one of them, and the first, because it
+        is the harness that builds the rest — not because it is the product."""
+        lines = ["AETHRION", ""]
         for space, channels in self.SPACES.items():
-            lines.append(space)
-            for channel in channels:
-                lines.append(f"  #{channel}")
-        lines.append("")
-        lines.append("Also: read WP-001 for a package's own channel.")
-        lines.append("read #<channel> for the last messages.")
+            lines.append(f"▸ {space}")
+            lines.append(f"   {self.SPACE_PURPOSE.get(space, '')}")
+            lines.append("   " + "  ".join(f"#{c}" for c in channels))
+            lines.append("")
+        lines.append("read #<channel>          the last messages")
+        lines.append("read WP-001              a package's own channel")
+        lines.append("open                     what nobody has answered")
+        lines.append("say #<channel> <text>    post a STATUS")
+        lines.append("commands                 everything you may do")
         return "\n".join(lines)
+
+    def _commands(self, principal_class: str = "DANGEROUS_ACTION") -> str:
+        """The vocabulary, grouped by what a class of action can do.
+
+        Printed by class rather than alphabetically because the classes are the
+        point: they are what keeps "can act" and "can settle" separable.
+        """
+        from .command_gateway import ACTIONS, CLASS_ORDER
+        groups: dict[str, list] = {}
+        for action in ACTIONS.values():
+            if CLASS_ORDER[action.klass] <= CLASS_ORDER[principal_class]:
+                groups.setdefault(action.klass, []).append(action)
+        order = sorted(groups, key=lambda k: CLASS_ORDER[k])
+        lines = []
+        for klass in order:
+            lines.append(klass.replace("_", " ").title())
+            for action in sorted(groups[klass], key=lambda a: a.name):
+                params = " ".join(f"<{p}>" for p in action.parameters)
+                lines.append(f"  {action.name} {params}".rstrip())
+                lines.append(f"      {action.summary}")
+            lines.append("")
+        return "\n".join(lines).rstrip()
 
     @staticmethod
     def _render(events: list) -> list[str]:
@@ -452,6 +495,7 @@ class IntentHandler:
                 "roles": lambda: self._roles(),
                 "ask": lambda: self._ask(args["role"], args["question"]),
                 "spaces": lambda: self._spaces(),
+                "commands": lambda: self._commands(),
                 "read": lambda: self._read(args["channel"]),
                 "open": lambda: self._open(),
                 "say": lambda: self._say(args["channel"], args["text"], actor),

@@ -58,7 +58,8 @@ ACTIONS: dict[str, Action] = {a.name: a for a in (
                           "currently bound to."),
     Action("ask", READ, "Put a question to a role. The answer is that role's "
                         "recorded work, not a new opinion.", ("role", "question")),
-    Action("spaces", READ, "Every AETHRION space and its channels."),
+    Action("spaces", READ, "AETHRION: every space, what it decides, its channels."),
+    Action("commands", READ, "Everything you may do here, grouped by class."),
     Action("read", READ, "The last messages in one channel.", ("channel",)),
     Action("open", READ, "Messages nobody has answered, across every space."),
 

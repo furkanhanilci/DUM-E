@@ -16,6 +16,8 @@ event and must not produce the same response.
 """
 from __future__ import annotations
 
+import time
+
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -190,6 +192,13 @@ class Orchestrator:
         """
         report = RunReport(wp_id=wp_id, started_at=_now())
         self._buzz_faults: list[str] = []
+        # Narration to whoever is not sitting here. One-way, best-effort, and
+        # unable to fail the run: Telegram being unreachable is not an
+        # implementation failure, and treating it as one would stop work over
+        # a message nobody was waiting for.
+        from .announce import Announcer
+        phone = Announcer.from_config()
+        started = time.monotonic()
 
         icon = {"OK": "✅", "BLOCKED": "⏸️", "FAILED": "❌"}
 
@@ -198,6 +207,9 @@ class Orchestrator:
             # Every stage transition is narrated where a human can watch it and
             # address a role by name. Operational only.
             self._say(f"{icon.get(outcome, '•')} {name}: {detail[:600]}")
+            phone.step(wp_id, name, outcome, detail)
+            if outcome == "BLOCKED":
+                phone.needs_you(f"{wp_id} is blocked at {name}", detail)
 
         row = self.store.get(wp_id)
         if row["state"] != "READY":
@@ -398,8 +410,16 @@ class Orchestrator:
                  else ": " + "; ".join(f"{c.name} — {c.detail}" for c in gate.failed)))
 
         report.verdict = gate.verdict
+        phone.verdict(wp_id, gate.verdict, time.monotonic() - started)
         if self.channel:
             report.channel = self.channel
+        if phone.faults:
+            # Reported, not swallowed. "The phone said nothing" and "the phone
+            # was never told" look identical from the phone.
+            report.steps.append(Step(
+                "narration", "BLOCKED",
+                f"{len(phone.faults)} Telegram fault(s); the commissioning was "
+                f"unaffected: {phone.faults[0]}"))
         if self._buzz_faults:
             report.steps.append(Step(
                 "collaboration", "BLOCKED",
