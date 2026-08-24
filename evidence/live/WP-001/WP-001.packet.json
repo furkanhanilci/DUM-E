@@ -48,6 +48,12 @@
       "path": "/home/otonom/Desktop/FH/DUM-E/docs/adr/ADR-0008-two-local-families-not-two-copies.md",
       "sha256": "22448a098d3834d8c628809a2d06ecfeb4c9e328d4403b3cd77824a723124f5d",
       "title": "DUME-ADR-0008 — Two local model families, not two copies of one"
+    },
+    {
+      "id": "ADR-0009",
+      "path": "/home/otonom/Desktop/FH/DUM-E/docs/adr/ADR-0009-one-run-is-one-task-not-one-package.md",
+      "sha256": "b52b605a8783c4a9c2c1d475d7ddb30ea097e9265e3b4fb9ebdaa5c173fc8e97",
+      "title": "DUME-ADR-0009 — One live run is one task, not one work package"
     }
   ],
   "deliverables": [
@@ -110,7 +116,7 @@
     "DUM-E stays small enough not to require itself to commission itself."
   ],
   "owner": "Platform Engineer",
-  "packet_sha256": "e9da53962288807555fa2c13af182e1fd18d393165bf301c2cbb997ec197d90b",
+  "packet_sha256": "d0ae2a32d17c26a082b74c17a43e59c04b640e9cc396d1ee58a0458e50a1b02c",
   "protected_paths": [
     "AETHRION_SPEC/**",
     "evidence/**"

@@ -68,42 +68,40 @@ def build_clients(bindings: dict) -> dict:
 # One bounded executable slice per package, for characterisation runs. Naming
 # them here rather than inventing one per run keeps a live result comparable
 # with the last one.
+# One right-sized task per package, not the whole package. DUME-ADR-0009: a tool
+# call carries the whole file as one JSON string, so a unit larger than a single
+# response budget can never be written however large the budget is made. The
+# unit here is closer to "one function and its tests" than to "one deliverable".
+#
+# The *reviewer* still sees the whole frozen specification. Narrowing the build
+# is a scheduling decision; narrowing what the requirement is judged against
+# would be a different and much worse thing.
 FOCUS = {
-    # WP-001's five mandatory deliverables, stated as the executable thing that
-    # produces them. Earlier this said "a module with usable_bytes(...)", the
-    # spec reviewer refused it, and the reviewer was right: a bounded slice of a
-    # package is not the package, and none of the five deliverables existed.
-    #
-    # The answer was not to tell the reviewer to lower its bar. It was to build
-    # what the card actually asks for.
     "WP-001": (
-        "A module `host_inventory.py` that produces WP-001's five mandatory "
-        "deliverables, plus a test file for it.\n\n"
-        "`collect()` returns a dict with keys: os, cpu_memory, gpu, storage, "
-        "capacity_envelope, host_class.\n"
-        "`classify(envelope)` returns one of HIGH_THROUGHPUT_GPU, "
-        "SINGLE_GPU_CONSTRAINED, CPU_HEAVY, REMOTE_GPU_REQUIRED.\n"
-        "`usable_vram_bytes(total, overhead=0.12)` returns total minus the "
-        "runtime reserve, never below zero — total VRAM is not usable VRAM.\n"
-        "`write_deliverables(inventory, out_dir)` writes exactly these five "
-        "files and returns their paths: host_inventory.json, host_inventory.md, "
-        "gpu_probe.log, disk_capacity_report.md, deployment_profile_candidate.md."
-        "\n\nThe probes may return empty or absent values on a host without a "
-        "GPU; the deliverables must still be produced. Do not invent a default "
-        "capacity when a probe fails — record that it failed."),
+        "A module `capacity.py` with two functions, plus a test file for them.\n\n"
+        "`usable_vram_bytes(total, overhead=0.12)` — total minus the runtime "
+        "reserve, never below zero. Total VRAM is not usable VRAM: display and "
+        "driver overhead is real, and an envelope that flatters the host is "
+        "worse than none because it is trusted.\n\n"
+        "`classify(usable_bytes, gpu_count)` — returns one of "
+        "HIGH_THROUGHPUT_GPU, SINGLE_GPU_CONSTRAINED, CPU_HEAVY or "
+        "REMOTE_GPU_REQUIRED. Zero GPUs is never a GPU class.\n\n"
+        "This is one task of WP-001, covering the capacity envelope and host "
+        "classification parts of its scope. It is not the whole package."),
 
     "WP-040": (
         "A module `merge_gate.py` with `evaluate(checks)` taking a list of "
         "{'name': str, 'passed': bool} and returning {'verdict': "
-        "'MERGE_ELIGIBLE' or 'REFUSED', 'failed': [names]}. MERGE_ELIGIBLE only "
-        "when every check passed, and an empty list is REFUSED — nothing having "
-        "been checked is not the same as everything having passed."),
+        "'MERGE_ELIGIBLE' or 'REFUSED', 'failed': [names]}, plus a test file. "
+        "MERGE_ELIGIBLE only when every check passed, and an empty list is "
+        "REFUSED — nothing having been checked is not the same as everything "
+        "having passed."),
 
     "WP-042": (
         "A module `retry_policy.py` with `should_retry(failure_class, attempts, "
-        "limit=3)` returning {'retry': bool, 'reason': str}. RUNTIME_FAILURE may "
-        "retry the same candidate; IMPLEMENTATION_FAILURE only after a change; "
-        "ACCEPTANCE_CONTRADICTION never."),
+        "limit=3)` returning {'retry': bool, 'reason': str}, plus a test file. "
+        "RUNTIME_FAILURE may retry the same candidate; IMPLEMENTATION_FAILURE "
+        "only after a change; ACCEPTANCE_CONTRADICTION never."),
 }
 
 
@@ -170,9 +168,10 @@ def run(wp_id: str = "WP-001", *, keep: bool = False,
             "Real models, real worktree, real test runs, against a disposable "
             "target created and destroyed inside the run. No real target was "
             "touched."
-            + (" The build was narrowed to one executable slice of the package; "
-               "the packet's constraints and acceptance criteria were not. This "
-               "characterises the harness — it does not complete the package."
+            + (" This run commissioned ONE TASK of the package, not the "
+               "package (DUME-ADR-0009). The build was narrowed; the packet's "
+               "constraints and the specification the reviewer judges against "
+               "were not."
                if executor.focus else ""))
         if keep:
             result["kept_at"] = str(root)
