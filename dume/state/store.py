@@ -152,6 +152,25 @@ class Store:
         self.conn.execute("PRAGMA journal_mode = WAL")
         self.conn.executescript(SCHEMA)
         self.conn.commit()
+        self._check_lifecycle_version()
+
+    def _check_lifecycle_version(self) -> None:
+        """Refuse a store whose rows predate the current lifecycle.
+
+        A state that is no longer in the transition table cannot be moved, so a
+        silently carried-over row would sit in the report forever looking like
+        progress. Better to say the store is stale and require a re-seed than to
+        display a state the machine cannot act on.
+        """
+        rows = self.conn.execute(
+            "SELECT DISTINCT state FROM wp").fetchall()
+        unknown = sorted({r["state"] for r in rows} - STATES)
+        if unknown:
+            raise StateError(
+                f"{self.path} holds work packages in state(s) {', '.join(unknown)}, "
+                "which the current lifecycle does not define. This store predates "
+                "a lifecycle change; re-seed it rather than carrying rows the "
+                "machine cannot move.")
 
     def close(self) -> None:
         self.conn.close()
@@ -198,6 +217,21 @@ class Store:
             if row is None or row["state"] != "ACCEPTED":
                 unmet.append(dep)
         return unmet
+
+    def set_candidate(self, wp_id: str, candidate_revision: str) -> None:
+        """Record the candidate produced in the current state.
+
+        Separate from ``transition`` because producing a candidate is not a
+        change of state — the package is still EXECUTING — and inventing a
+        self-transition to carry the value would put a lie in the history.
+        """
+        if not candidate_revision:
+            raise StateError("a candidate revision cannot be empty")
+        self.get(wp_id)
+        with self.conn:
+            self.conn.execute(
+                "UPDATE wp SET candidate_revision=?, updated_at=? WHERE wp_id=?",
+                (candidate_revision, _now(), wp_id))
 
     # ---- evidence -------------------------------------------------------
 

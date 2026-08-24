@@ -1,0 +1,91 @@
+{
+  "schema": "dume.runtimes/1",
+  "note": "Status is UNKNOWN until probed and qualified_roles is empty until WP-051 measures the runtime in that role. UNKNOWN is never treated as AVAILABLE and an unqualified runtime is never eligible, so binding refuses until both are established. That refusal is the correct state, not a bug.",
+  "runtimes": [
+    {
+      "runtime_id": "qwen-local",
+      "provider": "local",
+      "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
+      "status": "UNKNOWN",
+      "reason": "no serving stack is installed; WP-005 has not chosen a profile",
+      "mode": "NORMAL",
+      "qualified_roles": [],
+      "family": "qwen",
+      "cost_tier": 1,
+      "local": true,
+      "notes": "Bulk implementation and routine work once qualified. Costs no external quota, and its failure does not depend on someone else's billing period."
+    },
+    {
+      "runtime_id": "claude-opus-5",
+      "provider": "anthropic",
+      "model": "claude-opus-5",
+      "status": "UNKNOWN",
+      "mode": "NORMAL",
+      "qualified_roles": [],
+      "family": "claude",
+      "cost_tier": 4,
+      "local": false,
+      "notes": "Premium engineering, architecture-sensitive work and hard root-cause debugging."
+    },
+    {
+      "runtime_id": "claude-fable-5",
+      "provider": "anthropic",
+      "model": "claude-fable-5",
+      "status": "UNKNOWN",
+      "mode": "NORMAL",
+      "qualified_roles": [],
+      "family": "claude",
+      "cost_tier": 5,
+      "local": false,
+      "notes": "Commissioning orchestrator. Reserve it from routine code — this is the runtime the operator has said may run out at any moment."
+    },
+    {
+      "runtime_id": "claude-sonnet-5",
+      "provider": "anthropic",
+      "model": "claude-sonnet-5",
+      "status": "UNKNOWN",
+      "mode": "NORMAL",
+      "qualified_roles": [],
+      "family": "claude",
+      "cost_tier": 2,
+      "local": false,
+      "notes": "Review and verification capacity within the Claude family — which means it is NOT independent of the other Claude runtimes."
+    },
+    {
+      "runtime_id": "codex-terra",
+      "provider": "openai",
+      "model": "gpt-5.6-terra",
+      "status": "UNKNOWN",
+      "mode": "NORMAL",
+      "qualified_roles": [],
+      "family": "gpt",
+      "cost_tier": 3,
+      "local": false,
+      "notes": "Cross-family implementation and review. The operator reports this quota has been exhausted before."
+    },
+    {
+      "runtime_id": "codex-sol",
+      "provider": "openai",
+      "model": "gpt-5.6-sol",
+      "status": "UNKNOWN",
+      "mode": "NORMAL",
+      "qualified_roles": [],
+      "family": "gpt",
+      "cost_tier": 4,
+      "local": false,
+      "notes": "Cross-family escalation for architecture and difficult review."
+    },
+    {
+      "runtime_id": "hermes",
+      "provider": "nousresearch",
+      "model": "hermes-agent (custom OpenAI-compatible endpoint)",
+      "status": "UNKNOWN",
+      "mode": "NORMAL",
+      "qualified_roles": [],
+      "family": "hermes",
+      "cost_tier": 1,
+      "local": true,
+      "notes": "Harness candidate that can drive the local Qwen endpoint. Decided by WP-016."
+    }
+  ]
+}

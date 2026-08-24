@@ -11,6 +11,12 @@ import sys
 from pathlib import Path
 
 from . import config, inventory, scenarios, secrets, toolchain, upstream
+from .cohort.compiler import compile_cohort
+from .control import pilot as pilot_module
+from .packets.wp_packet_builder import PacketBuilder
+from .review import discipline as discipline_module
+from .runtimes.probe import probe as probe_runtimes
+from .runtimes.profiles import NoEligibleRuntime, RuntimeRegistry
 from .catalogue import seed
 from .state import Store, StateError, json_dump
 from .workspace import Boundary, mount_is_read_only, probe_write
@@ -177,6 +183,127 @@ def cmd_scenarios(args) -> int:
     return 0 if report["verdict"] == "PASS" else 1
 
 
+def cmd_packet(args) -> int:
+    store = _store()
+    states = {r["wp_id"]: dict(r) for r in store.all_wps()}
+    store.close()
+    builder = PacketBuilder(spec_revision=args.spec_revision)
+    packet = builder.build(args.wp, dependency_states=states)
+    out = builder.write(packet, EVIDENCE / args.wp)
+    print(f"{packet.wp_id}  {packet.title}")
+    print(f"  workstream      {packet.workstream}  wave {packet.wave}")
+    print(f"  owner           {packet.owner}")
+    print(f"  verifier role   {packet.verifier_role}")
+    print(f"  frozen sections {', '.join(s.name for s in packet.sections)}")
+    print(f"  deliverables    {len(packet.deliverables)}")
+    print(f"  dependencies    " + (", ".join(
+        f"{d['wp_id']}({d['state']})" for d in packet.dependencies) or "none"))
+    print(f"  scenarios       " + (", ".join(
+        s["scenario"] for s in packet.acceptance_scenarios) or "none yet"))
+    print(f"  schemas/ADRs    {len(packet.schemas)}/{len(packet.adrs)}")
+    print(f"  forbidden       {len(packet.forbidden)} actions")
+    print(f"  non-waivable    {len(packet.non_waivable_rules)} rules")
+    print(f"  digest          {packet.packet_sha256}")
+    print(f"  written         {out}")
+    _emit(packet.as_dict(include_text=False), args.json)
+    return 0
+
+
+def cmd_cohort(args) -> int:
+    store = _store()
+    states = {r["wp_id"]: dict(r) for r in store.all_wps()}
+    store.close()
+    packet = PacketBuilder().build(args.wp, dependency_states=states)
+    cohort = compile_cohort(packet)
+    print(f"{cohort.wp_id}  assurance {cohort.assurance_level}")
+    print("  signals: " + ", ".join(k for k, v in cohort.signals.items()
+                                    if v is True) or "  signals: none")
+    for slot in cohort.roles:
+        extra = f" — {slot.task}" if slot.task else ""
+        print(f"  {slot.role_id:<28}{extra}")
+        for requirement in slot.independence_requirements:
+            print(f"      {requirement}")
+    if cohort.specialists:
+        print("  specialists:")
+        for spec in cohort.specialists:
+            print(f"      {spec['specialist']:<14} {spec['trigger']}")
+    print(f"  embargo: {cohort.context_projection['embargo']}")
+    _emit(cohort.as_dict(), args.json)
+    return 0
+
+
+def cmd_runtime(args) -> int:
+    registry = RuntimeRegistry.load()
+    if args.probe:
+        result = probe_runtimes(registry)
+        registry.save()
+        print(f"probed {len(result['results'])} runtime(s)")
+    for row in registry.table():
+        print(f"  {row['icon']} {row['runtime']:<18} {row['status']:<17} "
+              f"{row['mode']:<9} {row['model'][:34]}")
+        if row["reason"]:
+            print(f"      {row['reason'][:100]}")
+    usable = [r for r in registry.runtimes.values() if r.usable()]
+    qualified = [r for r in registry.runtimes.values() if r.qualified_roles]
+    print(f"\nusable now: {len(usable)}   qualified for any role: {len(qualified)}")
+    if args.bind:
+        try:
+            binding = registry.bind(args.bind)
+            print(f"would bind {args.bind} → {binding.runtime_id}")
+        except NoEligibleRuntime as exc:
+            print(f"\nBLOCKED_RUNTIME\n{exc}")
+            return 1
+    _emit({"runtimes": registry.table()}, args.json)
+    return 0
+
+
+def cmd_pilot(args) -> int:
+    out = EVIDENCE / "synthetic_pilot.json"
+    report = pilot_module.run_all(out)
+    for case in report["results"]:
+        mark = "ok      " if case["matched"] else "MISMATCH"
+        print(f"  {mark} {case['case']:<26} expected {case['expected']:<16} "
+              f"got {case['verdict']}")
+        if args.verbose:
+            for step in case["steps"]:
+                print(f"           {step['name']:<26} {step['outcome']:<8} "
+                      f"{step['detail'][:88]}")
+    print(f"\n{report['matched']}/{report['cases']} cases matched — "
+          f"{report['verdict']}")
+    print(report["note"])
+    print(f"recorded: {out}")
+    _emit(report, args.json)
+    return 0 if report["verdict"] == "PASS" else 1
+
+
+def cmd_discipline(args) -> int:
+    expected = None
+    lock = REPO_ROOT / "config" / "upstream.lock.json"
+    if lock.is_file():
+        data = json.loads(lock.read_text())
+        expected = next((u["pinned_revision"] for u in data["upstreams"]
+                         if u["name"] == "superpowers"), None)
+    report = discipline_module.assess(
+        transcript=args.transcript, repo=args.repo or str(REPO_ROOT),
+        expected_revision=expected, base=args.base, head=args.head)
+    print(f"superpowers   installed {report.installed_revision or '—'}")
+    print(f"              expected  {report.expected_revision or '—'}")
+    print(f"              enabled   {report.enabled}")
+    print(f"              bootstrap {report.bootstrap_observed}")
+    if report.skills_invoked:
+        print(f"  skills invoked: {', '.join(report.skills_invoked)}")
+    for signal in report.signals:
+        mark = "yes" if signal.present else "no "
+        print(f"  {mark} [{signal.kind:<11}] {signal.stage:<20} {signal.detail[:70]}")
+    print(f"\nverdict: {report.verdict()}")
+    for gap in report.gaps:
+        print(f"  gap: {gap}")
+    out = EVIDENCE / "discipline_report.json"
+    print(f"recorded: {out}  sha256={json_dump(report.as_dict(), out)}")
+    _emit(report.as_dict(), args.json)
+    return 0
+
+
 def cmd_seed(args) -> int:
     store = _store()
     summary = seed(store)
@@ -278,6 +405,31 @@ def build_parser() -> argparse.ArgumentParser:
     t.set_defaults(func=cmd_toolchain)
 
     sub.add_parser("upstream", help="check every pin against upstream").set_defaults(func=cmd_upstream)
+
+    pk = sub.add_parser("packet", help="build a deterministic work-package packet")
+    pk.add_argument("wp")
+    pk.add_argument("--spec-revision", default="pack")
+    pk.set_defaults(func=cmd_packet)
+
+    ch = sub.add_parser("cohort", help="compile the cohort a package needs")
+    ch.add_argument("wp")
+    ch.set_defaults(func=cmd_cohort)
+
+    rt = sub.add_parser("runtime", help="runtime status, probing and binding")
+    rt.add_argument("--probe", action="store_true", help="measure what can run here")
+    rt.add_argument("--bind", metavar="ROLE", help="try to bind a role, or explain why not")
+    rt.set_defaults(func=cmd_runtime)
+
+    pl = sub.add_parser("pilot", help="run the synthetic end-to-end pilot")
+    pl.add_argument("-v", "--verbose", action="store_true")
+    pl.set_defaults(func=cmd_pilot)
+
+    dc = sub.add_parser("discipline", help="prove the engineering discipline was applied")
+    dc.add_argument("--transcript", help="a session transcript JSONL to read")
+    dc.add_argument("--repo", help="repository to inspect for artefacts")
+    dc.add_argument("--base")
+    dc.add_argument("--head")
+    dc.set_defaults(func=cmd_discipline)
 
     sc = sub.add_parser("scenarios", help="run the adversarial acceptance scenarios")
     sc.add_argument("-v", "--verbose", action="store_true", help="show every step")

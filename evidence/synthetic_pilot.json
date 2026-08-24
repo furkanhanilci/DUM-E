@@ -1,0 +1,692 @@
+{
+  "cases": 5,
+  "matched": 5,
+  "note": "Every case ran against a disposable target repository created and destroyed inside the run. No real target was touched.",
+  "results": [
+    {
+      "bindings": {
+        "architect": {
+          "agent_id": "WP-001/architect",
+          "bound_at": "2026-08-23T23:57:26+00:00",
+          "family": "synthetic-b",
+          "model": "deterministic-cross",
+          "reason": "cheapest qualified runtime for architect",
+          "role_id": "architect",
+          "runtime_id": "synthetic-cross"
+        },
+        "code_reviewer": {
+          "agent_id": "WP-001/code_reviewer",
+          "bound_at": "2026-08-23T23:57:26+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for code_reviewer; identity must differ from implementer, spec_reviewer, family-independent of implementer",
+          "role_id": "code_reviewer",
+          "runtime_id": "synthetic-local"
+        },
+        "commissioning_orchestrator": {
+          "agent_id": "WP-001/commissioning_orchestrator",
+          "bound_at": "2026-08-23T23:57:26+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for commissioning_orchestrator",
+          "role_id": "commissioning_orchestrator",
+          "runtime_id": "synthetic-local"
+        },
+        "implementer": {
+          "agent_id": "WP-001/implementer",
+          "bound_at": "2026-08-23T23:57:26+00:00",
+          "family": "synthetic-c",
+          "model": "deterministic-third",
+          "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+          "role_id": "implementer",
+          "runtime_id": "synthetic-third"
+        },
+        "implementer#2": {
+          "agent_id": "WP-001/implementer#2",
+          "bound_at": "2026-08-23T23:57:26+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+          "role_id": "implementer",
+          "runtime_id": "synthetic-local"
+        },
+        "spec_reviewer": {
+          "agent_id": "WP-001/spec_reviewer",
+          "bound_at": "2026-08-23T23:57:26+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for spec_reviewer; identity must differ from implementer, family-independent of implementer",
+          "role_id": "spec_reviewer",
+          "runtime_id": "synthetic-local"
+        },
+        "verifier": {
+          "agent_id": "WP-001/verifier",
+          "bound_at": "2026-08-23T23:57:26+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for verifier; identity must differ from implementer, spec_reviewer, code_reviewer, family-independent of implementer",
+          "role_id": "verifier",
+          "runtime_id": "synthetic-local"
+        }
+      },
+      "case": "happy_path",
+      "cohort_assurance": "BASELINE",
+      "expected": "MERGE_ELIGIBLE",
+      "final_state": "ACCEPTANCE_READY",
+      "gate": {
+        "candidate_revision": "726f2d2f34938eab8144e26bb22f7f6e905440e9",
+        "checks": [
+          {
+            "detail": "state records 726f2d2f34938eab8144e26bb22f7f6e905440e9, gate was asked about 726f2d2f34938eab8144e26bb22f7f6e905440e9",
+            "name": "candidate_unchanged",
+            "passed": true,
+            "question": "Is this the exact candidate that was reviewed?"
+          },
+          {
+            "detail": "working tree clean",
+            "name": "worktree_clean",
+            "passed": true,
+            "question": "Is every change committed into the candidate?"
+          },
+          {
+            "detail": "1 PASS record(s), 1 from an identity other than the producer WP-001/implementer",
+            "name": "specification_compliance_passed",
+            "passed": true,
+            "question": "Was the requirement met?"
+          },
+          {
+            "detail": "1 PASS record(s), 1 from an identity other than the producer WP-001/implementer",
+            "name": "code_quality_passed",
+            "passed": true,
+            "question": "Is the implementation good?"
+          },
+          {
+            "detail": "1 PASS record(s), 1 from an identity other than the producer WP-001/implementer",
+            "name": "verification_passed",
+            "passed": true,
+            "question": "Does it actually work?"
+          },
+          {
+            "detail": "verifier WP-001/verifier, distinct from both reviewers",
+            "name": "verification_independent",
+            "passed": true,
+            "question": "Did the verifier avoid checking its own earlier conclusion?"
+          },
+          {
+            "detail": "packet digest 799ea5556c18 vs recorded 799ea5556c18",
+            "name": "packet_unchanged",
+            "passed": true,
+            "question": "Was the work done against the frozen packet?"
+          },
+          {
+            "detail": "4 file(s) changed, none protected",
+            "name": "protected_paths_untouched",
+            "passed": true,
+            "question": "Did the candidate stay out of the paths it may not touch?"
+          },
+          {
+            "detail": "no frozen digests were declared for this package",
+            "name": "frozen_acceptance_unchanged",
+            "passed": true,
+            "question": "Is the frozen acceptance byte-identical?"
+          },
+          {
+            "detail": "2 artefact(s) present and non-empty",
+            "name": "required_artefacts_present",
+            "passed": true,
+            "question": "Does every mandatory artefact exist and contain something?"
+          },
+          {
+            "detail": "no open Critical/High finding",
+            "name": "no_blocking_findings",
+            "passed": true,
+            "question": "Is anything Critical or High still open?"
+          }
+        ],
+        "evaluated_at": "2026-08-23T23:57:27+00:00",
+        "failed_checks": [],
+        "schema": "dume.merge_eligibility/1",
+        "verdict": "MERGE_ELIGIBLE",
+        "wp_id": "WP-001"
+      },
+      "injected": "none",
+      "matched": true,
+      "steps": [
+        {
+          "at": "2026-08-23T23:57:26+00:00",
+          "detail": "package is READY and dependencies are ACCEPTED",
+          "name": "precondition",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:26+00:00",
+          "detail": "3 frozen sections, 0 dependencies, 5 deliverables, digest 799ea5556c18",
+          "name": "packet",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:26+00:00",
+          "detail": "BASELINE assurance, roles: commissioning_orchestrator, architect, implementer, implementer, spec_reviewer, code_reviewer, verifier; specialists: security, data, runtime",
+          "name": "cohort",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:26+00:00",
+          "detail": "commissioning_orchestrator→synthetic-local(synthetic-a); architect→synthetic-cross(synthetic-b); implementer→synthetic-third(synthetic-c); implementer#2→synthetic-local(synthetic-a); spec_reviewer→synthetic-local(synthetic-a); code_reviewer→synthetic-local(synthetic-a); verifier→synthetic-local(synthetic-a)",
+          "name": "runtime_binding",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:26+00:00",
+          "detail": "5 deliverable(s), BASELINE assurance, 7 roles",
+          "name": "plan",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:26+00:00",
+          "detail": "dume/WP-001/synthetic-799ea555 off 9d19df1705ed",
+          "name": "worktree",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:26+00:00",
+          "detail": "candidate 726f2d2f3493, RED→GREEN evidence: RED exit=1, GREEN exit=0",
+          "name": "implement",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:26+00:00",
+          "detail": "4 file(s) changed, none protected",
+          "name": "protected_paths",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:26+00:00",
+          "detail": "WP-001/spec_reviewer: PASS — 5 deliverable(s) checked against the frozen card",
+          "name": "specification_compliance",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:26+00:00",
+          "detail": "WP-001/code_reviewer: PASS — compiles=True, documented=True",
+          "name": "code_quality",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "WP-001/verifier: PASS — fresh checkout of 726f2d2f3493, pytest exit=0",
+          "name": "verification",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "candidate 726f2d2f3493",
+          "name": "tech_complete",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "MERGE_ELIGIBLE",
+          "name": "machine_gate",
+          "outcome": "OK"
+        }
+      ],
+      "verdict": "MERGE_ELIGIBLE",
+      "wp_id": "WP-001"
+    },
+    {
+      "bindings": {
+        "architect": {
+          "agent_id": "WP-001/architect",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-b",
+          "model": "deterministic-cross",
+          "reason": "cheapest qualified runtime for architect",
+          "role_id": "architect",
+          "runtime_id": "synthetic-cross"
+        },
+        "code_reviewer": {
+          "agent_id": "WP-001/code_reviewer",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for code_reviewer; identity must differ from implementer, spec_reviewer, family-independent of implementer",
+          "role_id": "code_reviewer",
+          "runtime_id": "synthetic-local"
+        },
+        "commissioning_orchestrator": {
+          "agent_id": "WP-001/commissioning_orchestrator",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for commissioning_orchestrator",
+          "role_id": "commissioning_orchestrator",
+          "runtime_id": "synthetic-local"
+        },
+        "implementer": {
+          "agent_id": "WP-001/implementer",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-c",
+          "model": "deterministic-third",
+          "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+          "role_id": "implementer",
+          "runtime_id": "synthetic-third"
+        },
+        "implementer#2": {
+          "agent_id": "WP-001/implementer#2",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+          "role_id": "implementer",
+          "runtime_id": "synthetic-local"
+        },
+        "spec_reviewer": {
+          "agent_id": "WP-001/spec_reviewer",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for spec_reviewer; identity must differ from implementer, family-independent of implementer",
+          "role_id": "spec_reviewer",
+          "runtime_id": "synthetic-local"
+        },
+        "verifier": {
+          "agent_id": "WP-001/verifier",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for verifier; identity must differ from implementer, spec_reviewer, code_reviewer, family-independent of implementer",
+          "role_id": "verifier",
+          "runtime_id": "synthetic-local"
+        }
+      },
+      "case": "implementation_wrong",
+      "cohort_assurance": "BASELINE",
+      "expected": "FAILED",
+      "final_state": "RETRY",
+      "gate": null,
+      "injected": "implementation",
+      "matched": true,
+      "steps": [
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "package is READY and dependencies are ACCEPTED",
+          "name": "precondition",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "3 frozen sections, 0 dependencies, 5 deliverables, digest 799ea5556c18",
+          "name": "packet",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "BASELINE assurance, roles: commissioning_orchestrator, architect, implementer, implementer, spec_reviewer, code_reviewer, verifier; specialists: security, data, runtime",
+          "name": "cohort",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "commissioning_orchestrator→synthetic-local(synthetic-a); architect→synthetic-cross(synthetic-b); implementer→synthetic-third(synthetic-c); implementer#2→synthetic-local(synthetic-a); spec_reviewer→synthetic-local(synthetic-a); code_reviewer→synthetic-local(synthetic-a); verifier→synthetic-local(synthetic-a)",
+          "name": "runtime_binding",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "5 deliverable(s), BASELINE assurance, 7 roles",
+          "name": "plan",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "dume/WP-001/synthetic-799ea555 off 8a4d543eeb73",
+          "name": "worktree",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "candidate 5f412ece4ffd, RED→GREEN evidence: RED exit=1, GREEN exit=1",
+          "name": "implement",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "4 file(s) changed, none protected",
+          "name": "protected_paths",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "WP-001/spec_reviewer: PASS — 5 deliverable(s) checked against the frozen card",
+          "name": "specification_compliance",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "WP-001/code_reviewer: FAIL — compiles=True, documented=False",
+          "name": "code_quality",
+          "outcome": "FAILED"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "IMPLEMENTATION_FAILURE — candidate implicated: True; owner: implementer; IMPLEMENTATION_FAILURE: retry 1 of 3; the candidate must change first",
+          "name": "failure_classification",
+          "outcome": "OK"
+        }
+      ],
+      "verdict": "FAILED",
+      "wp_id": "WP-001"
+    },
+    {
+      "bindings": {
+        "architect": {
+          "agent_id": "WP-001/architect",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-b",
+          "model": "deterministic-cross",
+          "reason": "cheapest qualified runtime for architect",
+          "role_id": "architect",
+          "runtime_id": "synthetic-cross"
+        },
+        "code_reviewer": {
+          "agent_id": "WP-001/code_reviewer",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for code_reviewer; identity must differ from implementer, spec_reviewer, family-independent of implementer",
+          "role_id": "code_reviewer",
+          "runtime_id": "synthetic-local"
+        },
+        "commissioning_orchestrator": {
+          "agent_id": "WP-001/commissioning_orchestrator",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for commissioning_orchestrator",
+          "role_id": "commissioning_orchestrator",
+          "runtime_id": "synthetic-local"
+        },
+        "implementer": {
+          "agent_id": "WP-001/implementer",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-c",
+          "model": "deterministic-third",
+          "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+          "role_id": "implementer",
+          "runtime_id": "synthetic-third"
+        },
+        "implementer#2": {
+          "agent_id": "WP-001/implementer#2",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+          "role_id": "implementer",
+          "runtime_id": "synthetic-local"
+        },
+        "spec_reviewer": {
+          "agent_id": "WP-001/spec_reviewer",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for spec_reviewer; identity must differ from implementer, family-independent of implementer",
+          "role_id": "spec_reviewer",
+          "runtime_id": "synthetic-local"
+        },
+        "verifier": {
+          "agent_id": "WP-001/verifier",
+          "bound_at": "2026-08-23T23:57:27+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for verifier; identity must differ from implementer, spec_reviewer, code_reviewer, family-independent of implementer",
+          "role_id": "verifier",
+          "runtime_id": "synthetic-local"
+        }
+      },
+      "case": "spec_review_fails",
+      "cohort_assurance": "BASELINE",
+      "expected": "FAILED",
+      "final_state": "RETRY",
+      "gate": null,
+      "injected": "spec_review",
+      "matched": true,
+      "steps": [
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "package is READY and dependencies are ACCEPTED",
+          "name": "precondition",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "3 frozen sections, 0 dependencies, 5 deliverables, digest 799ea5556c18",
+          "name": "packet",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "BASELINE assurance, roles: commissioning_orchestrator, architect, implementer, implementer, spec_reviewer, code_reviewer, verifier; specialists: security, data, runtime",
+          "name": "cohort",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "commissioning_orchestrator→synthetic-local(synthetic-a); architect→synthetic-cross(synthetic-b); implementer→synthetic-third(synthetic-c); implementer#2→synthetic-local(synthetic-a); spec_reviewer→synthetic-local(synthetic-a); code_reviewer→synthetic-local(synthetic-a); verifier→synthetic-local(synthetic-a)",
+          "name": "runtime_binding",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:27+00:00",
+          "detail": "5 deliverable(s), BASELINE assurance, 7 roles",
+          "name": "plan",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:28+00:00",
+          "detail": "dume/WP-001/synthetic-799ea555 off 8a4d543eeb73",
+          "name": "worktree",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:28+00:00",
+          "detail": "candidate 6f117fc09560, RED→GREEN evidence: RED exit=1, GREEN exit=0",
+          "name": "implement",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:28+00:00",
+          "detail": "4 file(s) changed, none protected",
+          "name": "protected_paths",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:28+00:00",
+          "detail": "WP-001/spec_reviewer: FAIL — the candidate implements a different requirement",
+          "name": "specification_compliance",
+          "outcome": "FAILED"
+        },
+        {
+          "at": "2026-08-23T23:57:28+00:00",
+          "detail": "SPEC_MISINTERPRETATION — candidate implicated: True; owner: architect; SPEC_MISINTERPRETATION: retry 1 of 3; the candidate must change first",
+          "name": "failure_classification",
+          "outcome": "OK"
+        }
+      ],
+      "verdict": "FAILED",
+      "wp_id": "WP-001"
+    },
+    {
+      "bindings": {
+        "architect": {
+          "agent_id": "WP-001/architect",
+          "bound_at": "2026-08-23T23:57:28+00:00",
+          "family": "synthetic-b",
+          "model": "deterministic-cross",
+          "reason": "cheapest qualified runtime for architect",
+          "role_id": "architect",
+          "runtime_id": "synthetic-cross"
+        },
+        "code_reviewer": {
+          "agent_id": "WP-001/code_reviewer",
+          "bound_at": "2026-08-23T23:57:28+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for code_reviewer; identity must differ from implementer, spec_reviewer, family-independent of implementer",
+          "role_id": "code_reviewer",
+          "runtime_id": "synthetic-local"
+        },
+        "commissioning_orchestrator": {
+          "agent_id": "WP-001/commissioning_orchestrator",
+          "bound_at": "2026-08-23T23:57:28+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for commissioning_orchestrator",
+          "role_id": "commissioning_orchestrator",
+          "runtime_id": "synthetic-local"
+        },
+        "implementer": {
+          "agent_id": "WP-001/implementer",
+          "bound_at": "2026-08-23T23:57:28+00:00",
+          "family": "synthetic-c",
+          "model": "deterministic-third",
+          "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+          "role_id": "implementer",
+          "runtime_id": "synthetic-third"
+        },
+        "implementer#2": {
+          "agent_id": "WP-001/implementer#2",
+          "bound_at": "2026-08-23T23:57:28+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+          "role_id": "implementer",
+          "runtime_id": "synthetic-local"
+        },
+        "spec_reviewer": {
+          "agent_id": "WP-001/spec_reviewer",
+          "bound_at": "2026-08-23T23:57:28+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for spec_reviewer; identity must differ from implementer, family-independent of implementer",
+          "role_id": "spec_reviewer",
+          "runtime_id": "synthetic-local"
+        },
+        "verifier": {
+          "agent_id": "WP-001/verifier",
+          "bound_at": "2026-08-23T23:57:28+00:00",
+          "family": "synthetic-a",
+          "model": "deterministic-local",
+          "reason": "cheapest qualified runtime for verifier; identity must differ from implementer, spec_reviewer, code_reviewer, family-independent of implementer",
+          "role_id": "verifier",
+          "runtime_id": "synthetic-local"
+        }
+      },
+      "case": "frozen_acceptance_edited",
+      "cohort_assurance": "BASELINE",
+      "expected": "FAILED",
+      "final_state": "RETRY",
+      "gate": null,
+      "injected": "protected_path",
+      "matched": true,
+      "steps": [
+        {
+          "at": "2026-08-23T23:57:28+00:00",
+          "detail": "package is READY and dependencies are ACCEPTED",
+          "name": "precondition",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:28+00:00",
+          "detail": "3 frozen sections, 0 dependencies, 5 deliverables, digest 799ea5556c18",
+          "name": "packet",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:28+00:00",
+          "detail": "BASELINE assurance, roles: commissioning_orchestrator, architect, implementer, implementer, spec_reviewer, code_reviewer, verifier; specialists: security, data, runtime",
+          "name": "cohort",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:28+00:00",
+          "detail": "commissioning_orchestrator→synthetic-local(synthetic-a); architect→synthetic-cross(synthetic-b); implementer→synthetic-third(synthetic-c); implementer#2→synthetic-local(synthetic-a); spec_reviewer→synthetic-local(synthetic-a); code_reviewer→synthetic-local(synthetic-a); verifier→synthetic-local(synthetic-a)",
+          "name": "runtime_binding",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:28+00:00",
+          "detail": "5 deliverable(s), BASELINE assurance, 7 roles",
+          "name": "plan",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:28+00:00",
+          "detail": "dume/WP-001/synthetic-799ea555 off e5b26bc6a2b7",
+          "name": "worktree",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:29+00:00",
+          "detail": "candidate b75ea7eb519a, RED→GREEN evidence: RED exit=1, GREEN exit=0",
+          "name": "implement",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:29+00:00",
+          "detail": "WP-001: candidate b75ea7eb519a modified protected path(s): acceptance/frozen.md (matched acceptance/**)",
+          "name": "protected_paths",
+          "outcome": "FAILED"
+        },
+        {
+          "at": "2026-08-23T23:57:29+00:00",
+          "detail": "IMPLEMENTATION_FAILURE — candidate implicated: True; owner: implementer; IMPLEMENTATION_FAILURE: retry 1 of 3; the candidate must change first",
+          "name": "failure_classification",
+          "outcome": "OK"
+        }
+      ],
+      "verdict": "FAILED",
+      "wp_id": "WP-001"
+    },
+    {
+      "bindings": {},
+      "case": "no_eligible_runtime",
+      "cohort_assurance": "BASELINE",
+      "expected": "BLOCKED_RUNTIME",
+      "final_state": "BLOCKED",
+      "gate": null,
+      "injected": "none",
+      "matched": true,
+      "steps": [
+        {
+          "at": "2026-08-23T23:57:29+00:00",
+          "detail": "package is READY and dependencies are ACCEPTED",
+          "name": "precondition",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:29+00:00",
+          "detail": "3 frozen sections, 0 dependencies, 5 deliverables, digest 799ea5556c18",
+          "name": "packet",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:29+00:00",
+          "detail": "BASELINE assurance, roles: commissioning_orchestrator, architect, implementer, implementer, spec_reviewer, code_reviewer, verifier; specialists: security, data, runtime",
+          "name": "cohort",
+          "outcome": "OK"
+        },
+        {
+          "at": "2026-08-23T23:57:29+00:00",
+          "detail": "WP-001: no eligible runtime for role 'commissioning_orchestrator'\n  synthetic-local: QUOTA_EXHAUSTED (pilot fault injection)\n  synthetic-cross: QUOTA_EXHAUSTED (pilot fault injection)\n  synthetic-third: QUOTA_EXHAUSTED (pilot fault injection)\nassurance does not shrink because a runtime is missing; the package waits",
+          "name": "runtime_binding",
+          "outcome": "BLOCKED"
+        }
+      ],
+      "verdict": "BLOCKED_RUNTIME",
+      "wp_id": "WP-001"
+    }
+  ],
+  "schema": "dume.synthetic_pilot/1",
+  "verdict": "PASS"
+}
