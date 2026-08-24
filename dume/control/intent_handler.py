@@ -199,9 +199,23 @@ class IntentHandler:
         return "Was not paused."
 
     def _retry(self, wp: str, actor: str) -> str:
+        """Bring a failed package back to where a run can pick it up.
+
+        The harness moves a retryable failure to RETRY on its own, so a package
+        can already be there when a person asks to retry it. This assumed
+        FAILED and tried RETRY → RETRY, which the lifecycle refuses — and the
+        package then sat at RETRY, which no run starts from. The same dead end
+        as before, one state along.
+        """
+        state = self.store.get(wp)["state"]
+        if state == "PLANNED":
+            return f"{wp} is already at PLANNED; a run can start from there."
         try:
-            self.store.transition(wp, "RETRY", actor=actor, reason="human retry")
-            self.store.transition(wp, "PLANNED", actor=actor, reason="human retry")
+            if state != "RETRY":
+                self.store.transition(wp, "RETRY", actor=actor,
+                                      reason="human retry")
+            self.store.transition(wp, "PLANNED", actor=actor,
+                                  reason="human retry")
         except StateError as exc:
             return f"refused: {exc}"
         return f"{wp} re-entered at PLANNED. A correction needs a plan, not a rerun."

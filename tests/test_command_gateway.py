@@ -187,3 +187,21 @@ def test_a_challenge_must_name_something_a_parser_did_not_invent():
     invented = ["no", "subject", "", "the", "it", "this one"]
     for reference in invented:
         assert not IntentHandler.REFERENCE.match(reference), reference
+
+
+def test_retry_works_from_where_the_harness_leaves_a_failure(tmp_path):
+    """The harness moves a retryable failure to RETRY by itself, so a package
+    can already be there when a person asks to retry it.
+
+    `_retry` assumed FAILED and attempted RETRY → RETRY, which the lifecycle
+    refuses. The package then sat at RETRY, which no run starts from — the same
+    dead end as requiring READY, one state along.
+    """
+    import inspect
+
+    from dume.control.intent_handler import IntentHandler
+
+    source = inspect.getsource(IntentHandler._retry)
+    assert 'state != "RETRY"' in source, (
+        "retry must not re-enter a state the package is already in")
+    assert '"PLANNED"' in source, "retry must leave the package where a run starts"
