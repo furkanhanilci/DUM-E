@@ -76,9 +76,11 @@ ROLE_CARDS = {
         "test-first discipline.\n\n"
         "The order is not negotiable:\n"
         "1. Write a test that captures the required behaviour.\n"
-        "2. Call run_tests. It MUST fail. A test that passes before the "
-        "implementation exists is testing nothing, and you must fix the test "
-        "rather than continue.\n"
+        "2. Call run_tests. It MUST report a FAILING test — pytest exit code "
+        "1. Exit code 5 means no tests were collected, which is an empty suite "
+        "and not a red phase; if you see 5, your test file is missing or is not "
+        "named test_*.py. A test that passes before the implementation exists "
+        "is testing nothing, and you must fix the test rather than continue.\n"
         "3. Write the smallest implementation that makes it pass.\n"
         "4. Call run_tests again. It MUST pass.\n\n"
         "You have no authority over whether your own work is correct. Do not "
@@ -192,9 +194,12 @@ class ModelExecutor:
                 messages.append({"role": "assistant", "content": text[:2000]})
                 messages.append({"role": "user", "content":
                     "Continue using the tools. "
-                    + ("You have not yet observed a failing test run."
+                    + ("Write the test file with write_file, then call "
+                       "run_tests. It must report a failing test — exit code 1. "
+                       "Exit code 5 means no test file was found."
                        if red_exit is None else
-                       "You have a failing run; now make it pass."
+                       "You have a failing test. Write the implementation with "
+                       "write_file, then call run_tests again."
                        if green_exit != 0 else
                        "Reply DONE.")})
                 continue
@@ -212,15 +217,32 @@ class ModelExecutor:
                 else:
                     result = tools.dispatch(call.name, call.arguments)
                 if call.name == "run_tests" and result.get("ok"):
-                    if red_exit is None and result["exit_code"] != 0:
-                        red_exit = result["exit_code"]
-                    elif red_exit is not None and result["exit_code"] == 0:
+                    code = result["exit_code"]
+                    # pytest's exit codes are not a boolean. 1 means tests ran
+                    # and failed — that is a red phase. 5 means no tests were
+                    # collected, which is an *empty* suite: calling run_tests
+                    # before writing anything produces 5, and counting that as
+                    # red would let an implementer claim a test-first cycle it
+                    # never performed. 0 before any implementation exists is a
+                    # third thing again, and also not progress.
+                    if code == 5:
+                        result["harness_note"] = (
+                            "No tests were collected. That is an empty suite, "
+                            "not a failing test. Write the test file first, "
+                            "named test_*.py.")
+                    elif red_exit is None and code == 1:
+                        red_exit = code
+                        result["harness_note"] = (
+                            "Red phase observed. Now write the smallest "
+                            "implementation that makes it pass.")
+                    elif red_exit is not None and code == 0:
                         green_exit = 0
-                    elif red_exit is None and result["exit_code"] == 0:
+                        result["harness_note"] = "Green. Reply DONE."
+                    elif red_exit is None and code == 0:
                         result["harness_note"] = (
                             "The suite passed before any implementation exists. "
                             "That test is not testing the required behaviour. "
-                            "Fix the test.")
+                            "Fix the test so it fails first.")
                 messages.append({"role": "tool", "tool_call_id": call.id,
                                  "content": json.dumps(result)[:3000]})
             if green_exit == 0 and red_exit is not None:

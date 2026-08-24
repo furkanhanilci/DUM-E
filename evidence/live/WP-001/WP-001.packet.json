@@ -42,6 +42,12 @@
       "path": "/home/otonom/Desktop/FH/DUM-E/docs/adr/ADR-0007-secrets-need-a-filesystem-that-enforces-permissions.md",
       "sha256": "499cb087fc4c0e5d633ff4034e2f8804a6c5dac96f8f1fb02d3a2668b587cac3",
       "title": "DUME-ADR-0007 — Secrets live on a filesystem that can enforce permissions"
+    },
+    {
+      "id": "ADR-0008",
+      "path": "/home/otonom/Desktop/FH/DUM-E/docs/adr/ADR-0008-two-local-families-not-two-copies.md",
+      "sha256": "22448a098d3834d8c628809a2d06ecfeb4c9e328d4403b3cd77824a723124f5d",
+      "title": "DUME-ADR-0008 — Two local model families, not two copies of one"
     }
   ],
   "deliverables": [
@@ -104,7 +110,7 @@
     "DUM-E stays small enough not to require itself to commission itself."
   ],
   "owner": "Platform Engineer",
-  "packet_sha256": "6e5cb3113450d0df16cf94e58feca5667d3073afe6378c65ff4b4142a12cf1cc",
+  "packet_sha256": "e9da53962288807555fa2c13af182e1fd18d393165bf301c2cbb997ec197d90b",
   "protected_paths": [
     "AETHRION_SPEC/**",
     "evidence/**"
