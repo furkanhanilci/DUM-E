@@ -122,8 +122,16 @@ class ModelClient:
         return Reply(content=message.get("content") or "", tool_calls=calls,
                      finish_reason=finish, usage=data.get("usage") or {})
 
+    # A reasoning model spends part of its response budget thinking before it
+    # answers. A JSON budget smaller than the configured thinking budget cannot
+    # produce an answer at all: the model is cut off mid-thought and `content`
+    # comes back empty, which reads as "the model cannot produce JSON" and is
+    # not that. This must stay comfortably above the server's --reasoning-budget.
+    JSON_REPLY_MAX_TOKENS = 3000
+
     def json_reply(self, messages: list[dict], schema_hint: str,
-                   max_tokens: int = 1024) -> dict:
+                   max_tokens: int | None = None) -> dict:
+        max_tokens = max_tokens or self.JSON_REPLY_MAX_TOKENS
         """Ask for a JSON object and return it, or say why it is not one.
 
         Retried once with the parse error fed back, because a model that
@@ -136,6 +144,16 @@ class ModelClient:
             reply = self.chat(conversation, max_tokens=max_tokens,
                               response_format={"type": "json_object"})
             text = reply.content.strip()
+            if not text:
+                last_error = (f"the model returned no content "
+                              f"(finish={reply.finish_reason}); the budget was "
+                              f"probably spent thinking before it answered")
+                if attempt == 0:
+                    conversation = conversation + [
+                        {"role": "user", "content":
+                         "Answer with the JSON object only. Do not deliberate."}]
+                    continue
+                raise ModelError(last_error)
             # A model that wraps JSON in a fence is not malformed, just dressed.
             if text.startswith("```"):
                 text = text.strip("`")

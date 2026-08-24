@@ -1,0 +1,4 @@
+candidate=21c3fa73dab80fb2f43527b7d7fbdb8958fc1171
+exit=0
+..................                                                       [100%]
+18 passed in 0.03s

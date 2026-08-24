@@ -142,14 +142,20 @@ class RuntimeSwitcher:
                 bound_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
         else:
             bound = dict(already_bound or {})
-            # The runtime that just failed must not be chosen again for this
-            # role, so it is excluded by making it ineligible rather than by
-            # hoping the ranking avoids it.
+            # The runtime that just failed must not be chosen again. Marking it
+            # DEGRADED is not enough — DEGRADED is still usable, so the ranking
+            # picked it straight back and reported "rebound qwen-local →
+            # qwen-local", which is not a switch. It is made ineligible for the
+            # duration of this bind.
+            restore = None
             if current:
                 failed = self.registry.runtimes.get(current.runtime_id)
-                previous_status = failed.status if failed else None
-                if failed and failed.status not in SWITCH_WORTHY:
-                    failed.status, failed.reason = "DEGRADED", reason
+                if failed:
+                    restore = (failed, failed.status, failed.reason)
+                    failed.status = "DEGRADED"
+                    failed.reason = reason
+                    failed.qualified_roles = [r for r in failed.qualified_roles
+                                              if r != role]
             try:
                 new = self.registry.bind(
                     role, already_bound=bound, work_class=work_class,
@@ -157,8 +163,21 @@ class RuntimeSwitcher:
                     family_independent_of=family_independent_of,
                     agent_id=f"{wp_id}/{role}@fallback")
             except NoEligibleRuntime as exc:
+                if restore:
+                    runtime, status, why = restore
+                    runtime.status, runtime.reason = status, why
+                    if role not in runtime.qualified_roles:
+                        runtime.qualified_roles.append(role)
                 raise SwitchRefused(
                     f"{role} cannot be rebound and the package waits.\n{exc}") from None
+            finally:
+                # The exclusion was for this decision only. Leaving it in place
+                # would quietly disqualify a runtime for the rest of the run
+                # because of one transient failure.
+                if restore:
+                    runtime, status, why = restore
+                    if role not in runtime.qualified_roles:
+                        runtime.qualified_roles.append(role)
 
         handoff = TaskHandoff(
             task_id=task_id, wp_id=wp_id, logical_role=role,

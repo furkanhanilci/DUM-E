@@ -1,0 +1,627 @@
+{
+  "wp_id": "WP-001",
+  "started_at": "2026-08-24T07:53:12+00:00",
+  "steps": [
+    {
+      "name": "precondition",
+      "outcome": "OK",
+      "detail": "package is READY and dependencies are ACCEPTED",
+      "at": "2026-08-24T07:53:12+00:00"
+    },
+    {
+      "name": "packet",
+      "outcome": "OK",
+      "detail": "3 frozen sections, 0 dependencies, 5 deliverables, digest d0ae2a32d17c",
+      "at": "2026-08-24T07:53:12+00:00"
+    },
+    {
+      "name": "cohort",
+      "outcome": "OK",
+      "detail": "BASELINE assurance, roles: commissioning_orchestrator, architect, implementer, implementer, spec_reviewer, code_reviewer, verifier; specialists: security, data, runtime",
+      "at": "2026-08-24T07:53:12+00:00"
+    },
+    {
+      "name": "runtime_binding",
+      "outcome": "OK",
+      "detail": "architect\u2192qwen-local(qwen); implementer\u2192qwen-local(qwen); implementer#2\u2192qwen-local(qwen); spec_reviewer\u2192mistral-local(mistral); code_reviewer\u2192mistral-local(mistral); verifier\u2192mistral-local(mistral)",
+      "at": "2026-08-24T07:53:12+00:00"
+    },
+    {
+      "name": "plan",
+      "outcome": "OK",
+      "detail": "planning failed: no JSON object after two attempts: Expecting value: line 1 column 1 (char 0)",
+      "at": "2026-08-24T07:54:22+00:00"
+    },
+    {
+      "name": "worktree",
+      "outcome": "OK",
+      "detail": "dume/WP-001/live-d0ae2a32 off 6040f5b3cf50",
+      "at": "2026-08-24T07:54:22+00:00"
+    },
+    {
+      "name": "implement",
+      "outcome": "OK",
+      "detail": "candidate 21c3fa73dab8, RED\u2192GREEN evidence: RED exit=2, GREEN exit=0, 7 tool calls",
+      "at": "2026-08-24T07:59:10+00:00"
+    },
+    {
+      "name": "protected_paths",
+      "outcome": "OK",
+      "detail": "4 file(s) changed, none protected",
+      "at": "2026-08-24T07:59:10+00:00"
+    },
+    {
+      "name": "specification_compliance",
+      "outcome": "OK",
+      "detail": "WP-001/spec_reviewer: PASS \u2014 The diff meets all specified requirements and acceptance criteria.",
+      "at": "2026-08-24T07:59:17+00:00"
+    },
+    {
+      "name": "code_quality",
+      "outcome": "OK",
+      "detail": "WP-001/code_reviewer: PASS \u2014 The implementation is well-structured, clear, and has comprehensive tests.",
+      "at": "2026-08-24T07:59:21+00:00"
+    },
+    {
+      "name": "verification",
+      "outcome": "OK",
+      "detail": "WP-001/verifier: PASS \u2014 fresh checkout, pytest exit=0; verifier said PASS \u2014 All tests passed with exit code 0.",
+      "at": "2026-08-24T07:59:23+00:00"
+    },
+    {
+      "name": "tech_complete",
+      "outcome": "OK",
+      "detail": "candidate 21c3fa73dab8",
+      "at": "2026-08-24T07:59:23+00:00"
+    },
+    {
+      "name": "machine_gate",
+      "outcome": "OK",
+      "detail": "MERGE_ELIGIBLE",
+      "at": "2026-08-24T07:59:23+00:00"
+    }
+  ],
+  "packet_sha256": "d0ae2a32d17c26a082b74c17a43e59c04b640e9cc396d1ee58a0458e50a1b02c",
+  "candidate_revision": "21c3fa73dab80fb2f43527b7d7fbdb8958fc1171",
+  "cohort": {
+    "wp_id": "WP-001",
+    "packet_sha256": "d0ae2a32d17c26a082b74c17a43e59c04b640e9cc396d1ee58a0458e50a1b02c",
+    "assurance_level": "BASELINE",
+    "signals": {
+      "touches_security_boundary": false,
+      "touches_durable_state": true,
+      "touches_external_code": false,
+      "touches_runtime_binding": true,
+      "must_be_reversible": false,
+      "is_architecture_bearing": false,
+      "adversarial_scenarios": 0,
+      "deliverable_count": 5,
+      "known_failure_modes": 3,
+      "dependency_count": 0,
+      "wave": 1
+    },
+    "roles": [
+      {
+        "role_id": "commissioning_orchestrator",
+        "purpose": "Runs the work-package workflow and manages the cohort.",
+        "decides": "Sequencing only. The orchestrator moves work between stages; it does not decide whether a stage passed.",
+        "independence_requirements": [],
+        "qualification_required": false,
+        "fresh_context_required": false,
+        "skill_bundle": [
+          "brainstorming",
+          "writing-plans"
+        ],
+        "task": null,
+        "reason": "every package needs sequencing"
+      },
+      {
+        "role_id": "architect",
+        "purpose": "Turns a frozen packet into an implementation plan.",
+        "decides": "The shape of the change, and whether the requirement is satisfiable as written.",
+        "independence_requirements": [],
+        "qualification_required": true,
+        "fresh_context_required": false,
+        "skill_bundle": [
+          "brainstorming",
+          "writing-plans",
+          "systems-architecture"
+        ],
+        "task": null,
+        "reason": "the plan is a separate artefact from the code, and the packet is frozen input to it"
+      },
+      {
+        "role_id": "implementer",
+        "purpose": "Produces the candidate under Superpowers discipline.",
+        "decides": "Nothing about its own correctness.",
+        "independence_requirements": [
+          "must not be the same identity as spec_reviewer",
+          "must not be the same identity as code_reviewer",
+          "must not be the same identity as verifier"
+        ],
+        "qualification_required": true,
+        "fresh_context_required": false,
+        "skill_bundle": [
+          "test-driven-development",
+          "systematic-debugging",
+          "verification-before-completion"
+        ],
+        "task": "host_inventory.json",
+        "reason": "produces the candidate"
+      },
+      {
+        "role_id": "implementer",
+        "purpose": "Produces the candidate under Superpowers discipline.",
+        "decides": "Nothing about its own correctness.",
+        "independence_requirements": [
+          "must not be the same identity as spec_reviewer",
+          "must not be the same identity as code_reviewer",
+          "must not be the same identity as verifier"
+        ],
+        "qualification_required": true,
+        "fresh_context_required": false,
+        "skill_bundle": [
+          "test-driven-development",
+          "systematic-debugging",
+          "verification-before-completion"
+        ],
+        "task": "host_inventory.md, disk_capacity_report.md, deployment_profile_candidate.md",
+        "reason": "produces the candidate"
+      },
+      {
+        "role_id": "spec_reviewer",
+        "purpose": "Compares the candidate against the frozen specification.",
+        "decides": "Was the requirement met? Nothing about code quality.",
+        "independence_requirements": [
+          "must not be the same identity as implementer",
+          "must not share a model family with implementer"
+        ],
+        "qualification_required": true,
+        "fresh_context_required": false,
+        "skill_bundle": [
+          "requirements-analysis",
+          "verification-before-completion"
+        ],
+        "task": null,
+        "reason": "answers: was the requirement met?"
+      },
+      {
+        "role_id": "code_reviewer",
+        "purpose": "Judges implementation quality and architectural fit.",
+        "decides": "Is the implementation good? Nothing about whether it runs.",
+        "independence_requirements": [
+          "must not be the same identity as implementer",
+          "must not be the same identity as spec_reviewer",
+          "must not share a model family with implementer"
+        ],
+        "qualification_required": true,
+        "fresh_context_required": false,
+        "skill_bundle": [
+          "code-review",
+          "systems-architecture"
+        ],
+        "task": null,
+        "reason": "answers: is the implementation good?"
+      },
+      {
+        "role_id": "verifier",
+        "purpose": "Runs the acceptance suite from a fresh checkout and environment.",
+        "decides": "Does it actually work? This is the only role whose PASS is evidence of behaviour.",
+        "independence_requirements": [
+          "must not be the same identity as implementer",
+          "must not be the same identity as spec_reviewer",
+          "must not be the same identity as code_reviewer",
+          "must not share a model family with implementer"
+        ],
+        "qualification_required": true,
+        "fresh_context_required": true,
+        "skill_bundle": [
+          "verification-before-completion",
+          "systematic-debugging"
+        ],
+        "task": null,
+        "reason": "answers: does it actually work?"
+      }
+    ],
+    "specialists": [
+      {
+        "specialist": "security",
+        "trigger": "the package touches credentials, capability or trust boundaries",
+        "matched": [
+          "capability"
+        ],
+        "authority": "raises findings only; never a gate verdict"
+      },
+      {
+        "specialist": "data",
+        "trigger": "the package changes durable state or evidence",
+        "matched": [
+          "evidence"
+        ],
+        "authority": "raises findings only; never a gate verdict"
+      },
+      {
+        "specialist": "runtime",
+        "trigger": "the package binds or switches models and runtimes",
+        "matched": [
+          "model",
+          "runtime"
+        ],
+        "authority": "raises findings only; never a gate verdict"
+      }
+    ],
+    "communication_topology": {
+      "channel": "DUME-WP-001",
+      "threads": [
+        "plan",
+        "implementation",
+        "review",
+        "verification"
+      ],
+      "rule": "operational only \u2014 a message is never a gate verdict",
+      "human_addressing": [
+        "@commissioning_orchestrator",
+        "@architect",
+        "@implementer",
+        "@implementer",
+        "@spec_reviewer",
+        "@code_reviewer",
+        "@verifier"
+      ]
+    },
+    "context_projection": {
+      "every_role_receives": [
+        "the frozen packet",
+        "the candidate revision",
+        "its own role card"
+      ],
+      "implementer_also_receives": [
+        "its worktree path",
+        "the accepted plan"
+      ],
+      "reviewer_receives": [
+        "the candidate diff",
+        "the frozen acceptance"
+      ],
+      "verifier_receives": [
+        "a fresh checkout",
+        "the acceptance suite"
+      ],
+      "nobody_receives": [
+        "another agent's conversation history",
+        "an earlier reviewer's verdict before forming their own",
+        "any credential"
+      ],
+      "embargo": "independent-first \u2014 a reviewer's verdict is not visible to the next reviewer until their own is recorded, so the second opinion is a second opinion"
+    },
+    "independence_matrix": [
+      "identity: implementer \u2260 spec_reviewer",
+      "identity: implementer \u2260 code_reviewer",
+      "identity: implementer \u2260 verifier",
+      "identity: implementer \u2260 spec_reviewer",
+      "identity: implementer \u2260 code_reviewer",
+      "identity: implementer \u2260 verifier",
+      "identity: spec_reviewer \u2260 implementer",
+      "identity: code_reviewer \u2260 implementer",
+      "identity: code_reviewer \u2260 spec_reviewer",
+      "identity: verifier \u2260 implementer",
+      "identity: verifier \u2260 spec_reviewer",
+      "identity: verifier \u2260 code_reviewer",
+      "family: spec_reviewer \u2260 implementer",
+      "family: code_reviewer \u2260 implementer",
+      "family: verifier \u2260 implementer"
+    ]
+  },
+  "channel": "bd97b0e4-ad6c-5373-946f-7e8395ecbb87",
+  "bindings": {
+    "architect": {
+      "role_id": "architect",
+      "agent_id": "WP-001/architect",
+      "runtime_id": "qwen-local",
+      "model": "Qwen3.8-27B (quantised \u2014 profile decided by WP-005)",
+      "family": "qwen",
+      "reason": "cheapest qualified runtime for architect",
+      "bound_at": "2026-08-24T07:53:12+00:00"
+    },
+    "implementer": {
+      "role_id": "implementer",
+      "agent_id": "WP-001/implementer",
+      "runtime_id": "qwen-local",
+      "model": "Qwen3.8-27B (quantised \u2014 profile decided by WP-005)",
+      "family": "qwen",
+      "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+      "bound_at": "2026-08-24T07:53:12+00:00"
+    },
+    "implementer#2": {
+      "role_id": "implementer",
+      "agent_id": "WP-001/implementer#2",
+      "runtime_id": "qwen-local",
+      "model": "Qwen3.8-27B (quantised \u2014 profile decided by WP-005)",
+      "family": "qwen",
+      "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+      "bound_at": "2026-08-24T07:53:12+00:00"
+    },
+    "spec_reviewer": {
+      "role_id": "spec_reviewer",
+      "agent_id": "WP-001/spec_reviewer",
+      "runtime_id": "mistral-local",
+      "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
+      "family": "mistral",
+      "reason": "cheapest qualified runtime for spec_reviewer; identity must differ from implementer, family-independent of implementer",
+      "bound_at": "2026-08-24T07:53:12+00:00"
+    },
+    "code_reviewer": {
+      "role_id": "code_reviewer",
+      "agent_id": "WP-001/code_reviewer",
+      "runtime_id": "mistral-local",
+      "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
+      "family": "mistral",
+      "reason": "cheapest qualified runtime for code_reviewer; identity must differ from implementer, spec_reviewer, family-independent of implementer",
+      "bound_at": "2026-08-24T07:53:12+00:00"
+    },
+    "verifier": {
+      "role_id": "verifier",
+      "agent_id": "WP-001/verifier",
+      "runtime_id": "mistral-local",
+      "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
+      "family": "mistral",
+      "reason": "cheapest qualified runtime for verifier; identity must differ from implementer, spec_reviewer, code_reviewer, family-independent of implementer",
+      "bound_at": "2026-08-24T07:53:12+00:00"
+    }
+  },
+  "gate": {
+    "schema": "dume.merge_eligibility/1",
+    "wp_id": "WP-001",
+    "candidate_revision": "21c3fa73dab80fb2f43527b7d7fbdb8958fc1171",
+    "verdict": "MERGE_ELIGIBLE",
+    "evaluated_at": "2026-08-24T07:59:23+00:00",
+    "checks": [
+      {
+        "name": "candidate_unchanged",
+        "question": "Is this the exact candidate that was reviewed?",
+        "passed": true,
+        "detail": "state records 21c3fa73dab80fb2f43527b7d7fbdb8958fc1171, gate was asked about 21c3fa73dab80fb2f43527b7d7fbdb8958fc1171"
+      },
+      {
+        "name": "worktree_clean",
+        "question": "Is every change committed into the candidate?",
+        "passed": true,
+        "detail": "working tree clean"
+      },
+      {
+        "name": "specification_compliance_passed",
+        "question": "Was the requirement met?",
+        "passed": true,
+        "detail": "1 PASS record(s), 1 from an identity other than the producer WP-001/implementer"
+      },
+      {
+        "name": "code_quality_passed",
+        "question": "Is the implementation good?",
+        "passed": true,
+        "detail": "1 PASS record(s), 1 from an identity other than the producer WP-001/implementer"
+      },
+      {
+        "name": "verification_passed",
+        "question": "Does it actually work?",
+        "passed": true,
+        "detail": "1 PASS record(s), 1 from an identity other than the producer WP-001/implementer"
+      },
+      {
+        "name": "verification_independent",
+        "question": "Did the verifier avoid checking its own earlier conclusion?",
+        "passed": true,
+        "detail": "verifier WP-001/verifier, distinct from both reviewers"
+      },
+      {
+        "name": "packet_unchanged",
+        "question": "Was the work done against the frozen packet?",
+        "passed": true,
+        "detail": "packet digest d0ae2a32d17c vs recorded d0ae2a32d17c"
+      },
+      {
+        "name": "protected_paths_untouched",
+        "question": "Did the candidate stay out of the paths it may not touch?",
+        "passed": true,
+        "detail": "4 file(s) changed, none protected"
+      },
+      {
+        "name": "frozen_acceptance_unchanged",
+        "question": "Is the frozen acceptance byte-identical?",
+        "passed": true,
+        "detail": "no frozen digests were declared for this package"
+      },
+      {
+        "name": "required_artefacts_present",
+        "question": "Does every mandatory artefact exist and contain something?",
+        "passed": true,
+        "detail": "3 artefact(s) present and non-empty"
+      },
+      {
+        "name": "no_blocking_findings",
+        "question": "Is anything Critical or High still open?",
+        "passed": true,
+        "detail": "no open Critical/High finding"
+      }
+    ],
+    "failed_checks": []
+  },
+  "handoffs": [],
+  "verdict": "MERGE_ELIGIBLE",
+  "schema": "dume.live_run/1",
+  "assurance": "BASELINE",
+  "focus": "A module `capacity.py` with two functions, plus a test file for them.\n\n`usable_vram_bytes(total, overhead=0.12)` \u2014 total minus the runtime reserve, never below zero. Total VRAM is not usable VRAM: display and driver overhead is real, and an envelope that flatters the host is worse than none because it is trusted.\n\n`classify(usable_bytes, gpu_count)` \u2014 returns one of HIGH_THROUGHPUT_GPU, SINGLE_GPU_CONSTRAINED, CPU_HEAVY or REMOTE_GPU_REQUIRED. Zero GPUs is never a GPU class.\n\nThis is one task of WP-001, covering the capacity envelope and host classification parts of its scope. It is not the whole package.",
+  "skills": {
+    "architect": {
+      "role": "architect",
+      "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "characters": 10353,
+      "skills": [
+        {
+          "name": "brainstorming",
+          "role": "architect",
+          "primary": true,
+          "path": "/home/otonom/.claude/plugins/cache/claude-plugins-official/superpowers/6.3.0/skills/brainstorming/SKILL.md",
+          "sha256": "74edf03ea6d24ef53db48677b93558d14a979bdf052ca3f57ecdca0c66791608",
+          "characters": 9061,
+          "truncated": true
+        },
+        {
+          "name": "writing-plans",
+          "role": "architect",
+          "primary": false,
+          "path": "/home/otonom/.claude/plugins/cache/claude-plugins-official/superpowers/6.3.0/skills/writing-plans/SKILL.md",
+          "sha256": "48508f44bbfd7d24b029fbf3a314f3cd14c9615599059366e922f47b8dc08cf2",
+          "characters": 894,
+          "truncated": true
+        }
+      ]
+    },
+    "implementer": {
+      "role": "implementer",
+      "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "characters": 9957,
+      "skills": [
+        {
+          "name": "test-driven-development",
+          "role": "implementer",
+          "primary": true,
+          "path": "/home/otonom/.claude/plugins/cache/claude-plugins-official/superpowers/6.3.0/skills/test-driven-development/SKILL.md",
+          "sha256": "bf1b8216e523851a411e91d429a7c1c2a173e79d88957bc78e348218d50edd54",
+          "characters": 8867,
+          "truncated": false
+        },
+        {
+          "name": "systematic-debugging",
+          "role": "implementer",
+          "primary": false,
+          "path": "/home/otonom/.claude/plugins/cache/claude-plugins-official/superpowers/6.3.0/skills/systematic-debugging/SKILL.md",
+          "sha256": "808fc5717aa88ad65efff312b11c186294d3e6ee301afb584e2f86599b137787",
+          "characters": 212,
+          "truncated": true
+        },
+        {
+          "name": "verification-before-completion",
+          "role": "implementer",
+          "primary": false,
+          "path": "/home/otonom/.claude/plugins/cache/claude-plugins-official/superpowers/6.3.0/skills/verification-before-completion/SKILL.md",
+          "sha256": "2befe7fc55bcadaa3d97dd9e8efeb633d2561c0ebe74c5a8b17c4d9e7e4520b3",
+          "characters": 176,
+          "truncated": true
+        }
+      ]
+    },
+    "spec_reviewer": {
+      "role": "spec_reviewer",
+      "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "characters": 5044,
+      "skills": [
+        {
+          "name": "verification-before-completion",
+          "role": "spec_reviewer",
+          "primary": true,
+          "path": "/home/otonom/.claude/plugins/cache/claude-plugins-official/superpowers/6.3.0/skills/verification-before-completion/SKILL.md",
+          "sha256": "2befe7fc55bcadaa3d97dd9e8efeb633d2561c0ebe74c5a8b17c4d9e7e4520b3",
+          "characters": 3313,
+          "truncated": false
+        },
+        {
+          "name": "brainstorming",
+          "role": "spec_reviewer",
+          "primary": false,
+          "path": "/home/otonom/.claude/plugins/cache/claude-plugins-official/superpowers/6.3.0/skills/brainstorming/SKILL.md",
+          "sha256": "74edf03ea6d24ef53db48677b93558d14a979bdf052ca3f57ecdca0c66791608",
+          "characters": 1200,
+          "truncated": true
+        }
+      ]
+    },
+    "code_reviewer": {
+      "role": "code_reviewer",
+      "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "characters": 3579,
+      "skills": [
+        {
+          "name": "requesting-code-review",
+          "role": "code_reviewer",
+          "primary": true,
+          "path": "/home/otonom/.claude/plugins/cache/claude-plugins-official/superpowers/6.3.0/skills/requesting-code-review/SKILL.md",
+          "sha256": "d71cc01ba56d2325cf8af5f7c11837819b63ecd57de0bfdb812f7f3ff7751df8",
+          "characters": 2793,
+          "truncated": false
+        },
+        {
+          "name": "receiving-code-review",
+          "role": "code_reviewer",
+          "primary": false,
+          "path": "/home/otonom/.claude/plugins/cache/claude-plugins-official/superpowers/6.3.0/skills/receiving-code-review/SKILL.md",
+          "sha256": "091df1629510af1b92fc4abd6f96732ebedb4cb2c0f3457e8f2740b0504a2438",
+          "characters": 221,
+          "truncated": true
+        }
+      ]
+    },
+    "verifier": {
+      "role": "verifier",
+      "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "characters": 3954,
+      "skills": [
+        {
+          "name": "verification-before-completion",
+          "role": "verifier",
+          "primary": true,
+          "path": "/home/otonom/.claude/plugins/cache/claude-plugins-official/superpowers/6.3.0/skills/verification-before-completion/SKILL.md",
+          "sha256": "2befe7fc55bcadaa3d97dd9e8efeb633d2561c0ebe74c5a8b17c4d9e7e4520b3",
+          "characters": 3313,
+          "truncated": false
+        },
+        {
+          "name": "systematic-debugging",
+          "role": "verifier",
+          "primary": false,
+          "path": "/home/otonom/.claude/plugins/cache/claude-plugins-official/superpowers/6.3.0/skills/systematic-debugging/SKILL.md",
+          "sha256": "808fc5717aa88ad65efff312b11c186294d3e6ee301afb584e2f86599b137787",
+          "characters": 212,
+          "truncated": true
+        }
+      ]
+    }
+  },
+  "skills_error": null,
+  "cohort_identities": {
+    "wp_id": "WP-001",
+    "channel": "bd97b0e4-ad6c-5373-946f-7e8395ecbb87",
+    "created_at": "2026-08-24T07:53:12+00:00",
+    "identities": {
+      "commissioning_orchestrator": {
+        "name": "WP-001/commissioning_orchestrator",
+        "pubkey": "e23ca12daaaba064c9ba03f0eb7feb3d9f780b3f507cdb0afe9e284e96e65be9"
+      },
+      "architect": {
+        "name": "WP-001/architect",
+        "pubkey": "1f3a9d5e5c66e0eafc6c771d812ec08e133f50321da442779b6273fe7a3edb3b"
+      },
+      "implementer": {
+        "name": "WP-001/implementer",
+        "pubkey": "d003c797986ffa8a100be2260b59ec3444024aec13567b6975c8f23f7949a28d"
+      },
+      "implementer#2": {
+        "name": "WP-001/implementer#2",
+        "pubkey": "fabd776baf4388b8f4ed5b774ad59adbfffe947d1723cac07117ff5ca4eeffcc"
+      },
+      "spec_reviewer": {
+        "name": "WP-001/spec_reviewer",
+        "pubkey": "6192d786f315cb7257c647b5c8e183b81532bbe0d121c5cd3fd724951279a2b8"
+      },
+      "code_reviewer": {
+        "name": "WP-001/code_reviewer",
+        "pubkey": "81bd5680ac639c77e1a9c1654c24ab4da316020f25b1a1440b20a86d612f9ab2"
+      },
+      "verifier": {
+        "name": "WP-001/verifier",
+        "pubkey": "a3e405a4f9bb2b9e96023070a9a4f0e702c03ab1eaab1a2d67389d4004b84c2b"
+      }
+    }
+  },
+  "note": "Real models, real worktree, real test runs, against a disposable target created and destroyed inside the run. No real target was touched. This run commissioned ONE TASK of the package, not the package (DUME-ADR-0009). The build was narrowed; the packet's constraints and the specification the reviewer judges against were not.",
+  "elapsed_seconds": 370.7
+}
