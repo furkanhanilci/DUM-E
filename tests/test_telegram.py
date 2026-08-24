@@ -150,3 +150,19 @@ def test_a_topic_names_the_channel_it_mirrors():
     assert topics.channel_for(12) == "review"
     assert topics.channel_for(99) is None
     assert topics.channel_for(None) is None
+
+
+def test_dume_speaks_only_for_itself():
+    """DUM-E is a structure inside AETHRIONIS — the harness in the laboratory,
+    not the laboratory. Its narration belongs in its own channels.
+
+    `runtime_binding` was routed to Operations, which is where AETHRIONIS talks
+    about runtimes as a shared resource. A binding made for one of DUM-E's runs
+    is part of that run, and sending it there made the harness sound like the
+    voice of the whole workspace.
+    """
+    from dume.control.announce import Announcer
+
+    for step, channel in Announcer.STEP_CHANNEL.items():
+        assert channel in Announcer.OWN_CHANNELS, (
+            f"{step} narrates to {channel}, which is not DUM-E's")

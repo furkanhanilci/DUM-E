@@ -105,18 +105,30 @@ class Announcer:
 
     # ---- the shapes a run actually produces --------------------------------
 
-    # Which conversation a step belongs to. A run's steps are not one stream:
-    # a review is review, a fresh checkout is verification, and separating them
-    # is what makes each readable on its own.
+    # Which conversation a step belongs to.
+    #
+    # All four are DUM-E's own channels. DUM-E is a structure inside AETHRIONIS
+    # — the harness in the laboratory, not the laboratory — so it speaks about
+    # its own work and nothing else. A runtime binding made for one of its runs
+    # is part of that run; it does not belong in Operations, which is where
+    # AETHRIONIS talks about runtimes as a shared resource. Routing it there
+    # made DUM-E sound like the voice of the whole workspace, which it is not.
     STEP_CHANNEL = {
-        "specification_compliance": "review", "code_quality": "review",
-        "verification": "verification", "implement": "implementation",
-        "protected_paths": "implementation", "plan": "implementation",
-        "runtime_binding": "runtimes", "cohort": "control",
-        "precondition": "control", "packet": "control",
+        "precondition": "control", "packet": "control", "cohort": "control",
         "tech_complete": "control", "machine_gate": "control",
-        "worktree": "implementation",
+        "runtime_binding": "implementation", "plan": "implementation",
+        "worktree": "implementation", "implement": "implementation",
+        "protected_paths": "implementation", "runtime_switch": "implementation",
+        "specification_compliance": "review", "code_quality": "review",
+        "verification": "verification",
+        "failure_classification": "control", "narration": "control",
+        "collaboration": "control",
     }
+
+    # DUM-E's channels, and the only ones it writes to. A step this does not
+    # recognise goes to its control channel rather than to the workspace at
+    # large: an unrecognised step is still DUM-E's step.
+    OWN_CHANNELS = ("control", "implementation", "review", "verification")
 
     def run_started(self, wp_id: str, title: str, roles: list[str]) -> None:
         self.say(f"▶ {wp_id} — {title}\n"
@@ -128,9 +140,11 @@ class Announcer:
         # Only the turns worth a notification buzz. A run has a dozen steps and
         # a phone that buzzes for each teaches its owner to stop looking.
         loud = outcome in ("FAILED", "BLOCKED")
+        channel = self.STEP_CHANNEL.get(name, "control")
+        if channel not in self.OWN_CHANNELS:
+            channel = "control"
         self.say(f"{ICON.get(outcome, '•')} {wp_id} · {name}\n{detail[:600]}",
-                 silent=not loud,
-                 channel=self.STEP_CHANNEL.get(name, "control"))
+                 silent=not loud, channel=channel)
 
     def verdict(self, wp_id: str, verdict: str, seconds: float) -> None:
         self.say(f"{'✅' if verdict == 'MERGE_ELIGIBLE' else '❌'} {wp_id}: "
@@ -139,6 +153,13 @@ class Announcer:
                  channel="control")
 
     def needs_you(self, what: str, detail: str) -> None:
-        """The one thing that should always be loud: work waiting on a human."""
-        self.say(f"🖐 {what}\n{detail[:600]}\n\nReply here, or: open",
+        """The one thing that should always be loud: work waiting on a human.
+
+        Still in DUM-E's control channel, not in Decisions. DUM-E can say it is
+        stuck; it cannot put an item on the workspace's decision agenda, and a
+        message that arrived in Decisions would look like it had.
+        """
+        self.say(f"🖐 {what}\n{detail[:600]}\n\n"
+                 "This is the harness reporting that it is stuck. "
+                 "Reply here, or: open",
                  channel="control")
