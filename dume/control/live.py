@@ -32,7 +32,13 @@ from .pilot import make_target_repo
 ENDPOINTS = {"qwen-local": "http://127.0.0.1:8000/v1",
              "mistral-local": "http://127.0.0.1:8001/v1"}
 
-BUZZ_URL = "http://127.0.0.1:3000"
+# Derived, not written down. Three places stated the relay's address and all
+# three said loopback; the community is bound to one host and a client naming a
+# different one is told "no community is configured for this host" — which
+# reads as the relay being down rather than as the address being wrong.
+def _buzz_url() -> str:
+    from ..collaboration.host import relay_http
+    return relay_http()
 IDENTITY_STORE = Path.home() / ".dume" / "secrets" / "buzz-identities.json"
 
 
@@ -46,7 +52,7 @@ def connect_buzz():
         # narrated nowhere and is otherwise identical.
         return None
     try:
-        client = BuzzClient(BUZZ_URL,
+        client = BuzzClient(_buzz_url(),
                             load_identity(IDENTITY_STORE, "dume_orchestrator"))
         client.relay_info()
         return client

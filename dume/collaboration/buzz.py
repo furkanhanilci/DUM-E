@@ -244,16 +244,25 @@ class BuzzClient:
 
     # ---- the operational surface DUM-E actually uses --------------------
 
-    def create_channel(self, channel: str, name: str, about: str = "") -> dict:
+    def create_channel(self, channel: str, name: str, about: str = "",
+                       *, private: bool = True) -> dict:
         """Create a channel at an id we chose.
 
         The relay will allocate a UUID if none is given, but then the id exists
         only in its database and DUM-E would need a lookup table to find its own
         channel again after a restart. Supplying a derived id keeps the mapping
         in an algorithm instead of in a file that can go missing.
+
+        `private` defaults to true because a work package's own channel is the
+        cohort's working surface and has no reason to be in everyone's sidebar.
+        DUM-E's four standing channels are the exception: they are where the
+        harness reports to the operator, and a channel the operator cannot see
+        is a report nobody reads. That was the state of it — a hundred messages
+        in a channel the desktop had no idea existed.
         """
         return self.publish(KIND_GROUP_CREATE, "", [
-            ["h", channel], ["name", name], ["about", about], ["private", "true"]])
+            ["h", channel], ["name", name], ["about", about],
+            ["private", "true" if private else "false"]])
 
     def announce(self, channel: str, text: str, mentions: list[str] | None = None,
                  *, message_type: str = "STATUS", refs: list[str] | None = None,

@@ -325,8 +325,9 @@ class IntentHandler:
     def _relay(self):
         from pathlib import Path as _Path
         from ..collaboration.buzz import BuzzClient, load_identity
+        from ..collaboration.host import relay_http
         store = _Path.home() / ".dume" / "secrets" / "buzz-identities.json"
-        return BuzzClient("http://127.0.0.1:3000", load_identity(store, "owner"))
+        return BuzzClient(relay_http(), load_identity(store, "owner"))
 
     # The short name a person types, and the space channel it means. The id
     # itself is derived in the collaboration layer, so this table names things

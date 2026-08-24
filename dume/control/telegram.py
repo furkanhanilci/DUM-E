@@ -259,6 +259,29 @@ class TelegramBridge:
         "come from the gate."
     )
 
+    def _answer(self, actor_id: str, chat_id, text: str,
+                thread_id: int | None) -> str:
+        """Run one command and return its reply, without sending it.
+
+        Separate from `handle` so a reading of plain text can be executed and
+        presented alongside what it was read as, rather than answered as though
+        the person had typed the command.
+        """
+        from .command_gateway import CommandRefused
+        try:
+            intent = self.gateway.translate(
+                actor_id=actor_id, channel=f"telegram:{chat_id}", text=text,
+                forwarded=False, verified=bool(actor_id))
+        except CommandRefused as exc:
+            return f"refused: {exc}"
+        if intent.authorization_result == "AWAITING_CONFIRMATION":
+            return (f"{intent.action} is a DANGEROUS_ACTION.\n"
+                    f"To go ahead, send exactly:  confirm {intent.confirmation_ref}")
+        try:
+            return self.handler(intent)
+        except Exception as exc:
+            return f"the command was authorised but failed: {type(exc).__name__}: {exc}"
+
     def handle(self, message: dict) -> dict:
         chat_id = (message.get("chat") or {}).get("id")
         # The topic this arrived in, when the group is a forum. Carried through
@@ -277,6 +300,26 @@ class TelegramBridge:
 
         # Where this chat is, so the operator can make it the broadcast target
         # without hunting for a numeric id in a settings screen.
+        # Addressed to somebody, or written in plain words. Both are resolved
+        # before the gateway sees anything, and both are shown: a person should
+        # be able to see what their sentence was taken to mean, and disagree.
+        from .address import addressee, belongs_to, interpret, strip_address
+
+        to = addressee(text)
+        reading, _ = interpret(text)
+        if reading:
+            self.send(chat_id,
+                      f"Read as: {reading}\n\n"
+                      + (self._answer(actor_id, chat_id, reading, thread_id)
+                         or "(no output)"),
+                      thread_id)
+            return {"outcome": "EXECUTED", "actor": actor_id, "chat": chat_id,
+                    "action": reading.split()[0]}
+        if to:
+            # Named an account and then said something in the vocabulary: run
+            # it, and say which account it was really about when they differ.
+            text = strip_address(text)
+
         if text.strip().lower() in ("/here", "here"):
             self.send(chat_id,
                       f"This chat is {chat_id}."
@@ -308,6 +351,13 @@ class TelegramBridge:
             reply = self.handler(intent)
         except Exception as exc:  # a handler fault must not kill the bridge
             reply = f"the command was authorised but failed: {type(exc).__name__}: {exc}"
-        self.send(chat_id, reply or "(no output)", thread_id)
+        # Which account the command was really about. Answered either way —
+        # refusing would be pedantry — but said, so the distinction between the
+        # harness and the workspace stays visible rather than becoming folklore.
+        note = ""
+        if to and belongs_to(intent.action) != to:
+            note = (f"\n\n(You asked @{to}; {intent.action} is "
+                    f"@{belongs_to(intent.action)}'s. Answered anyway.)")
+        self.send(chat_id, (reply or "(no output)") + note, thread_id)
         return {"outcome": "EXECUTED", "actor": actor_id, "chat": chat_id,
                 "action": intent.action}

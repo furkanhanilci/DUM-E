@@ -166,3 +166,53 @@ def test_dume_speaks_only_for_itself():
     for step, channel in Announcer.STEP_CHANNEL.items():
         assert channel in Announcer.OWN_CHANNELS, (
             f"{step} narrates to {channel}, which is not DUM-E's")
+
+
+def test_a_sentence_is_read_but_never_guessed_at():
+    """A person should be able to type what they mean without remembering the
+    verb — and must never have a sentence turned into a command they did not
+    ask for. `kill` and `decide` are in this vocabulary.
+
+    So plain text is mapped onto the vocabulary where the mapping is literal,
+    and left unmapped otherwise. Unmapped is refused with the whole list, which
+    teaches the vocabulary; a wrong guess teaches nothing and may act.
+    """
+    from dume.control.address import interpret
+
+    read = {
+        "durum nedir": "status",
+        "hangi paketler bekliyor": "next",
+        "cevap bekleyen var mı": "open",
+        "alanlar": "spaces",
+        "ne yapabilirim": "commands",
+        "WP-001 ne durumda": "show WP-001",
+        "wp 12 göster": "show WP-012",
+    }
+    for sentence, command in read.items():
+        assert interpret(sentence)[0] == command, sentence
+
+    # Nothing recognisable, and nothing invented.
+    for sentence in ("bugün hava nasıl", "teşekkürler", "peki sonra"):
+        assert interpret(sentence)[0] is None, sentence
+
+    # An exact command is left alone — somebody who typed `next` meant `next`.
+    for sentence in ("next", "status", "kill", "/status"):
+        assert interpret(sentence)[0] is None, sentence
+
+
+def test_naming_an_account_says_which_one_is_meant():
+    """The group holds two: the harness and the workspace. Naming one is how a
+    person says which they mean, and the answer says when they differ rather
+    than silently answering as the other."""
+    from dume.control.address import addressee, belongs_to, strip_address
+
+    assert addressee("@dume durum") == "dume"
+    assert addressee("@aethrionis alanlar") == "aethrionis"
+    assert addressee("dum-e ne yapıyor") == "dume"
+    assert addressee("durum nedir") is None
+    # A name inside another word is not a name.
+    assert addressee("dumela") is None
+
+    assert strip_address("@dume durum nedir") == "durum nedir"
+    assert belongs_to("commission") == "dume"
+    assert belongs_to("spaces") == "aethrionis"

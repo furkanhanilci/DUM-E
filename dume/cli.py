@@ -619,14 +619,18 @@ def cmd_telegram(args) -> int:
         path.write_text(_json.dumps(data, indent=2))
         path.chmod(0o600)
         print(f"AETHRIONIS will narrate to chat {args.broadcast}")
-        from .control.announce import Announcer
-        announcer = Announcer.from_config()
-        if announcer.say("AETHRIONIS will narrate here.\n\n"
-                         "Narration only — nothing posted here moves anything."):
+        # Sent by the command account, not the narrator. This is AETHRIONIS
+        # saying something about itself; the narrator is DUM-E, and a message
+        # about the workspace arriving in the harness's voice is the harness
+        # speaking for the laboratory it lives in.
+        try:
+            bridge = TelegramBridge(Config.load(), None, None)
+            bridge.send(args.broadcast,
+                        "AETHRIONIS will narrate here.\n\n"
+                        "Narration only — nothing posted here moves anything.")
             print("test message delivered")
-        else:
-            print(f"test message NOT delivered: "
-                  f"{announcer.faults[0] if announcer.faults else 'unknown'}")
+        except TelegramError as exc:
+            print(f"test message NOT delivered: {exc}", file=sys.stderr)
             return 1
         return 0
 
