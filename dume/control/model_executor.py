@@ -244,7 +244,27 @@ class ModelExecutor:
         return plan
 
     def prepare_worktree(self, packet: WPPacket):
-        task_id = f"live-{packet.packet_sha256[:8]}"
+        """A worktree for this attempt.
+
+        The id used to be the packet digest alone, so every attempt at the same
+        packet asked for the same path — and the manager refuses that, rightly,
+        so that two runs cannot share a tree. The effect was that a package
+        could be commissioned exactly once and then never again until somebody
+        removed a directory by hand.
+
+        The digest stays, because it says which packet this tree belongs to and
+        makes it findable. What is added is which attempt: the trees a previous
+        attempt left are evidence of that attempt and are not reused or
+        silently deleted.
+        """
+        base = f"live-{packet.packet_sha256[:8]}"
+        existing = {tree["path"] for tree in self.worktrees.list()}
+        attempt, task_id = 1, base
+        while (self.worktrees.worktree_root / f"{packet.wp_id}__{task_id}").exists() \
+                or str(self.worktrees.worktree_root
+                       / f"{packet.wp_id}__{task_id}") in existing:
+            attempt += 1
+            task_id = f"{base}-{attempt}"
         return self.worktrees.create(task_id, packet.wp_id)
 
     def implement(self, packet: WPPacket, plan: dict, worktree) -> dict:

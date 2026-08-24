@@ -141,3 +141,22 @@ def test_run_tests_reports_the_exit_code_it_got(tmp_path):
 
 def test_an_unknown_tool_is_refused_not_guessed_at(toolbox):
     assert toolbox.dispatch("exec_shell", {"cmd": "id"})["ok"] is False
+
+
+def test_a_second_attempt_gets_its_own_worktree(tmp_path):
+    """The task id was the packet digest alone, so every attempt at the same
+    packet asked for the same path. The manager refuses that — rightly, so two
+    runs cannot share a tree — and the effect was that a package could be
+    commissioned once and then never again until somebody deleted a directory.
+
+    The trees a previous attempt left are evidence of that attempt: they are
+    not reused, and they are not silently removed either.
+    """
+    import inspect
+
+    from dume.control.model_executor import ModelExecutor
+
+    source = inspect.getsource(ModelExecutor.prepare_worktree)
+    assert "attempt" in source, "a second attempt must not ask for the first's path"
+    assert "packet.packet_sha256" in source, (
+        "the digest must stay, so a tree still says which packet it belongs to")
