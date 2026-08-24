@@ -568,6 +568,28 @@ def cmd_telegram(args) -> int:
     from .control import telegram as tg
     from .control.telegram import Config, TelegramBridge, TelegramError
 
+    if args.forum:
+        from .control.forum import create
+        config = Config.load()
+        bridge = TelegramBridge(config, None, None)
+        try:
+            topics = create(bridge, str(args.forum))
+        except TelegramError as exc:
+            print(f"refused: {exc}", file=sys.stderr)
+            print("The bot must be an administrator of the group with the "
+                  "'Manage topics' right, and the group must have topics "
+                  "enabled.", file=sys.stderr)
+            return 1
+        import json as _json
+        path = tg.SECRETS
+        data = _json.loads(path.read_text()) if path.is_file() else {}
+        data["broadcast"] = str(args.forum)
+        path.write_text(_json.dumps(data, indent=2)); path.chmod(0o600)
+        print(f"{len(topics.by_channel)} topic(s) in chat {args.forum}:")
+        for channel, thread in sorted(topics.by_channel.items()):
+            print(f"  {channel:<16} topic {thread}")
+        return 0
+
     if args.broadcast:
         # Where the harness narrates. Written to the same file as the token but
         # a separate decision: this chat is told things, it is not thereby
@@ -820,6 +842,9 @@ def build_parser() -> argparse.ArgumentParser:
     tgp.add_argument("--max-class", default="CONTROL",
                      choices=["READ", "CONTROL", "HUMAN_DECISION",
                               "DANGEROUS_ACTION"])
+    tgp.add_argument("--forum", metavar="CHAT_ID",
+                     help="create one topic per AETHRION channel in this "
+                          "forum supergroup, and narrate into them")
     tgp.add_argument("--broadcast", metavar="CHAT_ID",
                      help="where AETHRION narrates; send /here in the chat to "
                           "find its id")

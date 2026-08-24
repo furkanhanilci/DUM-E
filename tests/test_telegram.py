@@ -16,7 +16,11 @@ def bridge(tmp_path):
     gateway = CommandGateway(config.principals(), audit_path=tmp_path / "a.jsonl")
     sent = []
     bridge = TelegramBridge(config, gateway, handler=lambda i: f"ran {i.action}")
-    bridge.send = lambda chat_id, text: sent.append((chat_id, text))
+    # The third argument is the forum topic a reply belongs in. Recorded so a
+    # test can assert an answer landed in the conversation that asked, rather
+    # than in the group root where nobody would find it.
+    bridge.send = lambda chat_id, text, thread_id=None: sent.append(
+        (chat_id, text, thread_id))
     bridge.sent = sent
     return bridge
 
@@ -90,3 +94,54 @@ def test_a_handler_fault_does_not_kill_the_bridge(bridge):
     result = bridge.handle(_message("status"))
     assert result["outcome"] == "EXECUTED"
     assert "failed" in bridge.sent[-1][1]
+
+
+def test_an_answer_stays_in_the_topic_that_asked(bridge):
+    """A forum group is many conversations, and the group root is not one of
+    them. An answer posted there is an answer nobody finds.
+
+    Regression guard for the reply path: whatever topic a command arrives in,
+    the reply carries the same `message_thread_id` back.
+    """
+    message = _message("status")
+    message["message_thread_id"] = 4242
+    bridge.handle(message)
+    assert bridge.sent[-1][2] == 4242, "the reply left its topic"
+
+    # A plain chat has no topic, and passing none must stay harmless.
+    bridge.handle(_message("status"))
+    assert bridge.sent[-1][2] is None
+
+
+def test_the_forum_mapping_is_re_runnable(tmp_path):
+    """Creating the topics twice must not give the group two rooms of the same
+    name, with no way to tell which one anything is in."""
+    from dume.control import forum
+
+    created = []
+
+    class FakeBridge:
+        def _call(self, method, **params):
+            created.append(params["name"])
+            return {"message_thread_id": 100 + len(created)}
+
+    path = tmp_path / "topics.json"
+    first = forum.create(FakeBridge(), "-100123", forum.Topics(by_channel={}))
+    first.save(path)
+    assert len(created) == len(forum.TOPICS)
+
+    again = forum.create(FakeBridge(), "-100123", forum.Topics.load(path))
+    assert len(created) == len(forum.TOPICS), "a re-run created duplicates"
+    assert again.by_channel == first.by_channel
+
+
+def test_a_topic_names_the_channel_it_mirrors():
+    """Narration has to land in the conversation it is about, and a reply typed
+    in a topic has to be understood as being about that channel."""
+    from dume.control.forum import Topics
+
+    topics = Topics(chat_id="-100123", by_channel={"control": 11, "review": 12})
+    assert topics.channel_for(11) == "control"
+    assert topics.channel_for(12) == "review"
+    assert topics.channel_for(99) is None
+    assert topics.channel_for(None) is None

@@ -202,10 +202,19 @@ class TelegramBridge:
         return {"id": bot.get("id"), "username": bot.get("username"),
                 "name": bot.get("first_name")}
 
-    def send(self, chat_id, text: str) -> None:
+    def send(self, chat_id, text: str, thread_id: int | None = None) -> None:
+        """Answer where the question was asked.
+
+        In a forum group every topic is a separate conversation, and an answer
+        that lands in the group root instead of the topic it belongs to is an
+        answer nobody finds. `message_thread_id` is what keeps a reply inside
+        its topic; omitting it in a plain chat is harmless, which is why it can
+        simply be passed through.
+        """
         # Telegram truncates at 4096; a silently cut status is a misleading one.
+        extra = {"message_thread_id": thread_id} if thread_id else {}
         for chunk in (text[i:i + 3800] for i in range(0, max(len(text), 1), 3800)):
-            self._call("sendMessage", chat_id=chat_id, text=chunk or "—")
+            self._call("sendMessage", chat_id=chat_id, text=chunk or "—", **extra)
 
     # ---- the loop -------------------------------------------------------
 
@@ -252,6 +261,9 @@ class TelegramBridge:
 
     def handle(self, message: dict) -> dict:
         chat_id = (message.get("chat") or {}).get("id")
+        # The topic this arrived in, when the group is a forum. Carried through
+        # every reply below so an answer stays in the conversation that asked.
+        thread_id = message.get("message_thread_id")
         sender = message.get("from") or {}
         # The identity comes from Telegram's own field. Nothing in the message
         # body can name a sender.
@@ -260,14 +272,16 @@ class TelegramBridge:
         forwarded = self.is_forwarded(message)
 
         if text.strip().lower() in ("/start", "start", "/help", "help", "?"):
-            self.send(chat_id, self.GREETING)
+            self.send(chat_id, self.GREETING, thread_id)
             return {"outcome": "GREETED", "actor": actor_id}
 
         # Where this chat is, so the operator can make it the broadcast target
         # without hunting for a numeric id in a settings screen.
         if text.strip().lower() in ("/here", "here"):
             self.send(chat_id,
-                      f"This chat is {chat_id}.\n\n"
+                      f"This chat is {chat_id}."
+                      + (f"\nThis topic is {thread_id}." if thread_id else "")
+                      + "\n\n"
                       "To have AETHRION narrate here, run on the host:\n"
                       f"  dume telegram --broadcast {chat_id}")
             return {"outcome": "GREETED", "actor": actor_id}
@@ -277,14 +291,15 @@ class TelegramBridge:
                 actor_id=actor_id, channel=f"telegram:{chat_id}", text=text,
                 forwarded=forwarded, verified=bool(actor_id))
         except CommandRefused as exc:
-            self.send(chat_id, f"refused: {exc}")
+            self.send(chat_id, f"refused: {exc}", thread_id)
             return {"outcome": "REFUSED", "actor": actor_id, "reason": str(exc)}
 
         if intent.authorization_result == "AWAITING_CONFIRMATION":
             self.send(chat_id,
                       f"{intent.action} is a DANGEROUS_ACTION.\n"
                       f"To go ahead, send exactly:  confirm {intent.confirmation_ref}\n"
-                      "It expires in 120 seconds and only you can confirm it.")
+                      "It expires in 120 seconds and only you can confirm it.",
+                      thread_id)
             return {"outcome": "AWAITING_CONFIRMATION", "actor": actor_id,
                     "action": intent.action}
 
@@ -292,5 +307,5 @@ class TelegramBridge:
             reply = self.handler(intent)
         except Exception as exc:  # a handler fault must not kill the bridge
             reply = f"the command was authorised but failed: {type(exc).__name__}: {exc}"
-        self.send(chat_id, reply or "(no output)")
+        self.send(chat_id, reply or "(no output)", thread_id)
         return {"outcome": "EXECUTED", "actor": actor_id, "action": intent.action}
