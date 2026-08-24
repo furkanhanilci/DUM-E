@@ -1,0 +1,219 @@
+{
+  "schema": "dume.skills_injected/1",
+  "note": "What each role was actually held to. Injection is an input, not proof of obedience \u2014 that is answered by the red-then-green exit codes and the independent reviews.",
+  "bundles": {
+    "commissioning_orchestrator": {
+      "role": "commissioning_orchestrator",
+      "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "characters": 8699,
+      "skills": [
+        {
+          "name": "writing-plans",
+          "role": "commissioning_orchestrator",
+          "primary": true,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/writing-plans/SKILL.md",
+          "sha256": "48508f44bbfd7d24b029fbf3a314f3cd14c9615599059366e922f47b8dc08cf2",
+          "characters": 6904,
+          "truncated": false
+        },
+        {
+          "name": "dispatching-parallel-agents",
+          "role": "commissioning_orchestrator",
+          "primary": false,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/dispatching-parallel-agents/SKILL.md",
+          "sha256": "1968923066f3b707eb01d1992cdf4c42284c3855f70253b9cd5000ff45fca13c",
+          "characters": 690,
+          "truncated": true
+        },
+        {
+          "name": "executing-plans",
+          "role": "commissioning_orchestrator",
+          "primary": false,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/executing-plans/SKILL.md",
+          "sha256": "c4c3d8b628c51114cd165fb8246fe02744cd8be180032328391252e653028d9b",
+          "characters": 527,
+          "truncated": true
+        }
+      ]
+    },
+    "architect": {
+      "role": "architect",
+      "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "characters": 11689,
+      "skills": [
+        {
+          "name": "brainstorming",
+          "role": "architect",
+          "primary": true,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/brainstorming/SKILL.md",
+          "sha256": "74edf03ea6d24ef53db48677b93558d14a979bdf052ca3f57ecdca0c66791608",
+          "characters": 9061,
+          "truncated": true
+        },
+        {
+          "name": "writing-plans",
+          "role": "architect",
+          "primary": false,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/writing-plans/SKILL.md",
+          "sha256": "48508f44bbfd7d24b029fbf3a314f3cd14c9615599059366e922f47b8dc08cf2",
+          "characters": 894,
+          "truncated": true
+        },
+        {
+          "name": "writing-skills",
+          "role": "architect",
+          "primary": false,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/writing-skills/SKILL.md",
+          "sha256": "d34db5c8aed6a4e0440132bd0613aace70a693ec7819d5637ad77481d8e10d1b",
+          "characters": 1200,
+          "truncated": true
+        }
+      ]
+    },
+    "implementer": {
+      "role": "implementer",
+      "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "characters": 10622,
+      "skills": [
+        {
+          "name": "test-driven-development",
+          "role": "implementer",
+          "primary": true,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/test-driven-development/SKILL.md",
+          "sha256": "bf1b8216e523851a411e91d429a7c1c2a173e79d88957bc78e348218d50edd54",
+          "characters": 8867,
+          "truncated": false
+        },
+        {
+          "name": "systematic-debugging",
+          "role": "implementer",
+          "primary": false,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/systematic-debugging/SKILL.md",
+          "sha256": "808fc5717aa88ad65efff312b11c186294d3e6ee301afb584e2f86599b137787",
+          "characters": 212,
+          "truncated": true
+        },
+        {
+          "name": "verification-before-completion",
+          "role": "implementer",
+          "primary": false,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/verification-before-completion/SKILL.md",
+          "sha256": "2befe7fc55bcadaa3d97dd9e8efeb633d2561c0ebe74c5a8b17c4d9e7e4520b3",
+          "characters": 176,
+          "truncated": true
+        },
+        {
+          "name": "using-git-worktrees",
+          "role": "implementer",
+          "primary": false,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/using-git-worktrees/SKILL.md",
+          "sha256": "8cfb86f121269e8f7f12361e6795c4f6738828340e28964c9229d365666c9edd",
+          "characters": 425,
+          "truncated": true
+        }
+      ]
+    },
+    "spec_reviewer": {
+      "role": "spec_reviewer",
+      "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "characters": 5545,
+      "skills": [
+        {
+          "name": "verification-before-completion",
+          "role": "spec_reviewer",
+          "primary": true,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/verification-before-completion/SKILL.md",
+          "sha256": "2befe7fc55bcadaa3d97dd9e8efeb633d2561c0ebe74c5a8b17c4d9e7e4520b3",
+          "characters": 3313,
+          "truncated": false
+        },
+        {
+          "name": "brainstorming",
+          "role": "spec_reviewer",
+          "primary": false,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/brainstorming/SKILL.md",
+          "sha256": "74edf03ea6d24ef53db48677b93558d14a979bdf052ca3f57ecdca0c66791608",
+          "characters": 1200,
+          "truncated": true
+        },
+        {
+          "name": "receiving-code-review",
+          "role": "spec_reviewer",
+          "primary": false,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/receiving-code-review/SKILL.md",
+          "sha256": "091df1629510af1b92fc4abd6f96732ebedb4cb2c0f3457e8f2740b0504a2438",
+          "characters": 221,
+          "truncated": true
+        }
+      ]
+    },
+    "code_reviewer": {
+      "role": "code_reviewer",
+      "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "characters": 3927,
+      "skills": [
+        {
+          "name": "requesting-code-review",
+          "role": "code_reviewer",
+          "primary": true,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/requesting-code-review/SKILL.md",
+          "sha256": "d71cc01ba56d2325cf8af5f7c11837819b63ecd57de0bfdb812f7f3ff7751df8",
+          "characters": 2793,
+          "truncated": false
+        },
+        {
+          "name": "receiving-code-review",
+          "role": "code_reviewer",
+          "primary": false,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/receiving-code-review/SKILL.md",
+          "sha256": "091df1629510af1b92fc4abd6f96732ebedb4cb2c0f3457e8f2740b0504a2438",
+          "characters": 221,
+          "truncated": true
+        },
+        {
+          "name": "systematic-debugging",
+          "role": "code_reviewer",
+          "primary": false,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/systematic-debugging/SKILL.md",
+          "sha256": "808fc5717aa88ad65efff312b11c186294d3e6ee301afb584e2f86599b137787",
+          "characters": 212,
+          "truncated": true
+        }
+      ]
+    },
+    "verifier": {
+      "role": "verifier",
+      "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "characters": 4619,
+      "skills": [
+        {
+          "name": "verification-before-completion",
+          "role": "verifier",
+          "primary": true,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/verification-before-completion/SKILL.md",
+          "sha256": "2befe7fc55bcadaa3d97dd9e8efeb633d2561c0ebe74c5a8b17c4d9e7e4520b3",
+          "characters": 3313,
+          "truncated": false
+        },
+        {
+          "name": "systematic-debugging",
+          "role": "verifier",
+          "primary": false,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/systematic-debugging/SKILL.md",
+          "sha256": "808fc5717aa88ad65efff312b11c186294d3e6ee301afb584e2f86599b137787",
+          "characters": 212,
+          "truncated": true
+        },
+        {
+          "name": "using-git-worktrees",
+          "role": "verifier",
+          "primary": false,
+          "path": "/home/otonom/Desktop/FH/DUM-E/vendor/superpowers/skills/using-git-worktrees/SKILL.md",
+          "sha256": "8cfb86f121269e8f7f12361e6795c4f6738828340e28964c9229d365666c9edd",
+          "characters": 425,
+          "truncated": true
+        }
+      ]
+    }
+  }
+}

@@ -346,6 +346,24 @@ class Orchestrator:
             return self._fail(report, wp_id, "IMPLEMENTATION_FAILURE", actor, str(exc))
 
         candidate = result["candidate_revision"]
+
+        # A candidate that is the commit it started from is not a candidate.
+        # This step reported OK on one — "RED exit=1, GREEN exit=0, 8 tool
+        # calls" over an empty diff — and the whole review cohort was then paid
+        # to notice that nothing had changed. The reviewer did catch it, which
+        # is the system working; it should not have had to, because the check is
+        # mechanical and the review is not.
+        #
+        # Reported as an implementation failure rather than a harness one: the
+        # machinery did what it was asked, and what came back was empty.
+        if candidate == worktree.base_revision:
+            detail = (f"the candidate is the base commit "
+                      f"{candidate[:12]} — nothing was written. "
+                      + str(result.get("discipline", "")))
+            step("implement", "FAILED", detail)
+            return self._fail(report, wp_id, "IMPLEMENTATION_FAILURE", actor,
+                              detail)
+
         report.candidate_revision = candidate
         # EXECUTING is already the current state, so the candidate is recorded
         # directly rather than by inventing a self-transition.
