@@ -18,6 +18,7 @@ from .control.command_gateway import (ACTIONS, CommandGateway, CommandRefused,
                                       Principal)
 from .control.intent_handler import IntentHandler
 from .review import discipline as discipline_module
+from .review import skills as skills_module
 from .runtimes import qualification as qualification_module
 from .runtimes import qwen as qwen_module
 from .runtimes.probe import probe as probe_runtimes
@@ -309,6 +310,76 @@ def cmd_qualify(args) -> int:
     return 0 if result.qualified_roles else 1
 
 
+def cmd_skills(args) -> int:
+    """What discipline each role is actually held to."""
+    lock = json.loads((REPO_ROOT / "config" / "upstream.lock.json").read_text())
+    expected = next((u["pinned_revision"] for u in lock["upstreams"]
+                     if u["name"] == "superpowers"), None)
+    try:
+        installed = skills_module.installed_revision()
+    except skills_module.SkillsUnavailable as exc:
+        print(f"{exc}", file=sys.stderr)
+        return 1
+    match = installed == expected
+    print(f"installed {installed or '—'}")
+    print(f"pinned    {expected or '—'}   {'match' if match else 'DRIFT'}")
+    print()
+    report = {}
+    for role in sorted(skills_module.ROLE_BUNDLES):
+        try:
+            bundle = skills_module.bundle_for(role, expected_revision=expected)
+        except skills_module.SkillsUnavailable as exc:
+            print(f"  {role:<16} unavailable: {exc}")
+            continue
+        report[role] = bundle.as_dict()
+        names = ", ".join(("*" if s.primary else "") + s.name for s in bundle.skills)
+        print(f"  {role:<16} {len(bundle.text):>6} chars   {names}")
+        if args.show == role:
+            print()
+            print(bundle.text)
+    print("\n* = injected whole. The rest are their own description and overview.")
+    print("Injection is an input. Whether it was obeyed is answered by the "
+          "red-then-green exit codes and the independent reviews.")
+    _emit(report, args.json)
+    return 0 if match else 1
+
+
+def cmd_reliability(args) -> int:
+    from .control import reliability
+    report = reliability.run(times=args.runs, wp_id=args.wp)
+    for attempt in report["attempts"]:
+        print(f"  #{attempt['index']}  {attempt['verdict']:<16} reached "
+              f"{attempt['reached']:<26} {attempt['seconds']:>6.1f}s")
+        if attempt["stopped_at"]:
+            print(f"      stopped at {attempt['stopped_at']}: {attempt['detail'][:80]}")
+    print(f"\n{report['merge_eligible']}/{report['runs']} reached MERGE_ELIGIBLE "
+          f"({report['success_rate']:.0%})")
+    print(f"deepest stage reached: {report['deepest_stage']}")
+    if report["stopped_at"]:
+        print("stopped at: " + ", ".join(f"{k} ×{v}" for k, v in
+                                         report["stopped_at"].items()))
+        print("same failure every time" if report["same_failure_every_time"]
+              else "different failures — a reliability problem, not one bug")
+    out = EVIDENCE / "reliability" / f"{args.wp}.json"
+    print(f"recorded: {out}  sha256={json_dump(report, out)}")
+    _emit(report, args.json)
+    return 0 if report["merge_eligible"] else 1
+
+
+def cmd_live(args) -> int:
+    from .control import live
+    report = live.run(args.wp, evidence_root=EVIDENCE / "live")
+    for step in report.get("steps", []):
+        print(f"  {step['name']:<28} {step['outcome']:<8} {step['detail'][:96]}")
+    print(f"\nverdict: {report.get('verdict')}")
+    if report.get("channel"):
+        print(f"channel: {report['channel']}")
+    if report.get("skills"):
+        print(f"skills:  {', '.join(report['skills'])} held to the pinned install")
+    _emit(report, args.json)
+    return 0 if report.get("verdict") == "MERGE_ELIGIBLE" else 1
+
+
 def cmd_pilot(args) -> int:
     out = EVIDENCE / "synthetic_pilot.json"
     report = pilot_module.run_all(out)
@@ -580,6 +651,19 @@ def build_parser() -> argparse.ArgumentParser:
     tg.add_argument("--check", action="store_true",
                     help="verify the bot and the allowlist, then exit")
     tg.set_defaults(func=cmd_telegram)
+
+    sk = sub.add_parser("skills", help="what discipline each role is held to")
+    sk.add_argument("--show", metavar="ROLE", help="print one role's whole bundle")
+    sk.set_defaults(func=cmd_skills)
+
+    lv = sub.add_parser("live", help="a real commissioning run with live models")
+    lv.add_argument("wp", nargs="?", default="WP-001")
+    lv.set_defaults(func=cmd_live)
+
+    rl = sub.add_parser("reliability", help="repeat a live run and report the spread")
+    rl.add_argument("--wp", default="WP-001")
+    rl.add_argument("--runs", type=int, default=5)
+    rl.set_defaults(func=cmd_reliability)
 
     pl = sub.add_parser("pilot", help="run the synthetic end-to-end pilot")
     pl.add_argument("-v", "--verbose", action="store_true")

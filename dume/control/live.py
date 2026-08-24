@@ -24,7 +24,6 @@ from ..runtimes.client import ModelClient
 from ..runtimes.profiles import NoEligibleRuntime, RuntimeRegistry
 from ..state import Store, json_dump
 from ..worktrees.manager import WorktreeManager
-from ..collaboration.buzz import BuzzClient, BuzzError, load_identity
 from ..review.skills import SkillsUnavailable, bundles_for_cohort
 from .model_executor import ModelExecutor
 from .orchestrator import Orchestrator
@@ -40,6 +39,12 @@ IDENTITY_STORE = Path.home() / ".dume" / "secrets" / "buzz-identities.json"
 def connect_buzz():
     """The relay, if it is there. A run without it is narrated nowhere and is
     otherwise identical — the substrate carries commentary, not authority."""
+    try:
+        from ..collaboration.buzz import BuzzClient, BuzzError, load_identity
+    except ImportError:
+        # No signature library installed. A run without the substrate is
+        # narrated nowhere and is otherwise identical.
+        return None
     try:
         client = BuzzClient(BUZZ_URL,
                             load_identity(IDENTITY_STORE, "dume_orchestrator"))

@@ -21,7 +21,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from ..acceptance.gate import MergeGate
-from ..collaboration.buzz import BuzzError, Cohort, channel_id_for
 from ..cohort.compiler import CohortManifest, compile_cohort
 from ..packets.wp_packet_builder import PacketBuilder, WPPacket
 from ..runtimes.client import ModelError
@@ -89,7 +88,7 @@ class Orchestrator:
         # the commentary, never the commissioning (Invariant 16), and a message
         # is never a gate verdict (Invariant 11).
         self.buzz = buzz
-        self.cohort_identities: Cohort | None = None
+        self.cohort_identities = None
         self.channel: str | None = None
         self.switcher = RuntimeSwitcher(registry, self.evidence_dir)
 
@@ -104,6 +103,11 @@ class Orchestrator:
         """
         if not (self.buzz and self.channel):
             return
+        # Imported here, not at module scope: the collaboration layer needs a
+        # signature library, and ADR-0001 promises the foundation commands run
+        # on a bare host with nothing installed. Buzz is optional, so its
+        # dependency must be too.
+        from ..collaboration.buzz import BuzzError
         try:
             self.buzz.announce(self.channel, text, mentions=mentions)
         except BuzzError as exc:
@@ -113,7 +117,7 @@ class Orchestrator:
         """Give the package a channel and mint one identity per role slot."""
         if not self.buzz:
             return None
-        from ..collaboration.buzz import deploy_cohort
+        from ..collaboration.buzz import BuzzError, channel_id_for, deploy_cohort
         self.channel = channel_id_for(wp_id)
         try:
             self.cohort_identities = deploy_cohort(self.buzz, wp_id, roles)

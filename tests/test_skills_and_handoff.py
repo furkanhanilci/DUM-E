@@ -155,3 +155,29 @@ def test_every_switch_worthy_status_is_a_real_status():
     from dume.runtimes.profiles import STATUSES
     assert SWITCH_WORTHY <= set(STATUSES)
     assert "AVAILABLE" not in SWITCH_WORTHY
+
+
+def test_the_foundation_still_runs_with_nothing_installed():
+    """ADR-0001. Wiring Buzz into the orchestrator briefly made the whole CLI
+    require a signature library at import time, which would have meant the
+    commands that exist to characterise a bare host could not run on one."""
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parent.parent
+    # The system interpreter, deliberately: the virtualenv has coincurve.
+    result = subprocess.run(
+        ["/usr/bin/python3", "-m", "dume.cli", "skills"],
+        cwd=repo, capture_output=True, text=True, timeout=60)
+    assert result.returncode == 0, result.stderr[-600:]
+    assert "ModuleNotFoundError" not in result.stderr
+
+
+def test_buzz_is_not_imported_at_orchestrator_module_scope():
+    from pathlib import Path
+    source = (Path(__file__).resolve().parent.parent / "dume" / "control"
+              / "orchestrator.py").read_text()
+    header = source.split("class Orchestrator")[0]
+    assert "from ..collaboration" not in header, \
+        "the collaboration layer must be imported lazily; it is optional"
