@@ -130,6 +130,7 @@ KIND_TEXT_NOTE = 1
 KIND_CHANNEL_MESSAGE = 9
 KIND_GROUP_CREATE = 9007
 KIND_GROUP_ADD_MEMBER = 9000
+KIND_AGENT_DIRECTORY = 10100
 KIND_METADATA = 0
 
 
@@ -338,6 +339,31 @@ class BuzzClient:
     def read(self, channel: str, limit: int = 50) -> list[dict]:
         return self.query(kinds=[KIND_CHANNEL_MESSAGE], tags={"h": [channel]},
                           limit=limit)
+
+    def announce_agent(self, name: str, about: str, channels: list[str],
+                       capabilities: list[str] | None = None) -> dict:
+        """List this identity in the desktop's Agents directory.
+
+        A profile makes a key show a name in a channel; it does not make it an
+        agent. The desktop builds that list from a self-signed directory record
+        and keeps only members the relay has recorded in the bot role — two
+        facts that must both hold, which is why six named, seated roles still
+        appeared nowhere under Agents.
+
+        Nothing here grants authority. It is a description of what this
+        identity is for, published by the identity itself, and the harness
+        remains the only thing that decides what any of them may do.
+        """
+        return self.publish(KIND_AGENT_DIRECTORY, json.dumps({
+            "name": name,
+            "display_name": name,
+            "about": about,
+            "agent_type": "agent",
+            "channels": channels,
+            "channel_ids": channels,
+            "capabilities": capabilities or [],
+            "status": "online",
+        }, separators=(",", ":")))
 
     def set_profile(self, about: str = "", name: str | None = None) -> dict:
         """Publish who this key is.
@@ -553,12 +579,15 @@ def ensure_roles(client: BuzzClient, path: Path | str,
         speaker = BuzzClient(client.base_url, harness, client.timeout)
         if not speaker.is_member():
             speaker = admit(client, harness, client.base_url)
-        speaker.set_profile(
-            name="DUM-E",
-            about="The commissioning harness. Records what happened; the gate "
-                  "decides, and nothing said in a channel moves a package.")
-        for name in ROLE_CHANNELS["commissioning_orchestrator"]:
+        about = ("The commissioning harness. Records what happened; the gate "
+                 "decides, and nothing said in a channel moves a package.")
+        speaker.set_profile(name="DUM-E", about=about)
+        seats = ROLE_CHANNELS["commissioning_orchestrator"]
+        for name in seats:
             client.add_member(SPACE_CHANNELS[name], harness.pubkey, role="bot")
+        speaker.announce_agent(
+            "DUM-E", about, [SPACE_CHANNELS[n] for n in seats],
+            ["commission", "record", "report"])
         out["dume"] = harness.pubkey[:12]
     except BuzzError as exc:
         out["dume"] = f"not named: {exc}"
@@ -571,8 +600,12 @@ def ensure_roles(client: BuzzClient, path: Path | str,
         # else is tried. Admission first, and it is the owner's decision.
         if not speaker.is_member():
             speaker = admit(client, identity, client.base_url)
-        speaker.set_profile(name=role.replace("_", " "),
-                            about=ROLE_ABOUT.get(role, f"A DUM-E {role}."))
+        about = ROLE_ABOUT.get(role, f"A DUM-E {role}.")
+        speaker.set_profile(name=role.replace("_", " "), about=about)
+        speaker.announce_agent(
+            role.replace("_", " "), about,
+            [SPACE_CHANNELS[n] for n in ROLE_CHANNELS.get(role, ())],
+            [role])
         for name in ROLE_CHANNELS.get(role, ()):
             try:
                 # Added by the owner: a role cannot put itself in a room.
