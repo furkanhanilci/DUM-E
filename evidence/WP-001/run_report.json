@@ -2,7 +2,7 @@
   "bindings": {
     "architect": {
       "agent_id": "WP-001/architect",
-      "bound_at": "2026-08-24T21:33:17+00:00",
+      "bound_at": "2026-08-24T22:07:22+00:00",
       "family": "qwen",
       "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
       "reason": "cheapest qualified runtime for architect",
@@ -11,7 +11,7 @@
     },
     "code_reviewer": {
       "agent_id": "WP-001/code_reviewer",
-      "bound_at": "2026-08-24T21:33:17+00:00",
+      "bound_at": "2026-08-24T22:07:22+00:00",
       "family": "mistral",
       "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
       "reason": "cheapest qualified runtime for code_reviewer; identity must differ from implementer, spec_reviewer, family-independent of implementer",
@@ -20,7 +20,7 @@
     },
     "implementer": {
       "agent_id": "WP-001/implementer",
-      "bound_at": "2026-08-24T21:33:17+00:00",
+      "bound_at": "2026-08-24T22:07:22+00:00",
       "family": "qwen",
       "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
       "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
@@ -29,7 +29,7 @@
     },
     "implementer#2": {
       "agent_id": "WP-001/implementer#2",
-      "bound_at": "2026-08-24T21:33:17+00:00",
+      "bound_at": "2026-08-24T22:07:22+00:00",
       "family": "qwen",
       "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
       "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
@@ -38,7 +38,7 @@
     },
     "spec_reviewer": {
       "agent_id": "WP-001/spec_reviewer",
-      "bound_at": "2026-08-24T21:33:17+00:00",
+      "bound_at": "2026-08-24T22:07:22+00:00",
       "family": "mistral",
       "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
       "reason": "cheapest qualified runtime for spec_reviewer; identity must differ from implementer, family-independent of implementer",
@@ -47,7 +47,7 @@
     },
     "verifier": {
       "agent_id": "WP-001/verifier",
-      "bound_at": "2026-08-24T21:33:17+00:00",
+      "bound_at": "2026-08-24T22:07:22+00:00",
       "family": "mistral",
       "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
       "reason": "cheapest qualified runtime for verifier; identity must differ from implementer, spec_reviewer, code_reviewer, family-independent of implementer",
@@ -55,7 +55,7 @@
       "runtime_id": "mistral-local"
     }
   },
-  "candidate_revision": "aa4c33e83723443b59f5bb73c473d7ebf839881d",
+  "candidate_revision": null,
   "channel": null,
   "cohort": {
     "assurance_level": "BASELINE",
@@ -287,133 +287,43 @@
     "wp_id": "WP-001"
   },
   "gate": null,
-  "handoffs": [
-    {
-      "accepted_plan": {
-        "risks": [
-          "no JSON object after two attempts: Expecting value: line 1 column 1 (char 0)"
-        ],
-        "satisfiable": false,
-        "steps": [],
-        "summary": "planning failed: no JSON object after two attempts: Expecting value: line 1 column 1 (char 0)"
-      },
-      "artefact_refs": [],
-      "candidate_sha": null,
-      "completed_steps": [],
-      "context_policy": "task state only. The previous agent's conversation is deliberately excluded: it would double the context, carry over its confusions, and prejudice a role that is supposed to form its own view.",
-      "from_binding": {
-        "agent_id": "WP-001/implementer",
-        "bound_at": "2026-08-24T21:33:17+00:00",
-        "family": "qwen",
-        "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
-        "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
-        "role_id": "implementer",
-        "runtime_id": "qwen-local"
-      },
-      "issued_at": "2026-08-24T22:03:59+00:00",
-      "logical_role": "implementer",
-      "open_findings": [],
-      "open_steps": [],
-      "packet_sha256": "66921faa41f496cde827432d5d4b25cd6303cda657be1d2103f91c347903500d",
-      "reason": "qwen-local failed to run the work: the model stopped mid tool call (max_tokens=8000); the arguments are incomplete",
-      "task_id": "WP-001-implement",
-      "to_binding": {
-        "agent_id": "WP-001/implementer@fallback",
-        "bound_at": "2026-08-24T22:03:59+00:00",
-        "family": "mistral",
-        "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
-        "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
-        "role_id": "implementer",
-        "runtime_id": "mistral-local"
-      },
-      "worktree": "/home/otonom/Desktop/FH/DUM-E/worktrees/WP-001__live-66921faa-9",
-      "wp_id": "WP-001"
-    }
-  ],
+  "handoffs": [],
   "packet_sha256": "66921faa41f496cde827432d5d4b25cd6303cda657be1d2103f91c347903500d",
-  "started_at": "2026-08-24T21:33:09+00:00",
+  "started_at": "2026-08-24T22:07:21+00:00",
   "steps": [
     {
-      "at": "2026-08-24T21:33:09+00:00",
+      "at": "2026-08-24T22:07:21+00:00",
       "detail": "package re-enters at PLANNED after a retry and dependencies are ACCEPTED",
       "name": "precondition",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-24T21:33:09+00:00",
+      "at": "2026-08-24T22:07:21+00:00",
       "detail": "3 frozen sections, 0 dependencies, 5 deliverables, digest 66921faa41f4",
       "name": "packet",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-24T21:33:17+00:00",
+      "at": "2026-08-24T22:07:22+00:00",
       "detail": "BASELINE assurance, roles: commissioning_orchestrator, architect, implementer, implementer, spec_reviewer, code_reviewer, verifier; specialists: security, data, runtime",
       "name": "cohort",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-24T21:33:17+00:00",
+      "at": "2026-08-24T22:07:22+00:00",
       "detail": "architect→qwen-local(qwen); implementer→qwen-local(qwen); implementer#2→qwen-local(qwen); spec_reviewer→mistral-local(mistral); code_reviewer→mistral-local(mistral); verifier→mistral-local(mistral)",
       "name": "runtime_binding",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-24T21:36:00+00:00",
-      "detail": "planning failed: no JSON object after two attempts: Expecting value: line 1 column 1 (char 0)",
+      "at": "2026-08-24T22:09:51+00:00",
+      "detail": "the architect produced no plan: no JSON object after two attempts: Expecting value: line 1 column 1 (char 0)",
       "name": "plan",
-      "outcome": "OK"
-    },
-    {
-      "at": "2026-08-24T21:36:00+00:00",
-      "detail": "dume/WP-001/live-66921faa-9 off 7786fbfbfd74",
-      "name": "worktree",
-      "outcome": "OK"
-    },
-    {
-      "at": "2026-08-24T21:36:00+00:00",
-      "detail": "3 open finding(s) handed to the implementer",
-      "name": "prior_findings",
-      "outcome": "OK"
-    },
-    {
-      "at": "2026-08-24T22:03:58+00:00",
-      "detail": "ToolCallTruncated: the model stopped mid tool call (max_tokens=8000); the arguments are incomplete",
-      "name": "implement",
       "outcome": "FAILED"
     },
     {
-      "at": "2026-08-24T22:03:59+00:00",
-      "detail": "implementer rebound qwen-local → mistral-local; role unchanged, task state carried, conversation not",
-      "name": "runtime_switch",
-      "outcome": "OK"
-    },
-    {
-      "at": "2026-08-24T22:04:22+00:00",
-      "detail": "3 finding(s) were about an earlier candidate",
-      "name": "findings_superseded",
-      "outcome": "OK"
-    },
-    {
-      "at": "2026-08-24T22:04:22+00:00",
-      "detail": "candidate aa4c33e83723, RED→GREEN evidence: RED exit=1, GREEN exit=0, 6 tool calls",
-      "name": "implement",
-      "outcome": "OK"
-    },
-    {
-      "at": "2026-08-24T22:04:22+00:00",
-      "detail": "6 file(s) changed, none protected",
-      "name": "protected_paths",
-      "outcome": "OK"
-    },
-    {
-      "at": "2026-08-24T22:04:23+00:00",
-      "detail": "the candidate does not contain host_inventory.md, gpu_probe.log, disk_capacity_report.md, deployment_profile_candidate.md — each is a mandatory deliverable of the packet",
-      "name": "deliverables",
-      "outcome": "FAILED"
-    },
-    {
-      "at": "2026-08-24T22:04:23+00:00",
-      "detail": "IMPLEMENTATION_FAILURE — candidate implicated: True; owner: implementer; IMPLEMENTATION_FAILURE: 11 attempts reached the limit of 3; repeating it again is not new information.",
+      "at": "2026-08-24T22:09:51+00:00",
+      "detail": "RUNTIME_FAILURE — candidate implicated: False; owner: runtime_control; RUNTIME_FAILURE: 12 attempts reached the limit of 3; repeating it again is not new information.",
       "name": "failure_classification",
       "outcome": "OK"
     }

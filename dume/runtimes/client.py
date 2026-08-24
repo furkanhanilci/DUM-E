@@ -156,8 +156,15 @@ class ModelClient:
         conversation = list(messages)
         last_error = ""
         for attempt in range(2):
+            # No thinking. The error this method raises already names the
+            # cause -- "the budget was probably spent thinking before it
+            # answered" -- and then asked again with thinking on. A structured
+            # answer to a question whose shape is given is not the place for a
+            # reasoning budget: with it the architect returned nothing twice
+            # and the run failed with no plan.
             reply = self.chat(conversation, max_tokens=max_tokens,
-                              response_format={"type": "json_object"})
+                              response_format={"type": "json_object"},
+                              think=False)
             text = reply.content.strip()
             if not text:
                 last_error = (f"the model returned no content "
