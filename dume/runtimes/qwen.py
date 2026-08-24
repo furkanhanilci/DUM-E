@@ -1,4 +1,4 @@
-"""Serving the local Qwen model, per DUME-ADR-0004.
+"""Serving the local models, per DUME-ADR-0004 and DUME-ADR-0008.
 
 The profile is llama.cpp CUDA in a container, Q4_K_M, on one GPU. Two reasons
 that ADR records and this module encodes: the image's `NVIDIA_REQUIRE_CUDA`
@@ -23,27 +23,66 @@ import shutil
 import subprocess
 import urllib.error
 import urllib.request
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 IMAGE = "ghcr.io/ggml-org/llama.cpp:server-cuda"
 MODEL_DIR = Path("/media/otonom/DATADRIVE1/dume-model-cache")
-MODEL_FILE = "Qwen3.8-27B-UD-Q4_K_M.gguf"
-CONTAINER = "dume-qwen"
-PORT = 8000          # on the host
 INTERNAL_PORT = 8080  # inside the container — the image's own healthcheck polls
                       # http://localhost:8080/health, so serving anywhere else
                       # leaves a working server permanently marked unhealthy
 
-# Chosen from the measured envelope, not from the model's native ceiling.
-# 41.1 GiB usable; ~16 GiB weights; KV is 64 KiB/token bf16, halved at q8_0, and
-# only the 16 full-attention layers grow with context. The 48 Gated-DeltaNet
-# layers cost ~78 MB *per sequence* regardless of length — which is why the cap
-# that matters is concurrency, not context.
-CONTEXT = 65536
-PARALLEL = 4
-KV_TYPE = "q8_0"
-GPU_INDEX = 0
+
+@dataclass(frozen=True)
+class Profile:
+    """One local model on one GPU.
+
+    Two of these run at once, and they exist as separate *families* rather than
+    two copies of one model on purpose: a reviewer from the implementer's family
+    shares its blind spot, so a second instance of the same weights would buy
+    availability and no independence at all.
+    """
+    runtime_id: str
+    container: str
+    model_file: str
+    port: int
+    gpu_index: int
+    family: str
+    context: int = 65536
+    parallel: int = 4
+    kv_type: str = "q8_0"
+
+    def model_path(self) -> Path:
+        return MODEL_DIR / self.model_file
+
+    def endpoint(self) -> str:
+        return f"http://127.0.0.1:{self.port}/v1"
+
+
+# Chosen from the measured envelope, not from either model's native ceiling.
+# 24 GiB per card; ~16 GiB and ~14 GiB of weights; KV is 64 KiB/token bf16 for
+# Qwen and only its 16 full-attention layers grow with context. The 48
+# Gated-DeltaNet layers cost per *sequence*, which is why the cap that matters
+# is concurrency.
+QWEN = Profile("qwen-local", "dume-qwen", "Qwen3.8-27B-UD-Q4_K_M.gguf",
+               8000, 0, "qwen")
+MISTRAL = Profile("mistral-local", "dume-mistral",
+                  "Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf",
+                  8001, 1, "mistral")
+
+PROFILES = {p.runtime_id: p for p in (QWEN, MISTRAL)}
+
+# Kept so existing callers and the CLI default keep working.
+MODEL_FILE = QWEN.model_file
+CONTAINER = QWEN.container
+PORT = QWEN.port
+
+# Module-level aliases for the default profile, kept so existing callers read
+# unchanged.
+CONTEXT = QWEN.context
+PARALLEL = QWEN.parallel
+KV_TYPE = QWEN.kv_type
+GPU_INDEX = QWEN.gpu_index
 
 
 @dataclass
@@ -57,12 +96,13 @@ class ServeResult:
         return asdict(self)
 
 
-def model_path() -> Path:
-    return MODEL_DIR / MODEL_FILE
+def model_path(profile: "Profile" = None) -> Path:
+    return (profile or QWEN).model_path()
 
 
-def preflight() -> dict:
+def preflight(profile: "Profile" = None) -> dict:
     """Everything that must be true before a serve attempt is worth making."""
+    profile = profile or QWEN
     checks: list[dict] = []
 
     def check(name: str, ok: bool, detail: str) -> None:
@@ -76,7 +116,7 @@ def preflight() -> dict:
     check("image", bool(image.stdout.strip()),
           f"{IMAGE} " + ("present" if image.stdout.strip() else "not pulled"))
 
-    path = model_path()
+    path = profile.model_path()
     size = path.stat().st_size if path.is_file() else 0
     check("artefact", path.is_file() and size > 8 * 1024 ** 3,
           f"{path} — {size / 1024**3:.1f} GiB" if size else f"{path} absent")
@@ -85,7 +125,7 @@ def preflight() -> dict:
     # reading the runtimes list. A modern toolkit passes devices through CDI
     # without registering a runtime named "nvidia", so inferring from that list
     # reports a working host as blocked — which is what it did here.
-    check(*_gpu_passthrough())
+    check(*_gpu_passthrough(profile.gpu_index))
 
     driver = subprocess.run(
         ["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader"],
@@ -103,7 +143,7 @@ def preflight() -> dict:
             "blocking": [c["check"] for c in checks if not c["passed"]]}
 
 
-def _gpu_passthrough() -> tuple[str, bool, str]:
+def _gpu_passthrough(gpu_index: int = 0) -> tuple[str, bool, str]:
     """Can a container actually see the GPU? Probed with an image already local."""
     images = subprocess.run(
         ["docker", "images", "--format", "{{.Repository}}:{{.Tag}}"],
@@ -113,23 +153,23 @@ def _gpu_passthrough() -> tuple[str, bool, str]:
         return ("gpu_passthrough", False,
                 "no local image to probe with; cannot establish this either way")
     result = subprocess.run(
-        ["docker", "run", "--rm", "--gpus", f"device={GPU_INDEX}",
-         "--entrypoint", "/bin/sh", probe_image, "-c", "ls /dev/nvidia0"],
+        ["docker", "run", "--rm", "--gpus", f"device={gpu_index}",
+         "--entrypoint", "/bin/sh", probe_image, "-c", f"ls /dev/nvidia{gpu_index}"],
         capture_output=True, text=True, timeout=120)
-    ok = result.returncode == 0 and "/dev/nvidia0" in result.stdout
+    ok = result.returncode == 0 and f"/dev/nvidia{gpu_index}" in result.stdout
     return ("gpu_passthrough", ok,
-            f"/dev/nvidia{GPU_INDEX} visible inside a container" if ok
+            f"/dev/nvidia{gpu_index} visible inside a container" if ok
             else (result.stderr.strip() or result.stdout.strip())[:160])
 
 
-def template_asserts(path: Path | None = None) -> dict:
+def template_asserts(path: Path | None = None, profile: "Profile" = None) -> dict:
     """Does the packaged chat template refuse before emitting a token?
 
     Reported rather than silently worked around: if the asserts are present, a
     patched template must be supplied, and knowing that before the first request
     is the difference between a five-second fix and an afternoon.
     """
-    path = path or model_path()
+    path = path or (profile or QWEN).model_path()
     if not path.is_file():
         return {"checked": False, "detail": f"{path} absent"}
     # The template lives in GGUF key-value metadata, which sits at the front of
@@ -189,50 +229,56 @@ def template_asserts(path: Path | None = None) -> dict:
                 f"request ({len(validation)})")}
 
 
-def serve_command() -> list[str]:
+def serve_command(profile: "Profile" = None) -> list[str]:
     """The exact command, so the report and the run cannot disagree."""
+    profile = profile or QWEN
     return [
-        "docker", "run", "-d", "--name", CONTAINER,
-        "--gpus", f"device={GPU_INDEX}",
-        "-p", f"{PORT}:{INTERNAL_PORT}",
+        "docker", "run", "-d", "--name", profile.container,
+        "--gpus", f"device={profile.gpu_index}",
+        "-p", f"{profile.port}:{INTERNAL_PORT}",
         "-v", f"{MODEL_DIR}:/models:ro",
         IMAGE,
-        "-m", f"/models/{MODEL_FILE}",
+        "-m", f"/models/{profile.model_file}",
         "--host", "0.0.0.0", "--port", str(INTERNAL_PORT),
         "-ngl", "999",              # every layer on the GPU
         "-sm", "none",              # one card; -sm row is dead on CUDA and
                                     # -sm tensor crashes on this architecture
         "-fa", "on",
-        "-c", str(CONTEXT),
-        "-np", str(PARALLEL),       # concurrency is the constraint, not context
-        "-ctk", KV_TYPE, "-ctv", KV_TYPE,   # must match or flash attention dies
+        "-c", str(profile.context),
+        "-np", str(profile.parallel),   # concurrency is the constraint
+        "-ctk", profile.kv_type, "-ctv", profile.kv_type,  # must match or
+                                    # flash attention silently disables
         "--jinja",                  # required for tool-call grammar
     ]
 
 
-def serve(force: bool = False) -> ServeResult:
-    ready = preflight()
+def serve(force: bool = False, profile: "Profile" = None) -> ServeResult:
+    profile = profile or QWEN
+    ready = preflight(profile)
     if not ready["ready"]:
         return ServeResult(False, "preflight failed: " + ", ".join(ready["blocking"]))
 
-    existing = subprocess.run(["docker", "ps", "-aq", "-f", f"name=^{CONTAINER}$"],
-                              capture_output=True, text=True).stdout.strip()
+    existing = subprocess.run(
+        ["docker", "ps", "-aq", "-f", f"name=^{profile.container}$"],
+        capture_output=True, text=True).stdout.strip()
     if existing:
         if not force:
-            return ServeResult(False, f"container {CONTAINER} already exists; "
-                                      "pass force to replace it")
-        subprocess.run(["docker", "rm", "-f", CONTAINER], capture_output=True)
+            return ServeResult(False, f"container {profile.container} already "
+                                      "exists; pass force to replace it",
+                               container=profile.container)
+        subprocess.run(["docker", "rm", "-f", profile.container], capture_output=True)
 
-    result = subprocess.run(serve_command(), capture_output=True, text=True)
+    result = subprocess.run(serve_command(profile), capture_output=True, text=True)
     if result.returncode != 0:
-        return ServeResult(False, result.stderr.strip()[:400])
+        return ServeResult(False, result.stderr.strip()[:400],
+                           container=profile.container)
     return ServeResult(True, f"container started: {result.stdout.strip()[:12]}",
-                       endpoint=f"http://127.0.0.1:{PORT}/v1")
+                       endpoint=profile.endpoint(), container=profile.container)
 
 
-def health(timeout: float = 5.0) -> dict:
+def health(timeout: float = 5.0, profile: "Profile" = None) -> dict:
     """Is it answering, and with what?"""
-    url = f"http://127.0.0.1:{PORT}/v1/models"
+    url = (profile or QWEN).endpoint() + "/models"
     try:
         with urllib.request.urlopen(url, timeout=timeout) as response:
             data = json.loads(response.read().decode())
@@ -242,13 +288,15 @@ def health(timeout: float = 5.0) -> dict:
         return {"up": False, "endpoint": url, "detail": f"{type(exc).__name__}: {exc}"}
 
 
-def logs(lines: int = 40) -> str:
-    result = subprocess.run(["docker", "logs", "--tail", str(lines), CONTAINER],
+def logs(lines: int = 40, profile: "Profile" = None) -> str:
+    result = subprocess.run(["docker", "logs", "--tail", str(lines),
+                             (profile or QWEN).container],
                             capture_output=True, text=True)
     return (result.stdout + result.stderr).strip()
 
 
-def tool_call_probe(timeout: float = 180.0) -> dict:
+def tool_call_probe(timeout: float = 180.0, profile: "Profile" = None) -> dict:
+    profile = profile or QWEN
     """The check that actually matters: does it call a tool correctly?
 
     Throughput is not what the harness needs from a local model — reliable tool
@@ -277,7 +325,7 @@ def tool_call_probe(timeout: float = 180.0) -> dict:
     }
     body = json.dumps(payload).encode()
     request = urllib.request.Request(
-        f"http://127.0.0.1:{PORT}/v1/chat/completions", data=body, method="POST")
+        profile.endpoint() + "/chat/completions", data=body, method="POST")
     request.add_header("Content-Type", "application/json")
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:

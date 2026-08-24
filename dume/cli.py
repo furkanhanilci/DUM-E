@@ -14,6 +14,9 @@ from . import config, inventory, scenarios, secrets, toolchain, upstream
 from .cohort.compiler import compile_cohort
 from .control import pilot as pilot_module
 from .packets.wp_packet_builder import PacketBuilder
+from .control.command_gateway import (ACTIONS, CommandGateway, CommandRefused,
+                                      Principal)
+from .control.intent_handler import IntentHandler
 from .review import discipline as discipline_module
 from .runtimes import qualification as qualification_module
 from .runtimes import qwen as qwen_module
@@ -353,6 +356,85 @@ def cmd_discipline(args) -> int:
     return 0
 
 
+PAUSE_FLAG = REPO_ROOT / "state" / "PAUSED"
+
+
+def _gateway(actor: str = "console") -> tuple:
+    store = _store()
+    registry = RuntimeRegistry.load()
+    principals = {actor: Principal(actor_id=actor, display_name=actor,
+                                   max_class="DANGEROUS_ACTION")}
+    gateway = CommandGateway(principals,
+                             audit_path=REPO_ROOT / "evidence" / "command_audit.jsonl")
+    return store, gateway, IntentHandler(store, registry, PAUSE_FLAG)
+
+
+def cmd_command(args) -> int:
+    """Run one command through the same gateway Telegram and Buzz use."""
+    if args.vocabulary:
+        store, gateway, _ = _gateway()
+        for entry in gateway.vocabulary():
+            confirm = "  (needs confirmation)" if entry["needs_confirmation"] else ""
+            params = " ".join(f"<{p}>" for p in entry["parameters"])
+            print(f"  {entry['class']:<17} {entry['command']} {params}{confirm}")
+            print(f"  {'':<17} {entry['summary']}")
+        store.close()
+        return 0
+    store, gateway, handler = _gateway(args.actor)
+    try:
+        intent = gateway.translate(actor_id=args.actor, channel="cli",
+                                   text=" ".join(args.text))
+    except CommandRefused as exc:
+        print(f"refused: {exc}", file=sys.stderr)
+        store.close()
+        return 1
+    if intent.authorization_result == "AWAITING_CONFIRMATION":
+        print(f"{intent.action} is a DANGEROUS_ACTION.")
+        print(f"confirm with: dume command --confirm {intent.confirmation_ref}")
+        store.close()
+        return 2
+    print(handler(intent))
+    print(f"\n[{intent.klass}] audit {intent.audit_ref}")
+    store.close()
+    return 0
+
+
+def cmd_telegram(args) -> int:
+    from .control.telegram import Config, TelegramBridge, TelegramError
+    try:
+        config = Config.load()
+    except TelegramError as exc:
+        print(f"{exc}", file=sys.stderr)
+        return 1
+    store, _unused, handler = _gateway()
+    gateway = CommandGateway(config.principals(),
+                             audit_path=REPO_ROOT / "evidence" / "command_audit.jsonl")
+    bridge = TelegramBridge(config, gateway, handler)
+    try:
+        bot = bridge.whoami()
+    except TelegramError as exc:
+        print(f"cannot reach Telegram: {exc}", file=sys.stderr)
+        store.close()
+        return 1
+    print(f"bot @{bot['username']} ({bot['id']})")
+    who = ", ".join(config.allowed) or "NONE — nobody can command this bot"
+    print(f"authorised principals: {who}")
+    if args.check:
+        store.close()
+        return 0
+    print("polling; Ctrl-C to stop")
+    try:
+        while True:
+            for outcome in bridge.poll_once():
+                print(f"  {outcome['outcome']:<22} {outcome.get('actor', '')} "
+                      f"{outcome.get('action', outcome.get('reason', ''))[:70]}")
+    except KeyboardInterrupt:
+        print("stopped")
+    finally:
+        store.close()
+    return 0
+
+
 def cmd_seed(args) -> int:
     store = _store()
     summary = seed(store)
@@ -482,6 +564,22 @@ def build_parser() -> argparse.ArgumentParser:
     ql.add_argument("--record", action="store_true",
                     help="write the result into the runtime registry")
     ql.set_defaults(func=cmd_qualify)
+
+    cm = sub.add_parser("command", help="run one command through the gateway")
+    # REMAINDER so a hostile message reaches the gateway verbatim instead of
+    # being eaten by the argument parser. The gateway is what refuses it, and it
+    # cannot refuse what it never sees.
+    cm.add_argument("text", nargs=argparse.REMAINDER)
+    cm.add_argument("--actor", default="console")
+    cm.add_argument("--vocabulary", action="store_true",
+                    help="every command that exists — there is no shell")
+    cm.add_argument("--confirm", help="confirmation reference for a dangerous action")
+    cm.set_defaults(func=cmd_command)
+
+    tg = sub.add_parser("telegram", help="the Telegram control bridge")
+    tg.add_argument("--check", action="store_true",
+                    help="verify the bot and the allowlist, then exit")
+    tg.set_defaults(func=cmd_telegram)
 
     pl = sub.add_parser("pilot", help="run the synthetic end-to-end pilot")
     pl.add_argument("-v", "--verbose", action="store_true")

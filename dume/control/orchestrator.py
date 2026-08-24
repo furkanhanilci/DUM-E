@@ -104,6 +104,10 @@ class Orchestrator:
         slots = sorted(cohort.roles, key=lambda s: order.index(s.role_id)
                        if s.role_id in order else 99)
         for slot in slots:
+            if not ROLES[slot.role_id].needs_runtime:
+                # The harness performs this role. Binding a model to it would
+                # add a voice with no vote and a quota bill.
+                continue
             key = slot.role_id
             if key in bindings:
                 # A second slot of the same role — two implementers, a second
@@ -181,7 +185,8 @@ class Orchestrator:
              "; ".join(f"{k}→{v.runtime_id}({v.family})" for k, v in bindings.items()))
 
         # 4. Plan.
-        self.store.transition(wp_id, "PLANNED", actor=bindings["architect"].agent_id,
+        self.store.transition(wp_id, "PLANNED",
+                              actor=bindings["architect"].agent_id,
                               reason="implementation plan accepted")
         plan = executor.plan(packet, cohort)
         step("plan", "OK", plan.get("summary", "plan produced"))

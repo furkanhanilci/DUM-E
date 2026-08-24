@@ -22,6 +22,27 @@
       "status": "AVAILABLE"
     },
     {
+      "cost_tier": 2,
+      "family": "mistral",
+      "local": true,
+      "mode": "NORMAL",
+      "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
+      "notes": "A second local model of a DIFFERENT family, on GPU 1. It exists so review and verification can be independent of the implementer without spending an external quota. A second copy of the same weights would buy availability and no independence at all.",
+      "provider": "local",
+      "qualified_roles": [
+        "implementer",
+        "architect",
+        "spec_reviewer",
+        "code_reviewer",
+        "verifier",
+        "specialist"
+      ],
+      "reason": "http://127.0.0.1:8001/v1/models answered with 1 model(s): /models/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf",
+      "retry_after": null,
+      "runtime_id": "mistral-local",
+      "status": "AVAILABLE"
+    },
+    {
       "cost_tier": 4,
       "family": "claude",
       "local": false,

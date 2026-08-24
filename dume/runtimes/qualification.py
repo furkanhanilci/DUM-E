@@ -112,17 +112,25 @@ def qualify(runtime_id: str, endpoint: str, repeats: int = 5) -> QualificationRe
     result.trials.append(Trial("tool_calling", passed, detail, seconds))
 
     # 2. Structured output that obeys a schema.
+    #
+    # Parsed exactly as the harness parses at runtime — fenced JSON accepted,
+    # one retry on a parse error. Measuring more strictly than you operate
+    # manufactures a failure: a model that wraps a correct object in a ```json
+    # fence has answered the question, and disqualifying it as a reviewer for a
+    # formatting habit the client already handles would lose a capable reviewer
+    # to a defect in the measurement.
     def schema_trial():
-        data = _chat(endpoint, [{"role": "user", "content":
-            "Return a JSON object with keys verdict (PASS or FAIL) and reason "
-            "(a string), judging whether a test that passes before the "
-            "implementation exists is a valid test."}],
-            response_format={"type": "json_object"})
-        content = data["choices"][0]["message"].get("content") or ""
+        from .client import ModelClient, ModelError
+        client = ModelClient(endpoint)
         try:
-            parsed = json.loads(content)
-        except json.JSONDecodeError:
-            return False, f"not JSON: {content[:120]}"
+            parsed = client.json_reply(
+                [{"role": "user", "content":
+                  "Return a JSON object with keys verdict (PASS or FAIL) and "
+                  "reason (a string), judging whether a test that passes before "
+                  "the implementation exists is a valid test."}],
+                '{"verdict": "PASS|FAIL", "reason": "..."}')
+        except ModelError as exc:
+            return False, str(exc)[:120]
         ok = "verdict" in parsed and "reason" in parsed
         return ok, f"keys: {sorted(parsed)[:6]}"
 

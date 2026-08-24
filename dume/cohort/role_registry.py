@@ -31,6 +31,11 @@ class Role:
     requires_qualification: bool = True
     # Whether a fresh context is mandatory rather than merely preferred.
     requires_fresh_context: bool = False
+    # Whether this role needs a model at all. Two do not: the human commander is
+    # a person, and the orchestrator is the harness itself — it moves work
+    # between stages and decides nothing about whether a stage passed, so giving
+    # it a model would add a voice with no vote and a quota bill.
+    needs_runtime: bool = True
 
 
 ROLES: dict[str, Role] = {
@@ -40,13 +45,14 @@ ROLES: dict[str, Role] = {
         "Anything the machine may not: scope, architecture conflicts, "
         "irreversible actions, and whether an unsatisfiable requirement is "
         "changed or the design is.",
-        requires_qualification=False),
+        requires_qualification=False, needs_runtime=False),
 
     "commissioning_orchestrator": Role(
         "commissioning_orchestrator",
         "Runs the work-package workflow and manages the cohort.",
         "Sequencing only. The orchestrator moves work between stages; it does "
         "not decide whether a stage passed.",
+        requires_qualification=False, needs_runtime=False,
         skills=("brainstorming", "writing-plans")),
 
     "architect": Role(
