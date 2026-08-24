@@ -95,7 +95,8 @@ class Orchestrator:
 
     # ---- collaboration --------------------------------------------------
 
-    def _say(self, text: str, mentions: list[str] | None = None) -> None:
+    def _say(self, text: str, mentions: list[str] | None = None, *,
+             message_type: str = "STATUS", refs: list[str] | None = None) -> None:
         """Post an operational message. Never allowed to stop the run.
 
         A substrate outage is not an implementation failure, so this swallows
@@ -110,7 +111,8 @@ class Orchestrator:
         # dependency must be too.
         from ..collaboration.buzz import BuzzError
         try:
-            self.buzz.announce(self.channel, text, mentions=mentions)
+            self.buzz.announce(self.channel, text, mentions=mentions,
+                               message_type=message_type, refs=refs)
         except BuzzError as exc:
             self._buzz_faults.append(str(exc)[:200])
 
@@ -360,7 +362,14 @@ class Orchestrator:
                  f"{reviewer}: {verdict['verdict']} — {verdict.get('detail', '')}")
             self._say(f"@{role_key} answered {verdict['verdict']}: "
                       f"{verdict.get('detail', '')[:400]}",
-                      mentions=self._pubkey(role_key))
+                      mentions=self._pubkey(role_key),
+                      # A reviewer's answer is EVIDENCE about a candidate, not a
+                      # verdict on the package. The gate reads the store; it has
+                      # never read this channel, and this tag does not change
+                      # that. It says what the message is, so that a reader is
+                      # not left inferring it from the word PASS in a sentence.
+                      message_type="EVIDENCE",
+                      refs=[f"{wp_id}/{kind}/{reviewer}"])
             if verdict["verdict"] != "PASS":
                 for finding in verdict.get("findings", []):
                     self.store.add_finding(wp_id, finding.get("severity", "HIGH"),

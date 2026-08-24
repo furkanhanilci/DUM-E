@@ -30,6 +30,24 @@ from . import nostr
 DUME_CHANNEL_NAMESPACE = uuid.UUID("6f1d5b52-0d2e-5f6a-9c3b-4a7e8d1c2b3f")
 
 
+# The ten message classes. A message declares which one it is; nothing reads it
+# out of the prose. Kept here rather than imported from the contracts package so
+# that the bridge stays importable without it — ADR-0001.
+MESSAGE_TYPES = frozenset({
+    "PROPOSAL", "CHALLENGE", "EVIDENCE", "REQUEST", "CORRECTION",
+    "DISAGREEMENT", "CONSENSUS_CANDIDATE", "ABSTAIN", "STATUS", "BLOCKER"})
+
+# Classes that are unanswerable without naming their subject. A challenge to
+# nothing in particular cannot be closed, and an untethered claim of evidence is
+# the shape a prohibited authority transfer takes when it is trying to look
+# ordinary.
+NEEDS_REFERENCE = frozenset({"CHALLENGE", "EVIDENCE", "CORRECTION",
+                             "DISAGREEMENT", "CONSENSUS_CANDIDATE"})
+
+TYPE_TAG = "aethrion-type"
+REF_TAG = "aethrion-ref"
+
+
 def channel_id_for(wp_id: str) -> str:
     """The channel a work package talks in. Derived, not allocated."""
     return str(uuid.uuid5(DUME_CHANNEL_NAMESPACE, wp_id.upper()))
@@ -180,16 +198,42 @@ class BuzzClient:
         return self.publish(KIND_GROUP_CREATE, "", [
             ["h", channel], ["name", name], ["about", about], ["private", "true"]])
 
-    def announce(self, channel: str, text: str, mentions: list[str] | None = None
+    def announce(self, channel: str, text: str, mentions: list[str] | None = None,
+                 *, message_type: str = "STATUS", refs: list[str] | None = None,
+                 reply_to: str | None = None, thread_root: str | None = None
                  ) -> dict:
         """Say something in a channel, optionally waking named participants.
 
         A mention is a `p` tag. That is the whole wake mechanism, and it is why
         a role can be addressed by name without DUM-E owning a message bus.
+
+        The declared type travels in a tag, never in the text. A reader that has
+        to decide from prose whether a paragraph was a challenge or a status
+        will sometimes decide wrong, and the seven prohibited authority
+        transfers all begin with exactly that reading. The tag is a claim about
+        what the sender meant, and nothing more: it still confers no authority,
+        which is why EVIDENCE and CHALLENGE must also carry what they are about.
         """
-        tags = [["h", channel]]
+        message_type = message_type.upper()
+        if message_type not in MESSAGE_TYPES:
+            raise BuzzError(
+                f"{message_type!r} is not one of the ten message classes: "
+                + ", ".join(sorted(MESSAGE_TYPES)))
+        refs = list(refs or [])
+        if message_type in NEEDS_REFERENCE and not refs:
+            raise BuzzError(
+                f"a {message_type} must name what it is about. Without a "
+                "reference it cannot be answered, tracked or closed.")
+
+        tags = [["h", channel], [TYPE_TAG, message_type]]
         for pubkey in mentions or []:
             tags.append(["p", pubkey])
+        for ref in refs:
+            tags.append([REF_TAG, ref])
+        if thread_root:
+            tags.append(["e", thread_root, "", "root"])
+        if reply_to:
+            tags.append(["e", reply_to, "", "reply"])
         return self.publish(KIND_CHANNEL_MESSAGE, text, tags)
 
     def read(self, channel: str, limit: int = 50) -> list[dict]:
