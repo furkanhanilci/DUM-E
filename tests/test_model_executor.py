@@ -238,3 +238,18 @@ def test_a_plan_that_was_never_produced_is_not_reported_as_OK():
     # An architect who says the packet cannot be met is a different thing from
     # a model that did not answer, and must not be recorded as the same.
     assert 'step("plan", "BLOCKED"' in source
+
+
+def test_a_long_tool_loop_does_not_outgrow_the_window():
+    """Every write_file the model sends comes back in its own transcript. After
+    a dozen turns the request was 33280 tokens against a smaller window, and
+    the run only survived because a runtime switch moved it somewhere roomier."""
+    import inspect
+    from dume.control import model_executor
+
+    source = inspect.getsource(model_executor.ModelExecutor.implement)
+    assert "_fits(messages)" in source, "the conversation is never trimmed"
+    assert "MAX_CONVERSATION_CHARS" in inspect.getsource(model_executor)
+    # A tool reply separated from the call that produced it is a malformed
+    # request, not a shorter one.
+    assert '"tool"' in source

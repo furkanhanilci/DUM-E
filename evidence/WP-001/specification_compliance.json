@@ -1,18 +1,34 @@
 {
   "verdict": "FAIL",
-  "reason": "The diff does not include all mandatory deliverables and lacks evidence of required tests.",
+  "reason": "The implementation does not meet the specification requirements.",
   "findings": [
     {
       "severity": "CRITICAL",
-      "summary": "Missing mandatory deliverables: host_inventory.json, host_inventory.md, gpu_probe.log, disk_capacity_report.md, deployment_profile_candidate.md."
+      "summary": "The implementation does not include the required adversarial tests targeting known failure modes."
     },
     {
       "severity": "CRITICAL",
-      "summary": "No evidence of mandatory core and package-specific adversarial tests being executed."
+      "summary": "The implementation does not include the required upstream drift check."
     },
     {
       "severity": "HIGH",
-      "summary": "No evidence of Superpowers discipline being followed (e.g., no RED-GREEN cycle, no verification before completion)."
+      "summary": "The implementation does not include the required evidence for each test case."
+    },
+    {
+      "severity": "HIGH",
+      "summary": "The implementation does not include the required rollback/disable evidence."
+    },
+    {
+      "severity": "MEDIUM",
+      "summary": "The implementation does not include the required environment manifest."
+    },
+    {
+      "severity": "MEDIUM",
+      "summary": "The implementation does not include the required verifier binding."
+    },
+    {
+      "severity": "LOW",
+      "summary": "The implementation does not include the required timestamp for each test case."
     }
   ]
 }

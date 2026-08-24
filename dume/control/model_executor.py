@@ -44,6 +44,12 @@ MAX_TOOL_TURNS = 24
 # costs four hundred seconds at thirty tokens a second.
 IMPLEMENTER_MAX_TOKENS = 4000
 
+# Roughly what fits alongside the brief and the answer in the smaller of the
+# two local windows. Measured in characters rather than tokens because the
+# tokeniser is the server's business and a character count that is wrong in the
+# safe direction is better than a token count that is wrong in the other.
+MAX_CONVERSATION_CHARS = 48_000
+
 # Two replies running with no tool call is not a model that needs another nudge;
 # it is a model that is not going to use the tools. Stopping says so while the
 # evidence is still legible, instead of burning twenty more turns to reach the
@@ -329,6 +335,32 @@ class ModelExecutor:
                "a file, at exactly the path given — and only then reply with "
                "the single word DONE and nothing else."}]
 
+        def _fits(conversation: list[dict]) -> list[dict]:
+            """Drop the oldest exchanges when the conversation outgrows the
+            window.
+
+            A tool-calling loop grows without bound: every write_file the model
+            sends comes back in its own transcript, and after a dozen turns the
+            request was 33280 tokens against a smaller window. The server
+            answered HTTP 400 and the run only survived because the runtime
+            switch happened to move it to a model with more room.
+
+            The system message and the brief are what the work is; they always
+            stay. What is dropped is the middle, oldest first, and a tool reply
+            is never separated from the assistant turn that called it — an
+            orphaned tool result is a malformed request, not a shorter one.
+            """
+            budget = MAX_CONVERSATION_CHARS
+            head, tail = conversation[:2], conversation[2:]
+            size = sum(len(str(m.get("content") or "")) for m in conversation)
+            while size > budget and len(tail) > 2:
+                dropped = [tail.pop(0)]
+                # Carry its tool replies with it.
+                while tail and tail[0].get("role") == "tool":
+                    dropped.append(tail.pop(0))
+                size -= sum(len(str(m.get("content") or "")) for m in dropped)
+            return head + tail
+
         red_exit: int | None = None
         green_exit: int | None = None
         silent = 0
@@ -340,6 +372,7 @@ class ModelExecutor:
             # way on the same turn. Retry the turn once with room, and if it
             # truncates again say so — a file that will not fit twice the
             # budget wants splitting, which the model is told to do.
+            messages = _fits(messages)
             try:
                 reply = client.chat(messages, tools=TOOL_SCHEMAS,
                                     max_tokens=IMPLEMENTER_MAX_TOKENS)
@@ -452,6 +485,12 @@ class ModelExecutor:
                 f"(red={red_exit}, green={green_exit}) after "
                 f"{len(log.calls)} tool call(s)")
 
+        # Byte-code caches are produced by running the tests, not written by
+        # anyone, and a candidate carrying one puts a binary in front of a
+        # reviewer who then has to decide whether it matters. It does not.
+        for cache in root.rglob("__pycache__"):
+            if ".git" not in cache.parts:
+                shutil.rmtree(cache, ignore_errors=True)
         subprocess.run(["git", "-C", str(root), "add", "-A"],
                        capture_output=True, check=False)
         # The author is the agent that wrote it, named per commit rather than
