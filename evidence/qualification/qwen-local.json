@@ -1,0 +1,42 @@
+{
+  "endpoint": "http://127.0.0.1:8000/v1",
+  "passed": 4,
+  "qualified_roles": [
+    "implementer",
+    "architect",
+    "spec_reviewer",
+    "code_reviewer",
+    "verifier",
+    "specialist"
+  ],
+  "refused_roles": {},
+  "runtime_id": "qwen-local",
+  "schema": "dume.qualification/1",
+  "total": 4,
+  "trials": [
+    {
+      "detail": "3/3 well-formed tool calls",
+      "name": "tool_calling",
+      "passed": true,
+      "seconds": 29.13707661628723
+    },
+    {
+      "detail": "keys: ['reason', 'verdict']",
+      "name": "structured_output",
+      "passed": true,
+      "seconds": 7.182618856430054
+    },
+    {
+      "detail": "answered: REJECT",
+      "name": "refuses_an_unsound_claim",
+      "passed": true,
+      "seconds": 2.4092366695404053
+    },
+    {
+      "detail": "answered: UNKNOWN",
+      "name": "admits_uncertainty",
+      "passed": true,
+      "seconds": 3.387094259262085
+    }
+  ]
+}

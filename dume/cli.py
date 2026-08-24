@@ -15,6 +15,8 @@ from .cohort.compiler import compile_cohort
 from .control import pilot as pilot_module
 from .packets.wp_packet_builder import PacketBuilder
 from .review import discipline as discipline_module
+from .runtimes import qualification as qualification_module
+from .runtimes import qwen as qwen_module
 from .runtimes.probe import probe as probe_runtimes
 from .runtimes.profiles import NoEligibleRuntime, RuntimeRegistry
 from .catalogue import seed
@@ -257,6 +259,53 @@ def cmd_runtime(args) -> int:
     return 0
 
 
+def cmd_qwen(args) -> int:
+    if args.serve:
+        result = qwen_module.serve(force=args.force)
+        print(result.detail)
+        if not result.started:
+            return 1
+    ready = qwen_module.preflight()
+    for check in ready["checks"]:
+        mark = "ok " if check["passed"] else "NO "
+        print(f"  {mark} {check['check']:<22} {check['detail'][:72]}")
+    template = qwen_module.template_asserts()
+    if template.get("checked"):
+        print(f"  {'NO ' if template['needs_patch'] else 'ok '} "
+              f"{'chat_template':<22} {template['detail'][:72]}")
+    health = qwen_module.health()
+    print(f"\nendpoint {health['endpoint']} — "
+          + (f"up, serving {', '.join(health['models'])}" if health["up"]
+             else f"down ({health.get('detail', '')[:80]})"))
+    if health["up"] and args.probe:
+        probe = qwen_module.tool_call_probe()
+        print(f"tool-call probe: {'called' if probe['called'] else 'NO CALL'} — "
+              f"{probe.get('detail', '')}")
+    _emit({"preflight": ready, "template": template, "health": health}, args.json)
+    return 0 if health["up"] else 1
+
+
+def cmd_qualify(args) -> int:
+    result = qualification_module.qualify(args.runtime, args.endpoint,
+                                          repeats=args.repeats)
+    for trial in result.trials:
+        mark = "PASS" if trial.passed else "FAIL"
+        print(f"  {mark}  {trial.name:<26} {trial.seconds:6.1f}s  {trial.detail[:60]}")
+    print(f"\nqualified for: {', '.join(result.qualified_roles) or 'nothing'}")
+    for role, why in result.refused_roles.items():
+        print(f"  refused {role:<16} {why}")
+    if args.record:
+        registry = RuntimeRegistry.load()
+        runtime = registry.get(args.runtime)
+        runtime.qualified_roles = list(result.qualified_roles)
+        registry.save()
+        print(f"\nrecorded against {args.runtime} in the runtime registry")
+    out = EVIDENCE / "qualification" / f"{args.runtime}.json"
+    print(f"recorded: {out}  sha256={json_dump(result.as_dict(), out)}")
+    _emit(result.as_dict(), args.json)
+    return 0 if result.qualified_roles else 1
+
+
 def cmd_pilot(args) -> int:
     out = EVIDENCE / "synthetic_pilot.json"
     report = pilot_module.run_all(out)
@@ -419,6 +468,20 @@ def build_parser() -> argparse.ArgumentParser:
     rt.add_argument("--probe", action="store_true", help="measure what can run here")
     rt.add_argument("--bind", metavar="ROLE", help="try to bind a role, or explain why not")
     rt.set_defaults(func=cmd_runtime)
+
+    qw = sub.add_parser("qwen", help="the local model server")
+    qw.add_argument("--serve", action="store_true", help="start it")
+    qw.add_argument("--force", action="store_true", help="replace a running container")
+    qw.add_argument("--probe", action="store_true", help="send a real tool call")
+    qw.set_defaults(func=cmd_qwen)
+
+    ql = sub.add_parser("qualify", help="measure whether a runtime may hold a role")
+    ql.add_argument("runtime")
+    ql.add_argument("--endpoint", default="http://127.0.0.1:8000/v1")
+    ql.add_argument("--repeats", type=int, default=5)
+    ql.add_argument("--record", action="store_true",
+                    help="write the result into the runtime registry")
+    ql.set_defaults(func=cmd_qualify)
 
     pl = sub.add_parser("pilot", help="run the synthetic end-to-end pilot")
     pl.add_argument("-v", "--verbose", action="store_true")
