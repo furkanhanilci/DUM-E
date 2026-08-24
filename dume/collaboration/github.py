@@ -110,11 +110,33 @@ def _post(url: str, payload: dict, *, token: str | None = None) -> dict:
         with urllib.request.urlopen(request, timeout=15) as response:
             return json.loads(response.read().decode())
     except urllib.error.HTTPError as exc:
-        raise MembershipError(
-            f"GitHub returned {exc.code} for {urllib.parse.urlparse(url).path}"
-        ) from exc
+        # GitHub explains itself in the body. Reporting only the status code
+        # turns "device flow is not enabled on this app" into "400", and the
+        # operator cannot tell that from a client id that does not exist.
+        raise MembershipError(_explain(exc, url)) from exc
     except urllib.error.URLError as exc:
         raise MembershipError(f"GitHub could not be reached: {exc.reason}") from exc
+
+
+def _explain(exc: urllib.error.HTTPError, url: str) -> str:
+    path = urllib.parse.urlparse(url).path
+    try:
+        body = exc.read().decode()
+    except Exception:
+        body = ""
+    try:
+        parsed = json.loads(body)
+        detail = (parsed.get("error_description") or parsed.get("message")
+                  or parsed.get("error") or "")
+    except json.JSONDecodeError:
+        detail = body.strip()[:200]
+    hint = ""
+    if exc.code == 400 and "device" in path:
+        hint = (" — GitHub says this when the OAuth app has no device flow: "
+                "open the app and tick 'Enable Device Flow'. It says the same "
+                "for a client id that does not exist.")
+    return (f"GitHub returned {exc.code} for {path}"
+            + (f": {detail}" if detail else "") + hint)
 
 
 def _get(url: str, token: str) -> dict:
