@@ -241,8 +241,13 @@ class ModelExecutor:
                 '{"summary": "...", "satisfiable": true, "steps": [...], '
                 '"test_first": "...", "risks": [...]}')
         except ModelError as exc:
+            # Distinguished from an architect who read the packet and said the
+            # requirement cannot be met: that is a finding, this is a model
+            # that did not answer. Both used to arrive as satisfiable=False,
+            # and the run reported "plan OK — planning failed" and carried on
+            # with no plan at all.
             return {"summary": f"planning failed: {exc}", "satisfiable": False,
-                    "steps": [], "risks": [str(exc)]}
+                    "planning_error": str(exc), "steps": [], "risks": [str(exc)]}
         self._record("architect", messages, json.dumps(plan)[:2000])
         plan.setdefault("summary", "plan produced")
         return plan
@@ -316,8 +321,10 @@ class ModelExecutor:
              + "\n\nYou do not need to list or read these unless you intend to "
                "change one. Work only through the tools, and begin by writing "
                "the failing test with write_file. When run_tests has shown the "
-               "test not passing and then passing, reply with the single word "
-               "DONE and nothing else."}]
+               "test not passing and then passing, write every mandatory "
+               "deliverable listed above that does not exist yet — each one is "
+               "a file, at exactly the path given — and only then reply with "
+               "the single word DONE and nothing else."}]
 
         red_exit: int | None = None
         green_exit: int | None = None

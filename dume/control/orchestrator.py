@@ -367,6 +367,25 @@ class Orchestrator:
                               actor=bindings["architect"].agent_id,
                               reason="implementation plan accepted")
         plan = executor.plan(packet, cohort)
+        if plan.get("planning_error"):
+            # No plan was produced. Continuing hands the implementer an empty
+            # plan and blames it for the result, which is what happened: the
+            # step read "plan OK — planning failed" and the run went on.
+            detail = f"the architect produced no plan: {plan['planning_error']}"
+            step("plan", "FAILED", detail)
+            return self._fail(report, wp_id, "RUNTIME_FAILURE", actor, detail)
+        if plan.get("satisfiable") is False:
+            # The architect read the packet and says it cannot be met as
+            # written. That is a finding about the packet, not a failure of
+            # anyone's, and it needs a person.
+            detail = "the architect says the packet is not satisfiable as " \
+                     f"written: {plan.get('summary', '(no reason given)')}"
+            step("plan", "BLOCKED", detail)
+            self.store.add_finding(wp_id, "HIGH", detail)
+            self.store.transition(wp_id, "BLOCKED", actor=actor, reason=detail)
+            report.verdict = "BLOCKED_SPECIFICATION"
+            self._write(report)
+            return report
         step("plan", "OK", plan.get("summary", "plan produced"))
 
         # 5. Worktree + implementation.

@@ -224,3 +224,17 @@ def test_a_retry_shows_the_implementer_what_was_refused():
         "the orchestrator never reads the findings back into the work")
     assert "findings=prior" in source, (
         "the findings are read but not handed to the implementer")
+
+
+def test_a_plan_that_was_never_produced_is_not_reported_as_OK():
+    """The step read "plan OK -- planning failed" and the run carried on with
+    an empty plan, then blamed the implementer for the result."""
+    import inspect
+    from dume.control import orchestrator
+
+    source = inspect.getsource(orchestrator.Orchestrator.run)
+    assert 'plan.get("planning_error")' in source
+    assert 'step("plan", "FAILED"' in source
+    # An architect who says the packet cannot be met is a different thing from
+    # a model that did not answer, and must not be recorded as the same.
+    assert 'step("plan", "BLOCKED"' in source
