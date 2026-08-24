@@ -130,3 +130,58 @@ def test_evidence_is_redacted_at_the_moment_it_becomes_a_file(tmp_path):
     body = out.read_text()
     assert REAL["github_token"] not in body
     assert "REDACTED:github_token" in body
+
+
+# The shapes that a real deployment actually produces. An earlier version of the
+# detector reported a directory holding a private-key vault and five live
+# passwords as clean, because it anchored on \b and "_" is a word character —
+# so there is no boundary before PASSWORD in POSTGRES_PASSWORD.
+ENVIRONMENT_SHAPES = [
+    ("POSTGRES_PASSWORD", "POSTGRES_PASSWORD=aB3xZ9qW7eR1tY2uI4oP"),
+    ("screaming snake private key", "BUZZ_RELAY_PRIVATE_KEY=" + "a1b2c3d4" * 8),
+    ("suffix secret", "BUZZ_GIT_HOOK_HMAC_SECRET=" + "f" * 64),
+    ("nested secret key", "BUZZ_S3_SECRET_KEY=abcdefghij123456"),
+    ("json private field", '  "private": "' + "9" * 64 + '",'),
+    ("lowercase yaml", "  api_key: aB3xZ9qW7eR1tY2uI4oP"),
+    ("dotted", "db.password = aB3xZ9qW7eR1tY2uI4oP"),
+]
+
+PUBLIC_OR_INNOCENT = [
+    ("owner pubkey", "RELAY_OWNER_PUBKEY=" + "9f907217" * 8),
+    ("ssh public key", "SSH_PUBLIC_KEY=AAAAB3NzaC1yc2EAAAADAQABAAAB"),
+    ("commit sha", "candidate_revision: c750946d0ee08e58e3090f979630743aafcf9696"),
+    ("artefact digest", "artefact_sha256: " + "e3b0c442" * 8),
+    ("schema name", '"schema": "dume.secret_scan_allowlist/1"'),
+    ("boolean", "private_repo: true"),
+    ("placeholder", "api_key = changeme"),
+]
+
+
+@pytest.mark.parametrize("label,line", ENVIRONMENT_SHAPES)
+def test_deployment_credential_shapes_are_caught(label, line):
+    assert secrets.scan(line), f"{label} was missed"
+
+
+@pytest.mark.parametrize("label,line", PUBLIC_OR_INNOCENT)
+def test_public_and_innocent_values_are_not_flagged(label, line):
+    """A scanner that cannot be satisfied by a correct configuration gets
+    switched off, and then it protects nothing."""
+    assert secrets.scan(line) == [], f"{label} was a false positive"
+
+
+def test_a_generated_env_file_is_not_reported_as_clean(tmp_path):
+    """The regression that mattered: a whole file of live secrets, missed."""
+    env = tmp_path / "relay.env"
+    env.write_text("\n".join([
+        "# generated deployment environment",
+        "BUZZ_IMAGE=ghcr.io/block/buzz:sha-0720f53",
+        "RELAY_OWNER_PUBKEY=" + "9f907217" * 8,
+        "BUZZ_RELAY_PRIVATE_KEY=" + "a1b2c3d4" * 8,
+        "POSTGRES_PASSWORD=aB3xZ9qW7eR1tY2uI4oP",
+        "REDIS_PASSWORD=Xy7-abcdEFGH1234_ijkl",
+        "BUZZ_S3_SECRET_KEY=abcdefghij123456",
+    ]) + "\n")
+    hits = secrets.scan_file(env)
+    assert len(hits) >= 4, [h.preview for h in hits]
+    # ...and the public half is still not among them.
+    assert all("9f907217" not in h.preview for h in hits)

@@ -36,13 +36,29 @@ PATTERNS: list[tuple[str, re.Pattern]] = [
     ("bearer_header", re.compile(r"(?i)\bauthorization\s*:\s*bearer\s+\S{16,}")),
     ("url_with_credentials", re.compile(r"\b[a-z][a-z0-9+.\-]*://[^\s/:@]+:[^\s/@]{3,}@")),
     # Generic assignment: a name that means credential, followed by a value long
-    # enough to be one. Placeholders are excluded below rather than here, so the
-    # rule stays readable.
+    # enough to be one.
+    #
+    # The name may carry a prefix, because the single most common way a
+    # credential appears is as a SCREAMING_SNAKE environment variable —
+    # POSTGRES_PASSWORD, BUZZ_S3_SECRET_KEY, GIT_HOOK_HMAC_SECRET. An earlier
+    # version of this rule anchored on \b and matched none of them: "_" is a
+    # word character, so there is no boundary before PASSWORD in
+    # POSTGRES_PASSWORD. It reported a directory holding a private-key vault and
+    # five live passwords as clean.
     ("credential_assignment", re.compile(
-        r"(?i)\b(?:api[_\-]?key|secret[_\-]?key|access[_\-]?token|auth[_\-]?token"
-        r"|client[_\-]?secret|password|passwd|private[_\-]?token)\b"
-        r"\s*[:=]\s*[\"']?([A-Za-z0-9_\-+/=]{12,})[\"']?")),
+        r"(?i)(?:^|[^A-Za-z0-9_.\-])"          # not mid-identifier
+        r"(?:[A-Za-z0-9_.\-]*?[_.\-])?"        # optional prefix ending at a separator
+        r"(?:api[_.\-]?key|secret[_.\-]?key|private[_.\-]?key|privkey"
+        r"|access[_.\-]?token|auth[_.\-]?token|refresh[_.\-]?token"
+        r"|client[_.\-]?secret|passphrase|password|passwd|credentials?"
+        r"|secret|token|private|nsec)"
+        r"[\"']?\s*[:=]\s*[\"']?([A-Za-z0-9_\-+/=]{12,})[\"']?")),
 ]
+
+# Names that contain a credential word but denote the public half. Matching them
+# would train the reader to ignore this scanner, which is how a scanner stops
+# working.
+PUBLIC_BY_NAME = re.compile(r"(?i)\b[A-Za-z0-9_.\-]*(?:public|pub)[_.\-]?key\b|pubkey")
 
 # Values that look like credentials but carry no secret. A scanner that cannot
 # be satisfied by a correct configuration gets switched off, which is worse.
@@ -96,6 +112,9 @@ def scan(text: str) -> list[Hit]:
         for m in pattern.finditer(text):
             value = m.group(1) if m.groups() else m.group(0)
             if _is_placeholder(value):
+                continue
+            if kind == "credential_assignment" and PUBLIC_BY_NAME.search(m.group(0)):
+                # A public key is published on purpose.
                 continue
             span = m.span()
             # A more specific rule already owns this span.
