@@ -2,7 +2,7 @@
   "bindings": {
     "architect": {
       "agent_id": "WP-001/architect",
-      "bound_at": "2026-08-24T19:45:33+00:00",
+      "bound_at": "2026-08-24T19:56:37+00:00",
       "family": "qwen",
       "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
       "reason": "cheapest qualified runtime for architect",
@@ -11,7 +11,7 @@
     },
     "code_reviewer": {
       "agent_id": "WP-001/code_reviewer",
-      "bound_at": "2026-08-24T19:45:33+00:00",
+      "bound_at": "2026-08-24T19:56:37+00:00",
       "family": "mistral",
       "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
       "reason": "cheapest qualified runtime for code_reviewer; identity must differ from implementer, spec_reviewer, family-independent of implementer",
@@ -20,7 +20,7 @@
     },
     "implementer": {
       "agent_id": "WP-001/implementer",
-      "bound_at": "2026-08-24T19:45:33+00:00",
+      "bound_at": "2026-08-24T19:56:37+00:00",
       "family": "qwen",
       "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
       "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
@@ -29,7 +29,7 @@
     },
     "implementer#2": {
       "agent_id": "WP-001/implementer#2",
-      "bound_at": "2026-08-24T19:45:33+00:00",
+      "bound_at": "2026-08-24T19:56:37+00:00",
       "family": "qwen",
       "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
       "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
@@ -38,7 +38,7 @@
     },
     "spec_reviewer": {
       "agent_id": "WP-001/spec_reviewer",
-      "bound_at": "2026-08-24T19:45:33+00:00",
+      "bound_at": "2026-08-24T19:56:37+00:00",
       "family": "mistral",
       "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
       "reason": "cheapest qualified runtime for spec_reviewer; identity must differ from implementer, family-independent of implementer",
@@ -47,7 +47,7 @@
     },
     "verifier": {
       "agent_id": "WP-001/verifier",
-      "bound_at": "2026-08-24T19:45:33+00:00",
+      "bound_at": "2026-08-24T19:56:37+00:00",
       "family": "mistral",
       "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
       "reason": "cheapest qualified runtime for verifier; identity must differ from implementer, spec_reviewer, code_reviewer, family-independent of implementer",
@@ -55,7 +55,7 @@
       "runtime_id": "mistral-local"
     }
   },
-  "candidate_revision": null,
+  "candidate_revision": "d654148ff3af9145eaafed451349b253fc546a61",
   "channel": null,
   "cohort": {
     "assurance_level": "BASELINE",
@@ -287,125 +287,67 @@
     "wp_id": "WP-001"
   },
   "gate": null,
-  "handoffs": [
-    {
-      "accepted_plan": {
-        "risks": [
-          "Host has no GPU or nvidia-smi is absent, so the gpu block must emit an explicit absent/blocked state rather than a fabricated value; the test must cover this path.",
-          "Confusing total VRAM with usable VRAM: if usable_vram is not measured separately (total minus display/runtime overhead), the packet's second known failure mode is uncontrolled; the schema must force both fields.",
-          "Deriving a context length from model capability instead of host capacity: the module must not emit any context field from capability alone, or the first known failure mode is uncontrolled.",
-          "Probe commands differ across distros (lscpu flags, df vs statvfs, /proc layout); the module must fail closed with a typed error on unexpected output rather than guessing.",
-          "Read-only or restricted filesystems may prevent writing host_inventory.json; the module must surface a legible blocked state instead of silently skipping the deliverable.",
-          "Scope creep: the full WP-001 deliverable set (gpu_probe.log, disk_capacity_report.md, deployment_profile_candidate.md, adversarial T-cases, OS/kernel) is out of this slice and must not be pulled in, or the bounded slice stops being bounded.",
-          "Evidence freshness: if the candidate revision or a probe tool revision drifts after preparation, the recorded evidence becomes stale and must be rejected; the run must re-verify the candidate SHA before acceptance."
-        ],
-        "satisfiable": true,
-        "steps": [
-          "Step 1 - Context and upstream lock: read the repo layout, existing test runner, and pinned tooling; record the exact candidate SHA/digest of the worktree. Lock the probe mechanisms with recorded revisions: nvidia-smi (NVIDIA driver, nvidia-smi --version), lscpu (util-linux), /proc/meminfo, /proc/cpuinfo, and df/statvfs for free disk. Record license/provenance for each. No network, no credentials, no installs.",
-          "Step 2 - Define the machine-readable schema: host_inventory.json with a schema_version field and four top-level resource blocks (gpu, cpu, ram, disk). For gpu, capture per-device total_vram_bytes AND usable_vram_bytes (total minus display/runtime overhead, measured via nvidia-smi), driver, compute capability, and topology; do NOT emit a max_context field from model capability alone. For cpu, capture model, physical/logical cores, and flags. For ram, capture total and available bytes. For disk, capture per-mount total, free, and filesystem type. Every value carries a source command and a captured_at timestamp.",
-          "Step 3 - Write the failing test first (RED): a unit test that monkeypatches the subprocess/OS probes to return fixed fixtures, asserts the module emits the exact schema with usable_vram strictly less than total_vram when overhead is present, and asserts no context field is derived from model capability. Run it and capture the real failure (missing module / missing keys) as the RED observation.",
-          "Step 4 - Implement the minimum GREEN change: a single probe module (e.g. host_inventory.py) with one function per resource class, each returning a dict with value + source + timestamp, and a write_inventory() that serializes to host_inventory.json. Keep it probe-only: no installs, no config mutation, no writes outside the inventory file. Handle the no-GPU and read-only-filesystem cases by emitting an explicit blocked/absent state, never an invented default.",
-          "Step 5 - Refactor with tests green: add unit tests for the no-GPU path, the partial/contradictory probe output path (fail closed with a typed error), and idempotency (running twice yields identical output for an unchanged host). Keep the suite green.",
-          "Step 6 - Live smoke test (T01 positive path): run the module on the real host, confirm host_inventory.json is non-empty, resolves to the candidate revision, and that usable_vram < total_vram on any GPU with a display. Capture command, exit code, timestamp, and artifact hash.",
-          "Step 7 - Evidence and deliverable: emit host_inventory.json (the slice deliverable) plus a short host_inventory.md summary. Record the candidate revision, environment manifest, and upstream lock entries. Note explicitly that gpu_probe.log, disk_capacity_report.md, deployment_profile_candidate.md, and the adversarial T-cases are out of this slice and belong to the follow-on plan.",
-          "Step 8 - Rollback: the change is additive (new module + new file), so rollback is deleting the new files and reverting the worktree to the recorded candidate SHA; demonstrate it and confirm the prior state is restored with no residual writes."
-        ],
-        "summary": "Add a small, probe-only Python module that records the host's GPUs, CPU, RAM and free disk into a schema-versioned host_inventory.json, built RED-first with subprocess mocked in unit tests plus one live smoke test, with VRAM and context fields designed so the packet's three known failure modes are mechanically controlled rather than merely warned about.",
-        "test_first": "A unit test that monkeypatches the GPU/CPU/RAM/disk probes to return fixed fixtures and asserts the module emits the exact schema_versioned host_inventory.json, that usable_vram_bytes is strictly less than total_vram_bytes when display/runtime overhead is present, and that no max_context field is derived from model capability; run it before any implementation and capture the real failure (missing module or missing keys) as the RED observation."
-      },
-      "artefact_refs": [],
-      "candidate_sha": null,
-      "completed_steps": [],
-      "context_policy": "task state only. The previous agent's conversation is deliberately excluded: it would double the context, carry over its confusions, and prejudice a role that is supposed to form its own view.",
-      "from_binding": {
-        "agent_id": "WP-001/implementer",
-        "bound_at": "2026-08-24T19:45:33+00:00",
-        "family": "qwen",
-        "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
-        "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
-        "role_id": "implementer",
-        "runtime_id": "qwen-local"
-      },
-      "issued_at": "2026-08-24T19:51:02+00:00",
-      "logical_role": "implementer",
-      "open_findings": [],
-      "open_steps": [],
-      "packet_sha256": "66921faa41f496cde827432d5d4b25cd6303cda657be1d2103f91c347903500d",
-      "reason": "qwen-local failed to run the work: the model stopped mid tool call (max_tokens=4000); the arguments are incomplete",
-      "task_id": "WP-001-implement",
-      "to_binding": {
-        "agent_id": "WP-001/implementer@fallback",
-        "bound_at": "2026-08-24T19:51:02+00:00",
-        "family": "mistral",
-        "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
-        "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
-        "role_id": "implementer",
-        "runtime_id": "mistral-local"
-      },
-      "worktree": "/home/otonom/Desktop/FH/DUM-E/worktrees/WP-001__live-66921faa-5",
-      "wp_id": "WP-001"
-    }
-  ],
+  "handoffs": [],
   "packet_sha256": "66921faa41f496cde827432d5d4b25cd6303cda657be1d2103f91c347903500d",
-  "started_at": "2026-08-24T19:45:32+00:00",
+  "started_at": "2026-08-24T19:56:37+00:00",
   "steps": [
     {
-      "at": "2026-08-24T19:45:32+00:00",
+      "at": "2026-08-24T19:56:37+00:00",
       "detail": "package re-enters at PLANNED after a retry and dependencies are ACCEPTED",
       "name": "precondition",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-24T19:45:33+00:00",
+      "at": "2026-08-24T19:56:37+00:00",
       "detail": "3 frozen sections, 0 dependencies, 5 deliverables, digest 66921faa41f4",
       "name": "packet",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-24T19:45:33+00:00",
+      "at": "2026-08-24T19:56:37+00:00",
       "detail": "BASELINE assurance, roles: commissioning_orchestrator, architect, implementer, implementer, spec_reviewer, code_reviewer, verifier; specialists: security, data, runtime",
       "name": "cohort",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-24T19:45:33+00:00",
+      "at": "2026-08-24T19:56:37+00:00",
       "detail": "architect→qwen-local(qwen); implementer→qwen-local(qwen); implementer#2→qwen-local(qwen); spec_reviewer→mistral-local(mistral); code_reviewer→mistral-local(mistral); verifier→mistral-local(mistral)",
       "name": "runtime_binding",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-24T19:47:56+00:00",
+      "at": "2026-08-24T19:59:02+00:00",
       "detail": "Add a small, probe-only Python module that records the host's GPUs, CPU, RAM and free disk into a schema-versioned host_inventory.json, built RED-first with subprocess mocked in unit tests plus one live smoke test, with VRAM and context fields designed so the packet's three known failure modes are mechanically controlled rather than merely warned about.",
       "name": "plan",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-24T19:47:56+00:00",
-      "detail": "dume/WP-001/live-66921faa-5 off 7786fbfbfd74",
+      "at": "2026-08-24T19:59:10+00:00",
+      "detail": "dume/WP-001/live-66921faa-6 off 7786fbfbfd74",
       "name": "worktree",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-24T19:51:01+00:00",
-      "detail": "ToolCallTruncated: the model stopped mid tool call (max_tokens=4000); the arguments are incomplete",
+      "at": "2026-08-24T20:08:10+00:00",
+      "detail": "candidate d654148ff3af, RED→GREEN evidence: RED exit=2, GREEN exit=0, 7 tool calls",
       "name": "implement",
-      "outcome": "FAILED"
-    },
-    {
-      "at": "2026-08-24T19:51:02+00:00",
-      "detail": "implementer rebound qwen-local → mistral-local; role unchanged, task state carried, conversation not",
-      "name": "runtime_switch",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-24T19:53:27+00:00",
-      "detail": "after switch: the model stopped mid tool call (max_tokens=4000); the arguments are incomplete",
-      "name": "implement",
+      "at": "2026-08-24T20:08:10+00:00",
+      "detail": "4 file(s) changed, none protected",
+      "name": "protected_paths",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-24T20:08:23+00:00",
+      "detail": "WP-001/spec_reviewer: FAIL — The candidate does not meet the scope requirements for GPU enumeration and capacity envelope production.",
+      "name": "specification_compliance",
       "outcome": "FAILED"
     },
     {
-      "at": "2026-08-24T19:53:27+00:00",
-      "detail": "RUNTIME_FAILURE — candidate implicated: False; owner: runtime_control; RUNTIME_FAILURE: 7 attempts reached the limit of 3; repeating it again is not new information.",
+      "at": "2026-08-24T20:08:23+00:00",
+      "detail": "IMPLEMENTATION_FAILURE — candidate implicated: True; owner: implementer; IMPLEMENTATION_FAILURE: 8 attempts reached the limit of 3; repeating it again is not new information.",
       "name": "failure_classification",
       "outcome": "OK"
     }

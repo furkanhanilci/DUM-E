@@ -273,8 +273,15 @@ class ModelExecutor:
             task_id = f"{base}-{attempt}"
         return self.worktrees.create(task_id, packet.wp_id)
 
-    def implement(self, packet: WPPacket, plan: dict, worktree) -> dict:
-        """Drive the implementer until a red run and then a green run exist."""
+    def implement(self, packet: WPPacket, plan: dict, worktree,
+                  findings: list[dict] | None = None) -> dict:
+        """Drive the implementer until a red run and then a green run exist.
+
+        `findings` are what a reviewer said was wrong with the last candidate.
+        Without them a retry is the same attempt run again: the harness kept
+        the findings and the implementer never saw one, so WP-001 produced a
+        candidate missing the same two deliverables twice.
+        """
         client = self._client("implementer")
         log = ToolLog()
         tools = Toolbox(worktree.path, log)
@@ -295,6 +302,11 @@ class ModelExecutor:
              "## the accepted plan\n" + json.dumps(plan, indent=2)[:2000] + "\n\n"
              + (f"## build exactly this, and nothing more\n{self.focus}\n\n"
                 if self.focus else "")
+             + (("## what a reviewer rejected in the last attempt\n"
+                 + "\n".join(f"- [{f.get('severity', 'HIGH')}] {f.get('summary', '')}"
+                              for f in findings[:12])
+                 + "\n\nEach of these must be answered by this candidate.\n\n")
+                if findings else "")
              + "## the worktree already contains\n"
              + ("\n".join(f"- {f}" for f in existing[:60]) or "- (nothing)")
              + "\n\nYou do not need to list or read these unless you intend to "

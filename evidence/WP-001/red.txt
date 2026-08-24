@@ -1,9 +1,9 @@
-exit=1
+exit=2
 [
   {
     "tool": "run_tests",
     "arguments": {},
-    "outcome": "EXIT_1",
-    "detail": " at 0x7ee4edd71ea0> = <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'>.exists\nE        +      where <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'> = os.path\n\ntest_inventory.py:7: AssertionError\n=========================== short test summary info ============================\nFAILED test_inventory.py::test_deliverables_exist_and_valid - AssertionError:...\n1 failed in 0.02s\n"
+    "outcome": "EXIT_5",
+    "detail": "\nno tests ran in 0.00s\n"
   }
 ]

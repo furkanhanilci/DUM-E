@@ -104,7 +104,7 @@ class Orchestrator:
         "precondition": "dume-control", "packet": "dume-control",
         "cohort": "dume-control", "tech_complete": "dume-control",
         "machine_gate": "dume-control", "failure_classification": "dume-control",
-        "findings_superseded": "dume-control",
+        "findings_superseded": "dume-control", "prior_findings": "dume-control",
         "runtime_binding": "dume-implementation", "plan": "dume-implementation",
         "worktree": "dume-implementation", "implement": "dume-implementation",
         "protected_paths": "dume-implementation",
@@ -341,11 +341,20 @@ class Orchestrator:
             step("worktree", "FAILED", f"{type(exc).__name__}: {exc}")
             return self._fail(report, wp_id, "HARNESS_FAILURE", actor, str(exc))
 
+        # What a reviewer refused last time. The store had these all along and
+        # nothing read them back into the work, so a retry rebuilt the same
+        # candidate and was refused for the same reason.
+        prior = [{"severity": r["severity"], "summary": r["summary"]}
+                 for r in self.store.open_blocking_findings(wp_id)]
+        if prior:
+            step("prior_findings", "OK",
+                 f"{len(prior)} open finding(s) handed to the implementer")
+
         producer = bindings["implementer"].agent_id
         self.store.transition(wp_id, "EXECUTING", actor=producer,
                               reason="implementation started")
         try:
-            result = executor.implement(packet, plan, worktree)
+            result = executor.implement(packet, plan, worktree, findings=prior)
         except ModelError as exc:
             # The model or its server failed to run the work. Invariant 16: that
             # says nothing about the candidate. Rather than failing the package,
@@ -383,7 +392,7 @@ class Orchestrator:
             if hasattr(executor, "rebind"):
                 executor.rebind("implementer", new_id, handoff)
             try:
-                result = executor.implement(packet, plan, worktree)
+                result = executor.implement(packet, plan, worktree, findings=prior)
             except Exception as second:
                 step("implement", "FAILED", f"after switch: {second}")
                 return self._fail(report, wp_id, "RUNTIME_FAILURE", actor,

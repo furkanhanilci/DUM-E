@@ -52,7 +52,8 @@ class SyntheticExecutor:
         self._worktree = self.worktrees.create(task_id, packet.wp_id)
         return self._worktree
 
-    def implement(self, packet: WPPacket, plan: dict, worktree) -> dict:
+    def implement(self, packet: WPPacket, plan: dict, worktree,
+                  findings: list[dict] | None = None) -> dict:
         """RED then GREEN, with the exit codes to prove which was which."""
         root = Path(worktree.path)
         module = root / "target_package.py"

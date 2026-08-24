@@ -209,3 +209,18 @@ def test_a_commit_that_fails_fails_the_step():
     assert "ImplementationRefused" in commit
     # And the author is named, because the repository is not any one agent's.
     assert "user.name=" in source and "agent_id" in source
+
+
+def test_a_retry_shows_the_implementer_what_was_refused():
+    """The findings were recorded and never read back, so a retry rebuilt the
+    same candidate and was refused for the same reason."""
+    import inspect
+    from dume.control.model_executor import ModelExecutor
+    from dume.control import orchestrator
+
+    assert "findings" in inspect.signature(ModelExecutor.implement).parameters
+    source = inspect.getsource(orchestrator.Orchestrator.run)
+    assert "open_blocking_findings" in source, (
+        "the orchestrator never reads the findings back into the work")
+    assert "findings=prior" in source, (
+        "the findings are read but not handed to the implementer")
