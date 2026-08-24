@@ -85,3 +85,23 @@ def test_malformed_configuration_fails_closed(tmp_path):
     bad.write_text("{not json")
     with pytest.raises(config.ConfigError, match="not valid JSON"):
         config.load(bad)
+
+
+def test_health_never_reports_unknown_as_fine():
+    """A check either reaches the thing it is about or says it could not.
+
+    The failures that cost the most today all looked like something else: the
+    relay was fine and the address was wrong, so `read` said "the relay could
+    not be reached"; a field name was wrong, so the panel showed an em dash,
+    which is what it also shows when nothing was recorded. Each is one line in
+    this report — but only if "could not tell" stays distinct from "fine".
+    """
+    from dume.health import Check
+
+    assert Check("x", True, "").mark == "ok"
+    assert Check("x", False, "").mark == "NO"
+    assert Check("x", None, "").mark == "??"
+
+    # The overall verdict must not read an unknown as a pass.
+    results = [Check("a", True, ""), Check("b", None, "")]
+    assert not all(c.ok for c in results)

@@ -367,6 +367,17 @@ def cmd_membership(args) -> int:
     return 0
 
 
+def cmd_health(args) -> int:
+    from .health import report
+    results, ok = report()
+    for check in results:
+        print(f"  {check.mark}  {check.name:<18} {check.detail}")
+    print()
+    print("usable end to end" if ok else
+          "not usable end to end — the lines marked NO or ?? say which part")
+    return 0 if ok else 1
+
+
 def cmd_skills(args) -> int:
     """What discipline each role is actually held to."""
     lock = json.loads((REPO_ROOT / "config" / "upstream.lock.json").read_text())
@@ -887,6 +898,10 @@ def build_parser() -> argparse.ArgumentParser:
     mb.add_argument("--approve", metavar="LOGIN", help="admit a pending request")
     mb.add_argument("--deny", metavar="LOGIN", help="refuse a pending request")
     mb.set_defaults(func=cmd_membership)
+
+    hl = sub.add_parser("health", help="is this deployment usable, and if not, "
+                                      "which part is missing")
+    hl.set_defaults(func=cmd_health)
 
     sk = sub.add_parser("skills", help="what discipline each role is held to")
     sk.add_argument("--show", metavar="ROLE", help="print one role's whole bundle")
