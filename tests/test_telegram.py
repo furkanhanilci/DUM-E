@@ -125,12 +125,17 @@ def test_the_forum_mapping_is_re_runnable(tmp_path):
             created.append(params["name"])
             return {"message_thread_id": 100 + len(created)}
 
+    # Every call names its own file. Without this the test wrote its fake chat
+    # id over the operator's real mapping, and the bridge then addressed a
+    # group that does not exist.
     path = tmp_path / "topics.json"
-    first = forum.create(FakeBridge(), "-100123", forum.Topics(by_channel={}))
-    first.save(path)
+    first = forum.create(FakeBridge(), "-100123",
+                         forum.Topics(by_channel={}), path=path)
     assert len(created) == len(forum.TOPICS)
+    assert not forum.MAP.samefile(path) if forum.MAP.exists() else True
 
-    again = forum.create(FakeBridge(), "-100123", forum.Topics.load(path))
+    again = forum.create(FakeBridge(), "-100123", forum.Topics.load(path),
+                         path=path)
     assert len(created) == len(forum.TOPICS), "a re-run created duplicates"
     assert again.by_channel == first.by_channel
 

@@ -86,14 +86,21 @@ class Topics:
         return None
 
 
-def create(bridge, chat_id: str, existing: Topics | None = None) -> Topics:
+def create(bridge, chat_id: str, existing: Topics | None = None,
+           path: Path | str = MAP) -> Topics:
     """Create one topic per channel, skipping the ones already recorded.
 
     Re-runnable: a second run against the same group adds only what is missing,
     because creating a topic that already exists would give the group two rooms
     with the same name and no way to tell which one anything is in.
+
+    `path` is explicit and defaults to the real one. It used to be implicit,
+    and the test that exercises re-runnability wrote its fake chat id and fake
+    topic numbers straight over the operator's own mapping — so the bridge then
+    addressed a group that does not exist and Telegram answered "chat not
+    found". A test that can reach production state is a test that will.
     """
-    topics = existing or Topics.load()
+    topics = existing or Topics.load(path)
     topics.chat_id = str(chat_id)
     topics.by_channel = dict(topics.by_channel or {})
     for name, channel in TOPICS:
@@ -103,5 +110,5 @@ def create(bridge, chat_id: str, existing: Topics | None = None) -> Topics:
         result = bridge._call("createForumTopic", chat_id=chat_id, name=name,
                               icon_color=COLOUR.get(space, 0x6FB9F0))
         topics.by_channel[channel] = int(result["message_thread_id"])
-    topics.save()
+    topics.save(path)
     return topics
