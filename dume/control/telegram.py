@@ -248,7 +248,7 @@ class TelegramBridge:
     # teaches its first-time reader that it is broken; answering with what this
     # place is costs one branch.
     GREETING = (
-        "AETHRION\n\n"
+        "AETHRIONIS\n\n"
         "Five spaces, and DUM-E is one of them — the harness that builds the "
         "rest, not the product.\n\n"
         "  spaces      the spaces and their channels\n"
@@ -273,7 +273,7 @@ class TelegramBridge:
 
         if text.strip().lower() in ("/start", "start", "/help", "help", "?"):
             self.send(chat_id, self.GREETING, thread_id)
-            return {"outcome": "GREETED", "actor": actor_id}
+            return {"outcome": "GREETED", "actor": actor_id, "chat": chat_id}
 
         # Where this chat is, so the operator can make it the broadcast target
         # without hunting for a numeric id in a settings screen.
@@ -282,9 +282,9 @@ class TelegramBridge:
                       f"This chat is {chat_id}."
                       + (f"\nThis topic is {thread_id}." if thread_id else "")
                       + "\n\n"
-                      "To have AETHRION narrate here, run on the host:\n"
+                      "To have AETHRIONIS narrate here, run on the host:\n"
                       f"  dume telegram --broadcast {chat_id}")
-            return {"outcome": "GREETED", "actor": actor_id}
+            return {"outcome": "GREETED", "actor": actor_id, "chat": chat_id}
 
         try:
             intent = self.gateway.translate(
@@ -292,7 +292,8 @@ class TelegramBridge:
                 forwarded=forwarded, verified=bool(actor_id))
         except CommandRefused as exc:
             self.send(chat_id, f"refused: {exc}", thread_id)
-            return {"outcome": "REFUSED", "actor": actor_id, "reason": str(exc)}
+            return {"outcome": "REFUSED", "actor": actor_id, "chat": chat_id,
+                    "reason": str(exc)}
 
         if intent.authorization_result == "AWAITING_CONFIRMATION":
             self.send(chat_id,
@@ -301,11 +302,12 @@ class TelegramBridge:
                       "It expires in 120 seconds and only you can confirm it.",
                       thread_id)
             return {"outcome": "AWAITING_CONFIRMATION", "actor": actor_id,
-                    "action": intent.action}
+                    "chat": chat_id, "action": intent.action}
 
         try:
             reply = self.handler(intent)
         except Exception as exc:  # a handler fault must not kill the bridge
             reply = f"the command was authorised but failed: {type(exc).__name__}: {exc}"
         self.send(chat_id, reply or "(no output)", thread_id)
-        return {"outcome": "EXECUTED", "actor": actor_id, "action": intent.action}
+        return {"outcome": "EXECUTED", "actor": actor_id, "chat": chat_id,
+                "action": intent.action}

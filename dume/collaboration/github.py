@@ -1,6 +1,6 @@
 """Membership through GitHub, admission through the relay.
 
-AETHRION keeps three things apart that a conventional account system merges:
+AETHRIONIS keeps three things apart that a conventional account system merges:
 
   identity    a key held on the operator's machine. Nothing registers it, no
               service issues it, and none can revoke it.

@@ -160,7 +160,7 @@ def record_adoption(name: str, *, reuse_class: str, upstream: str,
         "upstream": upstream, "pinned_revision": pinned_revision,
         "licence": licence, "capability": capability,
         "authority_boundary": authority_boundary or
-            "supplies a mechanism; carries no AETHRION authority",
+            "supplies a mechanism; carries no AETHRIONIS authority",
         "copied_files": copied_files or [],
         "characterisation_tests": characterisation_tests or [],
         "attribution": attribution, "recorded_at": _now(),

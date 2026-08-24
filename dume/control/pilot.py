@@ -60,7 +60,7 @@ def make_target_repo(root: Path) -> Path:
     run("config", "user.name", "DUM-E pilot")
     (repo / "README.md").write_text(
         "# Disposable pilot target\n\nCreated by DUM-E's synthetic pilot and "
-        "destroyed with it. Not a real AETHRION target.\n")
+        "destroyed with it. Not a real AETHRIONIS target.\n")
     acceptance = repo / "acceptance"
     acceptance.mkdir()
     (acceptance / "frozen.md").write_text("AC-01 frozen by the commissioning plan\n")

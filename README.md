@@ -1,16 +1,16 @@
 # DUM-E
 
-> DUM-E builds AETHRION. AETHRION does the science.
+> DUM-E builds AETHRIONIS. AETHRIONIS does the science.
 
 DUM-E is a deliberately small **commissioning control harness**. The full
-AETHRION cannot be a prerequisite for building itself, so this harness owns the
+AETHRIONIS cannot be a prerequisite for building itself, so this harness owns the
 commissioning glue and nothing else: work-package packetisation, cohort and
 runtime binding, model fallback, worktree execution, review and verification
 sequencing, minimal durable state and deterministic merge eligibility.
 
-When AETHRION has commissioned equivalent capabilities, DUM-E shrinks into a
+When AETHRIONIS has commissioned equivalent capabilities, DUM-E shrinks into a
 thin commissioning profile or is retired. It must not grow into a second
-AETHRION.
+AETHRIONIS.
 
 ## Status
 
@@ -108,9 +108,9 @@ action. Every claim below is enforced in code and attacked in
   and placeholders through, because a scanner that cannot be satisfied gets
   switched off.
 
-## AETHRION is not touched
+## AETHRIONIS is not touched
 
-This bring-up commissions DUM-E **in isolation**. No AETHRION clone is created,
+This bring-up commissions DUM-E **in isolation**. No AETHRIONIS clone is created,
 read, pinned or modified. `AETHRION_SPEC` and `AETHRION_TARGET` exist as
 configuration slots with their modes fixed and `bound: false`
 ([ADR-0003](docs/adr/ADR-0003-aethrion-workspaces-are-unbound.md)). The boundary
@@ -145,7 +145,7 @@ state (`wp_state`, `wave`, `candidate_revision`) read from the DUM-E state
 store, and scenario notes carry their executed verdict and steps.
 
 Tags use the `dume/` namespace. The vault's controlled vocabulary governs
-`aethrion/` only, so a separate project takes a separate namespace rather than
+`aethrionis/` only, so a separate project takes a separate namespace rather than
 enlarging someone else's.
 
 ```bash

@@ -54,14 +54,14 @@ def test_frontmatter_carries_what_the_vault_linter_requires():
 
 
 def test_tags_stay_outside_the_aethrion_namespace():
-    """The vault's controlled vocabulary governs `aethrion/` only. A DUM-E note
-    emitting an `aethrion/` tag would be a lint finding in someone else's
+    """The vault's controlled vocabulary governs `aethrionis/` only. A DUM-E note
+    emitting an `aethrionis/` tag would be a lint finding in someone else's
     project."""
     fm = m.frontmatter(title="T", dume_id="D", note_type="work-package",
                        category="commissioning",
                        tags=["dume/work-package", "dume/wave/w1"],
                        summary="S", source="x.md")
-    assert "aethrion/" not in fm
+    assert "aethrionis/" not in fm
 
 
 def test_relative_markdown_links_become_wikilinks_that_resolve():
@@ -109,14 +109,14 @@ def test_applying_colours_preserves_groups_it_did_not_write(tmp_path):
     obsidian = tmp_path / ".obsidian"
     obsidian.mkdir()
     (obsidian / "graph.json").write_text(json.dumps({
-        "colorGroups": [{"query": "tag:#aethrion/work-package",
+        "colorGroups": [{"query": "tag:#aethrionis/work-package",
                          "color": {"a": 1, "rgb": 111}}],
         "scale": 1.0}))
     result = m.apply_colour_groups(tmp_path)
     assert result["status"] == "WRITTEN"
     assert result["foreign_groups_preserved"] == 1
     after = json.loads((obsidian / "graph.json").read_text())
-    assert any("aethrion" in g["query"] for g in after["colorGroups"])
+    assert any("aethrionis" in g["query"] for g in after["colorGroups"])
     assert after["scale"] == 1.0, "unrelated settings must survive"
     # ...and running it twice does not duplicate.
     m.apply_colour_groups(tmp_path)

@@ -1,6 +1,6 @@
 # DUM-E as built — the design, and where each piece lives
 
-> DUM-E builds AETHRION. AETHRION does the science.
+> DUM-E builds AETHRIONIS. AETHRIONIS does the science.
 
 This maps the commissioning design onto the code that now implements it, and is
 honest about what is borrowed, what was rebuilt, and what is still absent.

@@ -13,7 +13,7 @@
 | Qwen3.8-27B | `unsloth/Qwen3.8-27B-GGUF` Q4_K_M, Apache-2.0 |
 | Mistral-Small-3.2-24B | `unsloth/…-2506-GGUF` Q4_K_M |
 | Serving | `ghcr.io/ggml-org/llama.cpp:server-cuda`, MIT |
-| AETHRION | **deliberately absent** — commissioned in isolation |
+| AETHRIONIS | **deliberately absent** — commissioned in isolation |
 
 ## Hardware and local-model capacity
 
@@ -107,5 +107,5 @@ It borrows a relay, a skill set and a serving stack, and reimplements exactly
 one thing it could not borrow — the machine gate, because Superpowers ships none
 and says so.
 
-When AETHRION has commissioned equivalent capabilities, this should shrink to a
+When AETHRIONIS has commissioned equivalent capabilities, this should shrink to a
 thin commissioning profile or be retired.

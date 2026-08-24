@@ -600,10 +600,10 @@ def cmd_telegram(args) -> int:
         data["broadcast"] = str(args.broadcast)
         path.write_text(_json.dumps(data, indent=2))
         path.chmod(0o600)
-        print(f"AETHRION will narrate to chat {args.broadcast}")
+        print(f"AETHRIONIS will narrate to chat {args.broadcast}")
         from .control.announce import Announcer
         announcer = Announcer.from_config()
-        if announcer.say("AETHRION will narrate here.\n\n"
+        if announcer.say("AETHRIONIS will narrate here.\n\n"
                          "Narration only — nothing posted here moves anything."):
             print("test message delivered")
         else:
@@ -682,8 +682,15 @@ def cmd_telegram(args) -> int:
     try:
         while True:
             for outcome in bridge.poll_once():
-                print(f"  {outcome['outcome']:<22} {outcome.get('actor', '')} "
-                      f"{outcome.get('action', outcome.get('reason', ''))[:70]}")
+                # The chat, because a line that cannot tell a direct message
+                # from a group is useless at exactly the moment a group is
+                # being set up. A negative id is a group; a positive one is a
+                # person.
+                chat = outcome.get("chat")
+                where = f"chat {chat}" if chat else "chat ?"
+                print(f"  {outcome['outcome']:<22} {where:<18} "
+                      f"actor {outcome.get('actor', '')} "
+                      f"{outcome.get('action', outcome.get('reason', ''))[:60]}")
     except KeyboardInterrupt:
         print("stopped")
     finally:
@@ -843,10 +850,10 @@ def build_parser() -> argparse.ArgumentParser:
                      choices=["READ", "CONTROL", "HUMAN_DECISION",
                               "DANGEROUS_ACTION"])
     tgp.add_argument("--forum", metavar="CHAT_ID",
-                     help="create one topic per AETHRION channel in this "
+                     help="create one topic per AETHRIONIS channel in this "
                           "forum supergroup, and narrate into them")
     tgp.add_argument("--broadcast", metavar="CHAT_ID",
-                     help="where AETHRION narrates; send /here in the chat to "
+                     help="where AETHRIONIS narrates; send /here in the chat to "
                           "find its id")
     tgp.add_argument("--check", action="store_true",
                      help="verify the bot and the allowlist, then exit")

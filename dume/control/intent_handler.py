@@ -321,7 +321,7 @@ class IntentHandler:
     # and the distinction between spaces is an authority distinction rather
     # than a filing one.
     SPACE_PURPOSE = {
-        "DUM-E": "The commissioning harness that builds AETHRION. Decides "
+        "DUM-E": "The commissioning harness that builds AETHRIONIS. Decides "
                  "merge eligibility, and that by a deterministic gate.",
         "Research": "Sources and open questions. Decides nothing — the Source "
                     "Registry owns bibliographic truth.",
@@ -333,9 +333,9 @@ class IntentHandler:
     }
 
     def _spaces(self) -> str:
-        """AETHRION's spaces. DUM-E is one of them, and the first, because it
+        """AETHRIONIS's spaces. DUM-E is one of them, and the first, because it
         is the harness that builds the rest — not because it is the product."""
-        lines = ["AETHRION", ""]
+        lines = ["AETHRIONIS", ""]
         for space, channels in self.SPACES.items():
             lines.append(f"▸ {space}")
             lines.append(f"   {self.SPACE_PURPOSE.get(space, '')}")
@@ -373,16 +373,11 @@ class IntentHandler:
     @staticmethod
     def _render(events: list) -> list[str]:
         out = []
+        from ..collaboration.buzz import declared_refs, declared_type
         for event in reversed(events):
-            tags = {}
-            refs = []
-            for tag in event.get("tags", []):
-                if len(tag) > 1:
-                    if tag[0] == "aethrion-ref":
-                        refs.append(tag[1])
-                    else:
-                        tags.setdefault(tag[0], tag[1])
-            klass = tags.get("aethrion-type", "—")
+            tags = event.get("tags", [])
+            refs = declared_refs(tags)
+            klass = declared_type(tags) or "—"
             who = (event.get("pubkey") or "?")[:8]
             body = " ".join((event.get("content") or "").split())[:260]
             line = f"[{klass}] {who}  {body}"
@@ -431,11 +426,12 @@ class IntentHandler:
                 continue
             answered = {tag[1] for event in events for tag in event.get("tags", [])
                         if len(tag) > 1 and tag[0] == "e"}
+            from ..collaboration.buzz import declared_type
             for event in events:
-                tags = {t[0]: t[1] for t in event.get("tags", []) if len(t) > 1}
-                if tags.get("aethrion-type") in asks and event["id"] not in answered:
+                klass = declared_type(event.get("tags", []))
+                if klass in asks and event["id"] not in answered:
                     body = " ".join((event.get("content") or "").split())[:180]
-                    found.append(f"#{name}  [{tags['aethrion-type']}] {body}")
+                    found.append(f"#{name}  [{klass}] {body}")
         if not found:
             return "Nothing is waiting for an answer."
         return f"{len(found)} waiting for an answer:\n\n" + "\n\n".join(found[:12])

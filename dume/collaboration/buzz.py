@@ -44,8 +44,33 @@ MESSAGE_TYPES = frozenset({
 NEEDS_REFERENCE = frozenset({"CHALLENGE", "EVIDENCE", "CORRECTION",
                              "DISAGREEMENT", "CONSENSUS_CANDIDATE"})
 
-TYPE_TAG = "aethrion-type"
-REF_TAG = "aethrion-ref"
+# The tag a message declares its class in. Renamed with the product, and read
+# under both names: 105 messages are already on the relay and six of them carry
+# the old tag. Writing the new name and refusing the old one would make those
+# six read as undeclared — and "nobody said" is a different fact from "somebody
+# said STATUS", which is the whole reason the tag exists.
+#
+# The old names stay readable indefinitely. There is no migration to run and
+# nothing to remember: the old form simply stops being written and fades as the
+# messages carrying it age out.
+TYPE_TAG = "aethrionis-type"
+REF_TAG = "aethrionis-ref"
+LEGACY_TYPE_TAGS = ("aethrionis-type", "aethrion-type")
+LEGACY_REF_TAGS = ("aethrionis-ref", "aethrion-ref")
+
+
+def declared_type(tags: list) -> str | None:
+    """The class a message declared, under either name."""
+    for tag in tags or []:
+        if len(tag) > 1 and tag[0] in LEGACY_TYPE_TAGS:
+            return tag[1]
+    return None
+
+
+def declared_refs(tags: list) -> list[str]:
+    """What a message says it is about, under either name."""
+    return [tag[1] for tag in tags or []
+            if len(tag) > 1 and tag[0] in LEGACY_REF_TAGS and tag[1]]
 
 
 def channel_id_for(wp_id: str) -> str:

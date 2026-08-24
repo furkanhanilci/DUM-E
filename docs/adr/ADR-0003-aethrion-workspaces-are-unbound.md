@@ -1,4 +1,4 @@
-# DUME-ADR-0003 — AETHRION workspaces are declared but unbound
+# DUME-ADR-0003 — AETHRIONIS workspaces are declared but unbound
 
 - **Status:** ACCEPTED
 - **Date:** 2026-08-24
@@ -6,10 +6,10 @@
 
 ## Context
 
-DUM-E's purpose is to build AETHRION, so the pack's workspace layout binds
+DUM-E's purpose is to build AETHRIONIS, so the pack's workspace layout binds
 `AETHRION_SPEC` read-only and `AETHRION_TARGET` writable from the start. The
 commissioning decision for this bring-up was that DUM-E is to be brought into
-service **in isolation**: no AETHRION clone is created, read, pinned or
+service **in isolation**: no AETHRIONIS clone is created, read, pinned or
 modified.
 
 An integration that cannot be built without touching the thing it integrates
@@ -19,7 +19,7 @@ with has not been proven to be separable.
 
 `AETHRION_SPEC` and `AETHRION_TARGET` exist as configuration slots with their
 modes fixed (`READ_ONLY` and `READ_WRITE`) and `bound: false`. `MODEL_CACHE` is
-likewise declared and unbound. AETHRION is absent from the upstream lock.
+likewise declared and unbound. AETHRIONIS is absent from the upstream lock.
 
 The boundary mechanism is verified against a synthetic three-workspace fixture
 that reproduces the same shape — a read-only specification, a writable target
@@ -29,7 +29,7 @@ being present.
 ## Consequences
 
 - An unbound slot grants nothing. `Boundary.check_write` refuses every path
-  outside a *bound* workspace, so today the harness cannot write to AETHRION
+  outside a *bound* workspace, so today the harness cannot write to AETHRIONIS
   even by accident: the path is outside every bound root.
 - A work package that genuinely needs the specification is `BLOCKED` on a human
   binding it, which is the correct state rather than an improvised default.
