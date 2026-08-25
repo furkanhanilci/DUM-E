@@ -2,7 +2,7 @@
   "bindings": {
     "architect": {
       "agent_id": "WP-001/architect",
-      "bound_at": "2026-08-25T01:37:21+00:00",
+      "bound_at": "2026-08-25T02:30:14+00:00",
       "family": "qwen",
       "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
       "reason": "cheapest qualified runtime for architect",
@@ -11,7 +11,7 @@
     },
     "code_reviewer": {
       "agent_id": "WP-001/code_reviewer",
-      "bound_at": "2026-08-25T01:37:21+00:00",
+      "bound_at": "2026-08-25T02:30:14+00:00",
       "family": "mistral",
       "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
       "reason": "cheapest qualified runtime for code_reviewer; identity must differ from implementer, spec_reviewer, family-independent of implementer",
@@ -20,7 +20,7 @@
     },
     "implementer": {
       "agent_id": "WP-001/implementer",
-      "bound_at": "2026-08-25T01:37:21+00:00",
+      "bound_at": "2026-08-25T02:30:14+00:00",
       "family": "qwen",
       "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
       "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
@@ -29,7 +29,7 @@
     },
     "implementer#2": {
       "agent_id": "WP-001/implementer#2",
-      "bound_at": "2026-08-25T01:37:21+00:00",
+      "bound_at": "2026-08-25T02:30:14+00:00",
       "family": "qwen",
       "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
       "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
@@ -38,7 +38,7 @@
     },
     "spec_reviewer": {
       "agent_id": "WP-001/spec_reviewer",
-      "bound_at": "2026-08-25T01:37:21+00:00",
+      "bound_at": "2026-08-25T02:30:14+00:00",
       "family": "mistral",
       "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
       "reason": "cheapest qualified runtime for spec_reviewer; identity must differ from implementer, family-independent of implementer",
@@ -47,7 +47,7 @@
     },
     "verifier": {
       "agent_id": "WP-001/verifier",
-      "bound_at": "2026-08-25T01:37:21+00:00",
+      "bound_at": "2026-08-25T02:30:14+00:00",
       "family": "mistral",
       "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
       "reason": "cheapest qualified runtime for verifier; identity must differ from implementer, spec_reviewer, code_reviewer, family-independent of implementer",
@@ -55,8 +55,8 @@
       "runtime_id": "mistral-local"
     }
   },
-  "candidate_revision": null,
-  "channel": null,
+  "candidate_revision": "4c444e4803982f300ba01a26367c038d4c0b61b0",
+  "channel": "bd97b0e4-ad6c-5373-946f-7e8395ecbb87",
   "cohort": {
     "assurance_level": "BASELINE",
     "communication_topology": {
@@ -286,7 +286,82 @@
     ],
     "wp_id": "WP-001"
   },
-  "gate": null,
+  "gate": {
+    "candidate_revision": "4c444e4803982f300ba01a26367c038d4c0b61b0",
+    "checks": [
+      {
+        "detail": "state records 4c444e4803982f300ba01a26367c038d4c0b61b0, gate was asked about 4c444e4803982f300ba01a26367c038d4c0b61b0",
+        "name": "candidate_unchanged",
+        "passed": true,
+        "question": "Is this the exact candidate that was reviewed?"
+      },
+      {
+        "detail": "working tree clean",
+        "name": "worktree_clean",
+        "passed": true,
+        "question": "Is every change committed into the candidate?"
+      },
+      {
+        "detail": "1 PASS record(s), 1 from an identity other than the producer WP-001/implementer",
+        "name": "specification_compliance_passed",
+        "passed": true,
+        "question": "Was the requirement met?"
+      },
+      {
+        "detail": "1 PASS record(s), 1 from an identity other than the producer WP-001/implementer",
+        "name": "code_quality_passed",
+        "passed": true,
+        "question": "Is the implementation good?"
+      },
+      {
+        "detail": "1 PASS record(s), 1 from an identity other than the producer WP-001/implementer",
+        "name": "verification_passed",
+        "passed": true,
+        "question": "Does it actually work?"
+      },
+      {
+        "detail": "verifier WP-001/verifier, distinct from both reviewers",
+        "name": "verification_independent",
+        "passed": true,
+        "question": "Did the verifier avoid checking its own earlier conclusion?"
+      },
+      {
+        "detail": "packet digest 66921faa41f4 vs recorded 66921faa41f4",
+        "name": "packet_unchanged",
+        "passed": true,
+        "question": "Was the work done against the frozen packet?"
+      },
+      {
+        "detail": "6 file(s) changed, none protected",
+        "name": "protected_paths_untouched",
+        "passed": true,
+        "question": "Did the candidate stay out of the paths it may not touch?"
+      },
+      {
+        "detail": "no frozen digests were declared for this package",
+        "name": "frozen_acceptance_unchanged",
+        "passed": true,
+        "question": "Is the frozen acceptance byte-identical?"
+      },
+      {
+        "detail": "3 artefact(s) present and non-empty",
+        "name": "required_artefacts_present",
+        "passed": true,
+        "question": "Does every mandatory artefact exist and contain something?"
+      },
+      {
+        "detail": "no open Critical/High finding",
+        "name": "no_blocking_findings",
+        "passed": true,
+        "question": "Is anything Critical or High still open?"
+      }
+    ],
+    "evaluated_at": "2026-08-25T02:38:32+00:00",
+    "failed_checks": [],
+    "schema": "dume.merge_eligibility/1",
+    "verdict": "MERGE_ELIGIBLE",
+    "wp_id": "WP-001"
+  },
   "handoffs": [
     {
       "accepted_plan": {
@@ -318,103 +393,145 @@
       "context_policy": "task state only. The previous agent's conversation is deliberately excluded: it would double the context, carry over its confusions, and prejudice a role that is supposed to form its own view.",
       "from_binding": {
         "agent_id": "WP-001/implementer",
-        "bound_at": "2026-08-25T01:37:21+00:00",
+        "bound_at": "2026-08-25T02:30:14+00:00",
         "family": "qwen",
         "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
         "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
         "role_id": "implementer",
         "runtime_id": "qwen-local"
       },
-      "issued_at": "2026-08-25T02:08:28+00:00",
+      "issued_at": "2026-08-25T02:36:33+00:00",
       "logical_role": "implementer",
       "open_findings": [],
       "open_steps": [],
       "packet_sha256": "66921faa41f496cde827432d5d4b25cd6303cda657be1d2103f91c347903500d",
-      "reason": "qwen-local failed to run the work: the model stopped mid tool call (max_tokens=8000); the arguments are incomplete",
+      "reason": "qwen-local failed to run the work: the implementer took 3 turns in a row without changing a file — re-running the tests, or rewriting a file with what it a",
       "task_id": "WP-001-implement",
       "to_binding": {
         "agent_id": "WP-001/implementer@fallback",
-        "bound_at": "2026-08-25T02:08:28+00:00",
+        "bound_at": "2026-08-25T02:36:33+00:00",
         "family": "mistral",
         "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
         "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
         "role_id": "implementer",
         "runtime_id": "mistral-local"
       },
-      "worktree": "/home/otonom/Desktop/FH/DUM-E/worktrees/WP-001__live-66921faa-16",
+      "worktree": "/home/otonom/Desktop/FH/DUM-E/worktrees/WP-001__live-66921faa-18",
       "wp_id": "WP-001"
     }
   ],
   "packet_sha256": "66921faa41f496cde827432d5d4b25cd6303cda657be1d2103f91c347903500d",
-  "started_at": "2026-08-25T01:37:20+00:00",
+  "started_at": "2026-08-25T02:30:13+00:00",
   "steps": [
     {
-      "at": "2026-08-25T01:37:20+00:00",
+      "at": "2026-08-25T02:30:13+00:00",
       "detail": "package re-enters at PLANNED after a retry and dependencies are ACCEPTED",
       "name": "precondition",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-25T01:37:21+00:00",
+      "at": "2026-08-25T02:30:13+00:00",
       "detail": "3 frozen sections, 0 dependencies, 5 deliverables, digest 66921faa41f4",
       "name": "packet",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-25T01:37:21+00:00",
+      "at": "2026-08-25T02:30:13+00:00",
       "detail": "BASELINE assurance, roles: commissioning_orchestrator, architect, implementer, implementer, spec_reviewer, code_reviewer, verifier; specialists: security, data, runtime",
       "name": "cohort",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-25T01:37:21+00:00",
+      "at": "2026-08-25T02:30:14+00:00",
       "detail": "architect→qwen-local(qwen); implementer→qwen-local(qwen); implementer#2→qwen-local(qwen); spec_reviewer→mistral-local(mistral); code_reviewer→mistral-local(mistral); verifier→mistral-local(mistral)",
       "name": "runtime_binding",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-25T01:37:50+00:00",
+      "at": "2026-08-25T02:30:42+00:00",
       "detail": "A read-only host inventory and capacity-envelope work package that is fully satisfiable as written, requiring only probe scripts and five report artifacts with no system mutation.",
       "name": "plan",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-25T01:37:50+00:00",
-      "detail": "dume/WP-001/live-66921faa-16 off 7786fbfbfd74",
+      "at": "2026-08-25T02:30:42+00:00",
+      "detail": "dume/WP-001/live-66921faa-18 off 7786fbfbfd74",
       "name": "worktree",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-25T01:37:50+00:00",
+      "at": "2026-08-25T02:30:43+00:00",
       "detail": "4 open finding(s) handed to the implementer",
       "name": "prior_findings",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-25T02:08:28+00:00",
-      "detail": "ToolCallTruncated: the model stopped mid tool call (max_tokens=8000); the arguments are incomplete",
+      "at": "2026-08-25T02:36:33+00:00",
+      "detail": "ImplementationRefused: the implementer took 3 turns in a row without changing a file — re-running the tests, or rewriting a file with what it already held. The result cannot differ, and it has made no progress in 4 tool call(s).",
       "name": "implement",
       "outcome": "FAILED"
     },
     {
-      "at": "2026-08-25T02:08:28+00:00",
+      "at": "2026-08-25T02:36:33+00:00",
       "detail": "implementer rebound qwen-local → mistral-local; role unchanged, task state carried, conversation not",
       "name": "runtime_switch",
       "outcome": "OK"
     },
     {
-      "at": "2026-08-25T02:14:59+00:00",
-      "detail": "after switch: no red-then-green cycle was observed (red=1, green=None) after 25 tool call(s)",
-      "name": "implement",
-      "outcome": "FAILED"
+      "at": "2026-08-25T02:38:21+00:00",
+      "detail": "4 finding(s) were about an earlier candidate",
+      "name": "findings_superseded",
+      "outcome": "OK"
     },
     {
-      "at": "2026-08-25T02:14:59+00:00",
-      "detail": "RUNTIME_FAILURE — candidate implicated: False; owner: runtime_control; RUNTIME_FAILURE: 22 attempts reached the limit of 3; repeating it again is not new information.",
-      "name": "failure_classification",
+      "at": "2026-08-25T02:38:22+00:00",
+      "detail": "candidate 4c444e480398, RED→GREEN evidence: RED exit=1, GREEN exit=0, 12 tool calls",
+      "name": "implement",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-25T02:38:22+00:00",
+      "detail": "6 file(s) changed, none protected",
+      "name": "protected_paths",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-25T02:38:22+00:00",
+      "detail": "all 5 mandatory deliverable(s) present and not empty",
+      "name": "deliverables",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-25T02:38:26+00:00",
+      "detail": "WP-001/spec_reviewer: PASS — All mandatory deliverables exist and are non-empty, and the scope behavior is demonstrated.",
+      "name": "specification_compliance",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-25T02:38:30+00:00",
+      "detail": "WP-001/code_reviewer: PASS — The implementation is well-structured and clear, with comprehensive tests.",
+      "name": "code_quality",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-25T02:38:32+00:00",
+      "detail": "WP-001/verifier: PASS — fresh checkout, pytest exit=0; verifier said PASS — All tests passed with exit code 0.",
+      "name": "verification",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-25T02:38:32+00:00",
+      "detail": "candidate 4c444e480398",
+      "name": "tech_complete",
+      "outcome": "OK"
+    },
+    {
+      "at": "2026-08-25T02:38:32+00:00",
+      "detail": "MERGE_ELIGIBLE",
+      "name": "machine_gate",
       "outcome": "OK"
     }
   ],
-  "verdict": "FAILED",
+  "verdict": "MERGE_ELIGIBLE",
   "wp_id": "WP-001"
 }

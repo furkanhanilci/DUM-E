@@ -131,10 +131,10 @@ def _deliverable_nudge(packet: WPPacket, root: Path) -> str:
     return ("The test passes. These files are still missing or contain nothing "
             "but headings:\n"
             + "\n".join(f"- {d}" for d in outstanding)
-            + "\n\nWrite each one with the actual measurements and findings "
-              "this work produced — the numbers, not the section titles. Use "
-              "append_file if a file is long. When they all say something, "
-              "reply DONE.")
+            + "\n\nWrite each one with the actual measurements this work "
+              "produced. Every figure about the machine must come from "
+              "probe_host — look before you write. Use append_file if a file "
+              "is long. When they all say something, reply DONE.")
 
 
 class ImplementationRefused(RuntimeError):
@@ -406,7 +406,11 @@ class ModelExecutor:
                "a file, at exactly the path given, and each must contain what "
                "the packet asks it to contain. Do that after the test passes, "
                "not before: the cycle is what proves the work, and a turn "
-               "spent on a report is a turn not spent reaching green."}]
+               "spent on a report is a turn not spent reaching green.\n\n"
+               "Every number you write down about this machine must come from "
+               "probe_host. Do not write hardware you have not looked at — a "
+               "plausible figure in an inventory is worse than a missing one, "
+               "because it will be believed."}]
 
         def _fits(conversation: list[dict]) -> list[dict]:
             """Drop the oldest exchanges when the conversation outgrows the

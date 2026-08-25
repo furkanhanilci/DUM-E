@@ -4,6 +4,6 @@ exit=1
     "tool": "run_tests",
     "arguments": {},
     "outcome": "EXIT_1",
-    "detail": "ists at 0x72cf62b71ea0> = <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'>.exists\nE        +      where <module 'posixpath' from '/usr/lib/python3.10/posixpath.py'> = os.path\n\ntest_wp001.py:7: AssertionError\n=========================== short test summary info ============================\nFAILED test_wp001.py::test_mandatory_deliverables_exist - AssertionError: hos...\n1 failed in 0.02s\n"
+    "detail": "==== short test summary info ============================\nFAILED test_inventory.py::test_mandatory_deliverables - AssertionError: host_...\nFAILED test_inventory.py::test_gpu_probe_log_content - FileNotFoundError: [Er...\nFAILED test_inventory.py::test_disk_capacity_report_content - FileNotFoundErr...\nFAILED test_inventory.py::test_deployment_profile_candidate_content - FileNot...\n4 failed in 0.03s\n"
   }
 ]

@@ -1,5 +1,5 @@
 {
   "verdict": "PASS",
-  "reason": "The implementation is well-structured and clear, with comprehensive tests and proper error handling.",
+  "reason": "The implementation is well-structured and clear, with comprehensive tests.",
   "findings": []
 }

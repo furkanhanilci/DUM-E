@@ -53,6 +53,17 @@ TOOL_SCHEMAS = [
         "description": "List files in the task worktree.",
         "parameters": {"type": "object", "properties": {}}}},
     {"type": "function", "function": {
+        "name": "probe_host",
+        "description": ("Look at the machine. Runs one read-only inspection "
+                        "command and returns its output. Use this whenever you "
+                        "need a real number about this host — never write down "
+                        "hardware you have not looked at."),
+        "parameters": {"type": "object", "properties": {
+            "what": {"type": "string",
+                     "enum": ["gpu", "cpu", "memory", "disk", "os", "python"],
+                     "description": "Which aspect of the host to inspect."}},
+            "required": ["what"]}}},
+    {"type": "function", "function": {
         "name": "run_tests",
         "description": ("Run the test suite in the worktree and return its exit "
                         "code and output. This is the only thing that decides "
@@ -157,6 +168,51 @@ class Toolbox:
                         "OK", f"appended {len(content)} chars to {path}")
         return {"ok": True, "path": path, "bytes": len(combined.encode())}
 
+    # What may be run to look at the machine, by name. An allow-list rather
+    # than a shell: reading the host is a READ, and handing an implementer an
+    # arbitrary command to get it would trade a bounded capability for an
+    # unbounded one. Every entry is read-only and installs nothing.
+    PROBES = {
+        "gpu": ["nvidia-smi"],
+        "cpu": ["lscpu"],
+        "memory": ["free", "-h"],
+        "disk": ["df", "-h"],
+        "os": ["uname", "-a"],
+        "python": ["python3", "--version"],
+    }
+
+    def probe_host(self, what: str) -> dict:
+        """Run one read-only inspection command and return what it said.
+
+        Without this the implementer was asked to record the host's hardware
+        and given no way to look at it, so it wrote down an Intel i7 with 32 GB
+        of RAM on a machine with two A5000s. Fabrication was the only way to
+        satisfy the instruction. A measurement nobody can take is not a
+        requirement, it is an invitation.
+        """
+        command = self.PROBES.get(what)
+        if command is None:
+            message = (f"{what!r} is not something that can be probed. "
+                       f"Choose one of: {', '.join(sorted(self.PROBES))}")
+            self.log.record("probe_host", {"what": what}, "DENIED", message)
+            return {"ok": False, "error": message}
+        try:
+            run = subprocess.run(command, capture_output=True, text=True,
+                                 timeout=30)
+        except FileNotFoundError:
+            message = f"{command[0]} is not installed on this host"
+            self.log.record("probe_host", {"what": what}, "UNAVAILABLE", message)
+            return {"ok": False, "error": message}
+        except subprocess.TimeoutExpired:
+            message = f"{command[0]} did not answer within 30 seconds"
+            self.log.record("probe_host", {"what": what}, "TIMEOUT", message)
+            return {"ok": False, "error": message}
+        output = (run.stdout + run.stderr)[:4000]
+        self.log.record("probe_host", {"what": what, "command": command},
+                        "OK", f"{command[0]}: {len(output)} chars")
+        return {"ok": True, "what": what, "command": " ".join(command),
+                "exit_code": run.returncode, "output": output}
+
     def read_file(self, path: str) -> dict:
         try:
             target = self._resolve(path)
@@ -193,6 +249,7 @@ class Toolbox:
     def dispatch(self, name: str, arguments: dict) -> dict:
         handler = {"write_file": self.write_file, "read_file": self.read_file,
                    "append_file": self.append_file,
+                   "probe_host": self.probe_host,
                    "list_files": self.list_files, "run_tests": self.run_tests}.get(name)
         if handler is None:
             self.log.record(name, arguments, "UNKNOWN_TOOL", "no such tool")
