@@ -1,5 +1,5 @@
 {
   "verdict": "PASS",
-  "reason": "All mandatory deliverables exist and are non-empty, and the scope behavior is demonstrated.",
+  "reason": "All mandatory deliverables exist, tests pass, and acceptance criteria are met.",
   "findings": []
 }

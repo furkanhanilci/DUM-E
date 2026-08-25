@@ -1,94 +1,178 @@
 {
   "calls": [
     {
-      "tool": "write_file",
+      "tool": "list_files",
+      "arguments": {},
+      "outcome": "OK",
+      "detail": "1 file(s)"
+    },
+    {
+      "tool": "probe_host",
       "arguments": {
-        "path": "test_inventory.py",
-        "content": "<2179 chars>"
+        "what": "os",
+        "command": [
+          "uname",
+          "-a"
+        ]
       },
       "outcome": "OK",
-      "detail": "wrote 2179 chars"
+      "detail": "uname: 137 chars"
+    },
+    {
+      "tool": "probe_host",
+      "arguments": {
+        "what": "cpu",
+        "command": [
+          "lscpu"
+        ]
+      },
+      "outcome": "OK",
+      "detail": "lscpu: 3457 chars"
+    },
+    {
+      "tool": "probe_host",
+      "arguments": {
+        "what": "memory",
+        "command": [
+          "free",
+          "-h"
+        ]
+      },
+      "outcome": "OK",
+      "detail": "free: 207 chars"
+    },
+    {
+      "tool": "probe_host",
+      "arguments": {
+        "what": "disk",
+        "command": [
+          "df",
+          "-h"
+        ]
+      },
+      "outcome": "OK",
+      "detail": "df: 544 chars"
+    },
+    {
+      "tool": "probe_host",
+      "arguments": {
+        "what": "gpu",
+        "command": [
+          "nvidia-smi"
+        ]
+      },
+      "outcome": "OK",
+      "detail": "nvidia-smi: 2732 chars"
+    },
+    {
+      "tool": "probe_host",
+      "arguments": {
+        "what": "python",
+        "command": [
+          "python3",
+          "--version"
+        ]
+      },
+      "outcome": "OK",
+      "detail": "python3: 15 chars"
+    },
+    {
+      "tool": "read_file",
+      "arguments": {
+        "path": "README.md"
+      },
+      "outcome": "OK",
+      "detail": "693 chars"
+    },
+    {
+      "tool": "write_file",
+      "arguments": {
+        "path": "test_wp001_host_inventory.py",
+        "content": "<6489 chars>"
+      },
+      "outcome": "OK",
+      "detail": "wrote 6489 chars"
     },
     {
       "tool": "run_tests",
       "arguments": {},
       "outcome": "EXIT_1",
-      "detail": "==== short test summary info ============================\nFAILED test_inventory.py::test_mandatory_deliverables - AssertionError: host_...\nFAILED test_inventory.py::test_gpu_probe_log_content - FileNotFoundError: [Er...\nFAILED test_inventory.py::test_disk_capacity_report_content - FileNotFoundErr...\nFAILED test_inventory.py::test_deployment_profile_candidate_content - FileNot...\n4 failed in 0.03s\n"
-    },
-    {
-      "tool": "run_tests",
-      "arguments": {},
-      "outcome": "EXIT_1",
-      "detail": "==== short test summary info ============================\nFAILED test_inventory.py::test_mandatory_deliverables - AssertionError: host_...\nFAILED test_inventory.py::test_gpu_probe_log_content - FileNotFoundError: [Er...\nFAILED test_inventory.py::test_disk_capacity_report_content - FileNotFoundErr...\nFAILED test_inventory.py::test_deployment_profile_candidate_content - FileNot...\n4 failed in 0.02s\n"
-    },
-    {
-      "tool": "run_tests",
-      "arguments": {},
-      "outcome": "EXIT_1",
-      "detail": "==== short test summary info ============================\nFAILED test_inventory.py::test_mandatory_deliverables - AssertionError: host_...\nFAILED test_inventory.py::test_gpu_probe_log_content - FileNotFoundError: [Er...\nFAILED test_inventory.py::test_disk_capacity_report_content - FileNotFoundErr...\nFAILED test_inventory.py::test_deployment_profile_candidate_content - FileNot...\n4 failed in 0.02s\n"
-    },
-    {
-      "tool": "run_tests",
-      "arguments": {},
-      "outcome": "EXIT_1",
-      "detail": "==== short test summary info ============================\nFAILED test_inventory.py::test_mandatory_deliverables - AssertionError: host_...\nFAILED test_inventory.py::test_gpu_probe_log_content - FileNotFoundError: [Er...\nFAILED test_inventory.py::test_disk_capacity_report_content - FileNotFoundErr...\nFAILED test_inventory.py::test_deployment_profile_candidate_content - FileNot...\n4 failed in 0.02s\n"
-    },
-    {
-      "tool": "run_tests",
-      "arguments": {},
-      "outcome": "EXIT_1",
-      "detail": "==== short test summary info ============================\nFAILED test_inventory.py::test_mandatory_deliverables - AssertionError: host_...\nFAILED test_inventory.py::test_gpu_probe_log_content - FileNotFoundError: [Er...\nFAILED test_inventory.py::test_disk_capacity_report_content - FileNotFoundErr...\nFAILED test_inventory.py::test_deployment_profile_candidate_content - FileNot...\n4 failed in 0.02s\n"
+      "detail": "d_matches_observed_host\nFAILED test_wp001_host_inventory.py::test_gpu_probe_log_contains_real_nvidia_smi_output\nFAILED test_wp001_host_inventory.py::test_disk_capacity_report_is_bound_to_observed_capacity\nFAILED test_wp001_host_inventory.py::test_deployment_profile_classifies_and_uses_usable_vram\nFAILED test_wp001_host_inventory.py::test_no_invented_numbers_from_rejected_attempt\n6 failed in 0.06s\n"
     },
     {
       "tool": "write_file",
       "arguments": {
         "path": "host_inventory.json",
-        "content": "<234 chars>"
+        "content": "<8973 chars>"
       },
       "outcome": "OK",
-      "detail": "wrote 234 chars"
-    },
-    {
-      "tool": "write_file",
-      "arguments": {
-        "path": "host_inventory.md",
-        "content": "<196 chars>"
-      },
-      "outcome": "OK",
-      "detail": "wrote 196 chars"
+      "detail": "wrote 8973 chars"
     },
     {
       "tool": "write_file",
       "arguments": {
         "path": "gpu_probe.log",
-        "content": "<291 chars>"
+        "content": "<3527 chars>"
       },
       "outcome": "OK",
-      "detail": "wrote 291 chars"
+      "detail": "wrote 3527 chars"
     },
     {
       "tool": "write_file",
       "arguments": {
         "path": "disk_capacity_report.md",
-        "content": "<162 chars>"
+        "content": "<3591 chars>"
       },
       "outcome": "OK",
-      "detail": "wrote 162 chars"
+      "detail": "wrote 3591 chars"
     },
     {
       "tool": "write_file",
       "arguments": {
         "path": "deployment_profile_candidate.md",
-        "content": "<220 chars>"
+        "content": "<5433 chars>"
       },
       "outcome": "OK",
-      "detail": "wrote 220 chars"
+      "detail": "wrote 5433 chars"
+    },
+    {
+      "tool": "write_file",
+      "arguments": {
+        "path": "host_inventory.md",
+        "content": "<5143 chars>"
+      },
+      "outcome": "OK",
+      "detail": "wrote 5143 chars"
+    },
+    {
+      "tool": "run_tests",
+      "arguments": {},
+      "outcome": "EXIT_1",
+      "detail": "  ...Full output truncated (34 lines hidden), use '-vv' to show\n\ntest_wp001_host_inventory.py:174: AssertionError\n=========================== short test summary info ============================\nFAILED test_wp001_host_inventory.py::test_deployment_profile_classifies_and_uses_usable_vram\nFAILED test_wp001_host_inventory.py::test_no_invented_numbers_from_rejected_attempt\n2 failed, 4 passed in 0.03s\n"
+    },
+    {
+      "tool": "write_file",
+      "arguments": {
+        "path": "deployment_profile_candidate.md",
+        "content": "<5450 chars>"
+      },
+      "outcome": "OK",
+      "detail": "wrote 5450 chars"
+    },
+    {
+      "tool": "write_file",
+      "arguments": {
+        "path": "disk_capacity_report.md",
+        "content": "<3633 chars>"
+      },
+      "outcome": "OK",
+      "detail": "wrote 3633 chars"
     },
     {
       "tool": "run_tests",
       "arguments": {},
       "outcome": "EXIT_0",
-      "detail": "....                                                                     [100%]\n4 passed in 0.01s\n"
+      "detail": "......                                                                   [100%]\n6 passed in 0.01s\n"
     }
   ]
 }

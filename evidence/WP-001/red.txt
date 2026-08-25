@@ -4,6 +4,6 @@ exit=1
     "tool": "run_tests",
     "arguments": {},
     "outcome": "EXIT_1",
-    "detail": "==== short test summary info ============================\nFAILED test_inventory.py::test_mandatory_deliverables - AssertionError: host_...\nFAILED test_inventory.py::test_gpu_probe_log_content - FileNotFoundError: [Er...\nFAILED test_inventory.py::test_disk_capacity_report_content - FileNotFoundErr...\nFAILED test_inventory.py::test_deployment_profile_candidate_content - FileNot...\n4 failed in 0.03s\n"
+    "detail": "d_matches_observed_host\nFAILED test_wp001_host_inventory.py::test_gpu_probe_log_contains_real_nvidia_smi_output\nFAILED test_wp001_host_inventory.py::test_disk_capacity_report_is_bound_to_observed_capacity\nFAILED test_wp001_host_inventory.py::test_deployment_profile_classifies_and_uses_usable_vram\nFAILED test_wp001_host_inventory.py::test_no_invented_numbers_from_rejected_attempt\n6 failed in 0.06s\n"
   }
 ]
