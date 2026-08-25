@@ -300,9 +300,9 @@ def cmd_qualify(args) -> int:
         print(f"  refused {role:<16} {why}")
     if args.record:
         registry = RuntimeRegistry.load()
-        runtime = registry.get(args.runtime)
-        runtime.qualified_roles = list(result.qualified_roles)
-        registry.save()
+        qualification_module.record_qualification(
+            registry, args.runtime, result.qualified_roles,
+            evidence=", ".join(t.name for t in result.trials if t.passed))
         print(f"\nrecorded against {args.runtime} in the runtime registry")
     out = EVIDENCE / "qualification" / f"{args.runtime}.json"
     print(f"recorded: {out}  sha256={json_dump(result.as_dict(), out)}")

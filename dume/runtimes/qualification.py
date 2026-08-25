@@ -185,3 +185,31 @@ def qualify(runtime_id: str, endpoint: str, repeats: int = 5) -> QualificationRe
         else:
             result.qualified_roles.append(role)
     return result
+
+
+def record_qualification(registry, runtime_id: str, qualified_roles: list[str],
+                         evidence: str = "") -> None:
+    """Write a measured qualification into the registry, status included.
+
+    Recording used to set `qualified_roles` and leave `status` alone. For a
+    runtime reached through a CLI that is the difference between working and
+    not: its probe can only ever answer UNKNOWN, because quota and auth cannot
+    be established without spending a request, so a runtime that had just
+    answered four live trials still counted as unusable. The router counts
+    usable runtimes, so every role collapsed onto whichever one had an
+    endpoint to probe — a cohort with no independence, indistinguishable from
+    one that has it.
+
+    Passing the trials is the stronger evidence: a CLI on PATH says a file
+    exists, while a trial says the runtime answered. The reason records which
+    of the two made it available so a later reader can tell them apart.
+    """
+    runtime = registry.get(runtime_id)
+    if runtime is None:
+        raise KeyError(f"{runtime_id} is not in the runtime registry")
+    runtime.qualified_roles = list(qualified_roles)
+    if qualified_roles:
+        runtime.status = "AVAILABLE"
+        runtime.reason = ("qualification trials passed"
+                          + (f": {evidence}" if evidence else ""))
+    registry.save()

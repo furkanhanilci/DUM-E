@@ -34,6 +34,7 @@ ENDPOINT_PROBES = {
     "qwen-local": ("http://127.0.0.1:8000/v1/models",
                    "http://127.0.0.1:30000/v1/models",
                    "http://127.0.0.1:8080/v1/models"),
+    "mistral-local": ("http://127.0.0.1:8001/v1/models",),
     "hermes": ("http://127.0.0.1:5000/v1/models",),
 }
 
@@ -77,7 +78,16 @@ def probe(registry: RuntimeRegistry) -> dict:
                              + ", ".join(ENDPOINT_PROBES[rt.runtime_id]))
         elif rt.runtime_id in CLI_PROBES:
             ok, detail = _cli_present(CLI_PROBES[rt.runtime_id])
-            if ok:
+            if ok and rt.qualified_roles:
+                # A qualification already spent the request this probe cannot,
+                # and it came back with answers. That is the stronger evidence,
+                # so the weaker check must not overwrite it — doing so threw
+                # the measurement away and left the router with one usable
+                # runtime, which it then bound to every role at once.
+                rt.status = "AVAILABLE"
+                rt.reason = (f"{detail} is installed; qualification trials "
+                             "established quota and auth")
+            elif ok:
                 # The CLI exists. Whether this account still has quota is not
                 # something a probe can know without spending some, so the
                 # honest answer is UNKNOWN rather than AVAILABLE.

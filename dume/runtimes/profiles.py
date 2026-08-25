@@ -51,6 +51,21 @@ MODES = ("NORMAL", "RESERVE", "DISABLED", "PINNED")
 # What a reserved runtime may still be spent on.
 RESERVE_ADMITS = ("ARCHITECTURE_CRITICAL", "SPEC_CONFLICT", "HIGH_RISK_REVIEW")
 
+# Which role each admitting class is actually about. Reserving used to be purely
+# subtractive: it kept a premium runtime out of routine work and then never
+# reached it, because the binder takes the cheapest candidate and a reserved
+# runtime is the dearest by definition. A control that never changes the outcome
+# it names is not a control, so on the work a reserve admits, the role that work
+# turns on gets first refusal of it. Only that role: upgrading the implementer
+# during an architecture-critical package spends the budget on the
+# highest-volume slot and changes nothing about the decision that made the work
+# critical.
+RESERVE_ROLES = {
+    "ARCHITECTURE_CRITICAL": ("architect",),
+    "SPEC_CONFLICT": ("spec_reviewer",),
+    "HIGH_RISK_REVIEW": ("code_reviewer", "verifier"),
+}
+
 
 class NoEligibleRuntime(RuntimeError):
     """No qualified, independent, available runtime exists for a role.
@@ -220,12 +235,23 @@ class RuntimeRegistry:
         # package is using — but only for roles where independence is actually
         # the point. Spending family diversity on the orchestrator would push
         # the roles that need it onto whatever is left.
+        # On work a reserve admits, the role that work turns on takes the
+        # reserved runtime first; everything else keeps the cheapest-first order.
+        upgraded = False
+        if role_id in RESERVE_ROLES.get(work_class or "", ()):
+            held = [c for c in candidates if c.mode == "RESERVE"]
+            if held:
+                candidates = held + [c for c in candidates if c.mode != "RESERVE"]
+                upgraded = True
+
         if family_independent_of:
             used = {b.family for b in already_bound.values() if b.family}
             chosen = next((c for c in candidates if c.family not in used), candidates[0])
         else:
             chosen = candidates[0]
-        reason = (f"cheapest qualified runtime for {role_id}"
+        reason = ((f"reserved for {work_class}, spent on {role_id}"
+                   if upgraded and chosen.mode == "RESERVE"
+                   else f"cheapest qualified runtime for {role_id}")
                   + (f"; identity must differ from {', '.join(independent_of)}"
                      if independent_of else "")
                   + (f", family-independent of {', '.join(family_independent_of)}"

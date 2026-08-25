@@ -1,0 +1,42 @@
+{
+  "endpoint": "http://127.0.0.1:8000/v1",
+  "passed": 4,
+  "qualified_roles": [
+    "implementer",
+    "architect",
+    "spec_reviewer",
+    "code_reviewer",
+    "verifier",
+    "specialist"
+  ],
+  "refused_roles": {},
+  "runtime_id": "codex-sol",
+  "schema": "dume.qualification/1",
+  "total": 4,
+  "trials": [
+    {
+      "detail": "5/5 well-formed tool calls",
+      "name": "tool_calling",
+      "passed": true,
+      "seconds": 63.544257164001465
+    },
+    {
+      "detail": "keys: ['reason', 'verdict']",
+      "name": "structured_output",
+      "passed": true,
+      "seconds": 6.265209436416626
+    },
+    {
+      "detail": "answered: REJECT",
+      "name": "refuses_an_unsound_claim",
+      "passed": true,
+      "seconds": 3.121417760848999
+    },
+    {
+      "detail": "answered: UNKNOWN",
+      "name": "admits_uncertainty",
+      "passed": true,
+      "seconds": 4.530080795288086
+    }
+  ]
+}

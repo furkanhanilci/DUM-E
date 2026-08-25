@@ -16,8 +16,8 @@
         "verifier",
         "specialist"
       ],
-      "reason": "http://127.0.0.1:8000/v1/models answered with 1 model(s): /models/Qwen3.8-27B-UD-Q4_K_M.gguf",
-      "retry_after": null,
+      "reason": "qualification trials passed: tool_calling, structured_output, refuses_an_unsound_claim, admits_uncertainty",
+      "retry_after": "2026-08-26T12:24:38+00:00",
       "runtime_id": "qwen-local",
       "status": "AVAILABLE"
     },
@@ -37,8 +37,8 @@
         "verifier",
         "specialist"
       ],
-      "reason": "http://127.0.0.1:8001/v1/models answered with 1 model(s): /models/Mistral-Small-3.2-24B-Instruct-2506-Q4_K_M.gguf",
-      "retry_after": null,
+      "reason": "qualification trials passed: tool_calling, structured_output, refuses_an_unsound_claim, admits_uncertainty",
+      "retry_after": "2026-08-26T12:24:38+00:00",
       "runtime_id": "mistral-local",
       "status": "AVAILABLE"
     },
@@ -50,25 +50,39 @@
       "model": "claude-opus-5",
       "notes": "Premium engineering, architecture-sensitive work and hard root-cause debugging.",
       "provider": "anthropic",
-      "qualified_roles": [],
-      "reason": "/home/otonom/.local/bin/claude is installed, but quota and auth cannot be established without spending a request",
+      "qualified_roles": [
+        "implementer",
+        "architect",
+        "spec_reviewer",
+        "code_reviewer",
+        "verifier",
+        "specialist"
+      ],
+      "reason": "qualification trials passed: tool_calling, structured_output, refuses_an_unsound_claim, admits_uncertainty",
       "retry_after": null,
       "runtime_id": "claude-opus-5",
-      "status": "UNKNOWN"
+      "status": "AVAILABLE"
     },
     {
       "cost_tier": 5,
       "family": "claude",
       "local": false,
-      "mode": "NORMAL",
+      "mode": "RESERVE",
       "model": "claude-fable-5",
       "notes": "Commissioning orchestrator. Reserve it from routine code — this is the runtime the operator has said may run out at any moment.",
       "provider": "anthropic",
-      "qualified_roles": [],
-      "reason": "/home/otonom/.local/bin/claude is installed, but quota and auth cannot be established without spending a request",
+      "qualified_roles": [
+        "implementer",
+        "architect",
+        "spec_reviewer",
+        "code_reviewer",
+        "verifier",
+        "specialist"
+      ],
+      "reason": "qualification trials passed: tool_calling, structured_output, refuses_an_unsound_claim, admits_uncertainty",
       "retry_after": null,
       "runtime_id": "claude-fable-5",
-      "status": "UNKNOWN"
+      "status": "AVAILABLE"
     },
     {
       "cost_tier": 2,
@@ -78,11 +92,13 @@
       "model": "claude-sonnet-5",
       "notes": "Review and verification capacity within the Claude family — which means it is NOT independent of the other Claude runtimes.",
       "provider": "anthropic",
-      "qualified_roles": [],
-      "reason": "/home/otonom/.local/bin/claude is installed, but quota and auth cannot be established without spending a request",
-      "retry_after": null,
+      "qualified_roles": [
+        "verifier"
+      ],
+      "reason": "qualification trials passed: trials passed",
+      "retry_after": "2026-08-26T12:24:38+00:00",
       "runtime_id": "claude-sonnet-5",
-      "status": "UNKNOWN"
+      "status": "AVAILABLE"
     },
     {
       "cost_tier": 3,
@@ -92,25 +108,39 @@
       "model": "gpt-5.6-terra",
       "notes": "Cross-family implementation and review. The operator reports this quota has been exhausted before.",
       "provider": "openai",
-      "qualified_roles": [],
-      "reason": "/home/otonom/.local/bin/codex is installed, but quota and auth cannot be established without spending a request",
+      "qualified_roles": [
+        "implementer",
+        "architect",
+        "spec_reviewer",
+        "code_reviewer",
+        "verifier",
+        "specialist"
+      ],
+      "reason": "qualification trials passed: tool_calling, structured_output, refuses_an_unsound_claim, admits_uncertainty",
       "retry_after": null,
       "runtime_id": "codex-terra",
-      "status": "UNKNOWN"
+      "status": "AVAILABLE"
     },
     {
       "cost_tier": 4,
       "family": "gpt",
       "local": false,
-      "mode": "NORMAL",
+      "mode": "RESERVE",
       "model": "gpt-5.6-sol",
       "notes": "Cross-family escalation for architecture and difficult review.",
       "provider": "openai",
-      "qualified_roles": [],
-      "reason": "/home/otonom/.local/bin/codex is installed, but quota and auth cannot be established without spending a request",
+      "qualified_roles": [
+        "implementer",
+        "architect",
+        "spec_reviewer",
+        "code_reviewer",
+        "verifier",
+        "specialist"
+      ],
+      "reason": "qualification trials passed: tool_calling, structured_output, refuses_an_unsound_claim, admits_uncertainty",
       "retry_after": null,
       "runtime_id": "codex-sol",
-      "status": "UNKNOWN"
+      "status": "AVAILABLE"
     },
     {
       "cost_tier": 1,
