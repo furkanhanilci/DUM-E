@@ -291,3 +291,21 @@ def test_a_reviewer_is_told_when_the_diff_was_cut():
     assert "is NOT missing from the" in source, (
         "the cut is still silent, so an absence the harness created reads as "
         "one the candidate has")
+
+
+def test_running_the_tests_again_without_changing_anything_is_caught():
+    """One run spent twenty-two of its twenty-four tool calls re-running the
+    tests, wrote two files, and was recorded as a runtime failure. The result
+    cannot differ when nothing changed."""
+    import inspect
+    from dume.control import model_executor
+
+    source = inspect.getsource(model_executor.ModelExecutor.implement)
+    assert "MAX_IDLE_TEST_RUNS" in source
+    assert "without changing a file" in source
+    # The nudge must come after the tool results, not between them.
+    results = source.index('"content": json.dumps(result)[:3000]')
+    nudge = source.index("You ran the tests without changing anything")
+    assert nudge > results, (
+        "a user message wedged between an assistant turn and its tool replies "
+        "is a malformed request, not a clearer one")

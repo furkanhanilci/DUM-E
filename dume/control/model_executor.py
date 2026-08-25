@@ -107,6 +107,10 @@ DELIVERABLE_TURNS = 6
 # rather than silent, which is the part that was missing.
 DIFF_BUDGET = 12_000
 
+# Consecutive turns that only re-run the tests. Two is a model that read the
+# failure and is about to act; three is a loop.
+MAX_IDLE_TEST_RUNS = 3
+
 
 def _outstanding(packet: WPPacket, root: Path) -> list[str]:
     """Deliverables that are absent or say nothing."""
@@ -431,6 +435,7 @@ class ModelExecutor:
             return head + tail
 
         red_exit: int | None = None
+        idle_runs = 0
         green_exit: int | None = None
         silent = 0
         for turn in range(MAX_TOOL_TURNS):
@@ -480,6 +485,22 @@ class ModelExecutor:
                 continue
 
             silent = 0
+            # A model that runs the tests, reads the failure and runs them
+            # again has not done anything: the result is identical because
+            # nothing changed. One run spent twenty-two of its twenty-four
+            # calls this way, wrote two files, and was recorded as a runtime
+            # failure. Say the thing that is actually true.
+            if all(c.name == "run_tests" for c in reply.tool_calls):
+                idle_runs += 1
+                if idle_runs >= MAX_IDLE_TEST_RUNS:
+                    raise ImplementationRefused(
+                        f"the implementer called run_tests {idle_runs} times "
+                        "in a row without changing a file. The result cannot "
+                        f"differ, and it has made no progress in "
+                        f"{len(log.calls)} tool call(s).")
+            else:
+                idle_runs = 0
+
             messages.append({"role": "assistant", "content": reply.content or "",
                              "tool_calls": [
                                  {"id": c.id, "type": "function",
@@ -532,6 +553,16 @@ class ModelExecutor:
                             "Fix the test so it fails first.")
                 messages.append({"role": "tool", "tool_call_id": call.id,
                                  "content": json.dumps(result)[:3000]})
+
+            # After the results, never between them: a tool reply has to follow
+            # the assistant turn that called it, and a user message wedged in
+            # the middle is a malformed request rather than a clearer one.
+            if idle_runs == 1:
+                messages.append({"role": "user", "content":
+                    "You ran the tests without changing anything, so the "
+                    "result was the same one you already have. Write the fix "
+                    "with write_file first, then run them."})
+
             if green_exit == 0 and red_exit is not None:
                 break
 
