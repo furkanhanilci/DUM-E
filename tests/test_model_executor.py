@@ -303,9 +303,12 @@ def test_running_the_tests_again_without_changing_anything_is_caught():
     source = inspect.getsource(model_executor.ModelExecutor.implement)
     assert "MAX_IDLE_TEST_RUNS" in source
     assert "without changing a file" in source
+    # A rewrite of what the file already held is idle too: one run did that
+    # thirteen times and every log called it a write.
+    assert '"changed") is False' in source
     # The nudge must come after the tool results, not between them.
     results = source.index('"content": json.dumps(result)[:3000]')
-    nudge = source.index("You ran the tests without changing anything")
+    nudge = source.index("Nothing changed on that turn")
     assert nudge > results, (
         "a user message wedged between an assistant turn and its tool replies "
         "is a malformed request, not a clearer one")

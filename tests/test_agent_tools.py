@@ -21,3 +21,20 @@ def test_append_cannot_grow_a_file_past_the_limit(tmp_path):
     refused = tools.append_file("a.py", "y" * 15)
     assert not refused["ok"] and "limit" in refused["error"]
     assert (tmp_path / "a.py").read_text() == "x" * 15
+
+
+def test_writing_a_file_what_it_already_holds_says_so(tmp_path):
+    """One run wrote the same 2344 characters thirteen times and ran the tests
+    after each, getting the same failure. Every log called it a write."""
+    from dume.control.agent_tools import Toolbox, ToolLog
+
+    tools = Toolbox(tmp_path, ToolLog())
+    first = tools.write_file("a.py", "print(1)\n")
+    assert first["changed"] is True and "note" not in first
+
+    again = tools.write_file("a.py", "print(1)\n")
+    assert again["ok"] and again["changed"] is False
+    assert "same result" in again["note"]
+
+    moved = tools.write_file("a.py", "print(2)\n")
+    assert moved["changed"] is True

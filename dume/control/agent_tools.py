@@ -114,11 +114,22 @@ class Toolbox:
             message = f"refusing {len(content)} chars; limit is {self.max_file_bytes}"
             self.log.record("write_file", {"path": path}, "DENIED", message)
             return {"ok": False, "error": message}
+        # Whether this actually changed anything. A model that rewrites a file
+        # with the content it already has and runs the tests again gets the
+        # same failure, and one run did that thirteen times: the write looked
+        # like progress in every log while nothing moved.
+        unchanged = target.is_file() and target.read_text() == content
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content)
         self.log.record("write_file", {"path": path, "content": content},
-                        "OK", f"wrote {len(content)} chars")
-        return {"ok": True, "path": path, "bytes": len(content.encode())}
+                        "OK", ("wrote the same content again"
+                               if unchanged else f"wrote {len(content)} chars"))
+        return {"ok": True, "path": path, "bytes": len(content.encode()),
+                "changed": not unchanged,
+                **({"note": "This is byte-for-byte what the file already "
+                            "contained. Running the tests will give you the "
+                            "same result. Change something."}
+                   if unchanged else {})}
 
     def append_file(self, path: str, content: str) -> dict:
         """Add to the end of a file.

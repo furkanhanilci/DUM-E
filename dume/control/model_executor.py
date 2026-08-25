@@ -436,6 +436,7 @@ class ModelExecutor:
 
         red_exit: int | None = None
         idle_runs = 0
+        turn_idle = False
         green_exit: int | None = None
         silent = 0
         for turn in range(MAX_TOOL_TURNS):
@@ -490,12 +491,17 @@ class ModelExecutor:
             # nothing changed. One run spent twenty-two of its twenty-four
             # calls this way, wrote two files, and was recorded as a runtime
             # failure. Say the thing that is actually true.
-            if all(c.name == "run_tests" for c in reply.tool_calls):
+            # A turn that changed no file is idle whatever it called: writing
+            # a file the content it already had is not progress, and thirteen
+            # of them in one run looked like work in every log.
+            if all(c.name == "run_tests" for c in reply.tool_calls) or turn_idle:
                 idle_runs += 1
                 if idle_runs >= MAX_IDLE_TEST_RUNS:
                     raise ImplementationRefused(
-                        f"the implementer called run_tests {idle_runs} times "
-                        "in a row without changing a file. The result cannot "
+                        f"the implementer took {idle_runs} turns in a row "
+                        "without changing a file — re-running the tests, or "
+                        "rewriting a file with what it already held. The "
+                        "result cannot "
                         f"differ, and it has made no progress in "
                         f"{len(log.calls)} tool call(s).")
             else:
@@ -507,6 +513,7 @@ class ModelExecutor:
                                   "function": {"name": c.name,
                                                "arguments": c.raw_arguments}}
                                  for c in reply.tool_calls]})
+            results_by_id: dict[str, dict] = {}
             for call in reply.tool_calls:
                 if call.parse_error:
                     result = {"ok": False,
@@ -551,6 +558,7 @@ class ModelExecutor:
                             "The suite passed before any implementation exists. "
                             "That test is not testing the required behaviour. "
                             "Fix the test so it fails first.")
+                results_by_id[call.id] = result
                 messages.append({"role": "tool", "tool_call_id": call.id,
                                  "content": json.dumps(result)[:3000]})
 
@@ -559,9 +567,17 @@ class ModelExecutor:
             # the middle is a malformed request rather than a clearer one.
             if idle_runs == 1:
                 messages.append({"role": "user", "content":
-                    "You ran the tests without changing anything, so the "
-                    "result was the same one you already have. Write the fix "
-                    "with write_file first, then run them."})
+                    "Nothing changed on that turn — you either re-ran the "
+                    "tests or wrote a file the content it already had, so the "
+                    "result is the one you already have. Change the code, then "
+                    "run them."})
+
+            # Did anything actually move this turn?
+            turn_idle = all(
+                c.name == "run_tests"
+                or (c.name in ("write_file", "append_file")
+                    and results_by_id.get(c.id, {}).get("changed") is False)
+                for c in reply.tool_calls)
 
             if green_exit == 0 and red_exit is not None:
                 break
