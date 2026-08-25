@@ -27,7 +27,7 @@ from ..cohort.compiler import CohortManifest, compile_cohort
 from ..cohort.role_registry import ROLES
 from ..packets.wp_packet_builder import PacketBuilder, WPPacket
 from ..runtimes.client import ModelError
-from .model_executor import ImplementationRefused
+from .model_executor import ImplementationRefused, is_hollow as _is_hollow
 from ..runtimes.failures import classify, retry_decision
 from ..runtimes.handoff import RuntimeSwitcher, SwitchRefused
 from ..runtimes.profiles import NoEligibleRuntime, RuntimeBinding, RuntimeRegistry
@@ -648,34 +648,3 @@ class Orchestrator:
         path = self.evidence_dir / report.wp_id / "run_report.json"
         json_dump(report.as_dict(), path)
         return path
-
-
-def _is_hollow(path: Path) -> bool:
-    """Whether a file says nothing, whatever it is shaped like.
-
-    Not a length threshold: a two-line answer can be complete and a page of
-    boilerplate can be empty. What is stripped is the scaffolding a model
-    produces when it means to fill something in later — markdown headings,
-    comment markers, list bullets with nothing after them — and JSON that
-    parses to an empty container.
-    """
-    try:
-        text = path.read_text(errors="replace")
-    except OSError:
-        return True
-    if path.suffix == ".json":
-        import json as _json
-        try:
-            return not _json.loads(text or "null")
-        except _json.JSONDecodeError:
-            # Malformed is a different complaint, and the reviewer's to make.
-            return False
-    body = []
-    for line in text.splitlines():
-        stripped = line.strip()
-        if not stripped or stripped.startswith(("#", "//", "<!--")):
-            continue
-        if stripped in ("-", "*", "|", "---"):
-            continue
-        body.append(stripped)
-    return not body

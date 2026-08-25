@@ -66,6 +66,68 @@ RED_EXIT_CODES = frozenset({1, 2})
 EMPTY_SUITE_EXIT = 5
 
 
+def is_hollow(path: Path) -> bool:
+    """Whether a file says nothing, whatever it is shaped like.
+
+    Not a length threshold: a two-line answer can be complete and a page of
+    boilerplate can be empty. What is stripped is the scaffolding a model
+    produces when it means to fill something in later — markdown headings,
+    comment markers, list bullets with nothing after them — and JSON that
+    parses to an empty container.
+    """
+    try:
+        text = path.read_text(errors="replace")
+    except OSError:
+        return True
+    if path.suffix == ".json":
+        import json as _json
+        try:
+            return not _json.loads(text or "null")
+        except _json.JSONDecodeError:
+            # Malformed is a different complaint, and the reviewer's to make.
+            return False
+    body = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith(("#", "//", "<!--")):
+            continue
+        if stripped in ("-", "*", "|", "---"):
+            continue
+        body.append(stripped)
+    return not body
+
+
+# How many turns the implementer gets to fill in the deliverables once its test
+# passes. Bounded because this is transcription, not problem-solving: a model
+# that has not written a report in six turns is not about to.
+DELIVERABLE_TURNS = 6
+
+
+def _outstanding(packet: WPPacket, root: Path) -> list[str]:
+    """Deliverables that are absent or say nothing."""
+    return [d for d in packet.deliverables
+            if not (root / d).is_file() or is_hollow(root / d)]
+
+
+def _deliverable_nudge(packet: WPPacket, root: Path) -> str:
+    """What to ask for next, named rather than described.
+
+    "Write the deliverables" produced files of headings. Naming the ones that
+    are still empty, and saying what empty means, is the difference between an
+    instruction and a reminder.
+    """
+    outstanding = _outstanding(packet, root)
+    if not outstanding:
+        return "Reply DONE."
+    return ("The test passes. These files are still missing or contain nothing "
+            "but headings:\n"
+            + "\n".join(f"- {d}" for d in outstanding)
+            + "\n\nWrite each one with the actual measurements and findings "
+              "this work produced — the numbers, not the section titles. Use "
+              "append_file if a file is long. When they all say something, "
+              "reply DONE.")
+
+
 class ImplementationRefused(RuntimeError):
     """The implementer could not produce a red-then-green candidate."""
 
@@ -333,10 +395,9 @@ class ModelExecutor:
                "test not passing and then passing, write every mandatory "
                "deliverable listed above that does not exist yet — each one is "
                "a file, at exactly the path given, and each must contain what "
-               "the packet asks it to contain. A heading with nothing under it "
-               "is not a deliverable, and an empty JSON object is not an "
-               "inventory. Only then reply with the single word DONE and "
-               "nothing else."}]
+               "the packet asks it to contain. Do that after the test passes, "
+               "not before: the cycle is what proves the work, and a turn "
+               "spent on a report is a turn not spent reaching green."}]
 
         def _fits(conversation: list[dict]) -> list[dict]:
             """Drop the oldest exchanges when the conversation outgrows the
@@ -410,7 +471,7 @@ class ModelExecutor:
                        "You have a failing test. Write the implementation with "
                        "write_file, then call run_tests again."
                        if green_exit != 0 else
-                       "Reply DONE.")})
+                       _deliverable_nudge(packet, root))})
                 continue
 
             silent = 0
@@ -481,6 +542,33 @@ class ModelExecutor:
                       "red-then-green exit codes and the independent reviews."),
              "bundles": {r: b.as_dict() for r, b in self.skills.items()}},
             indent=2))
+
+        # The cycle is done; the deliverables may not be. Asked for here, one
+        # objective at a time, because naming them in the opening brief made
+        # the model write reports instead of reaching green -- forty tool calls
+        # with red=1 and green=None, on both runtimes.
+        for _ in range(DELIVERABLE_TURNS):
+            if green_exit != 0:
+                break
+            outstanding = _outstanding(packet, root)
+            if not outstanding:
+                break
+            reply = client.chat(
+                _fits(messages + [{"role": "user", "content":
+                                   _deliverable_nudge(packet, root)}]),
+                tools=TOOL_SCHEMAS, max_tokens=IMPLEMENTER_MAX_TOKENS)
+            if not reply.tool_calls:
+                break
+            messages.append({"role": "assistant", "content": reply.content or "",
+                             "tool_calls": [
+                                 {"id": c.id, "type": "function",
+                                  "function": {"name": c.name,
+                                               "arguments": json.dumps(c.arguments)}}
+                                 for c in reply.tool_calls]})
+            for call in reply.tool_calls:
+                outcome = tools.dispatch(call.name, call.arguments)
+                messages.append({"role": "tool", "tool_call_id": call.id,
+                                 "content": json.dumps(outcome)[:2000]})
 
         if red_exit is None or green_exit != 0:
             raise ImplementationRefused(

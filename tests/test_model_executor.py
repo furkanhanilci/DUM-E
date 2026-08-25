@@ -253,3 +253,27 @@ def test_a_long_tool_loop_does_not_outgrow_the_window():
     # A tool reply separated from the call that produced it is a malformed
     # request, not a shorter one.
     assert '"tool"' in source
+
+
+def test_the_deliverables_are_asked_for_after_green_not_before(tmp_path):
+    """Naming them in the opening brief made the model write reports instead of
+    reaching green: forty tool calls with red=1 and green=None, on both
+    runtimes. The cycle is what proves the work."""
+    from dume.control.model_executor import (
+        _deliverable_nudge, _outstanding, ModelExecutor)
+    import inspect
+
+    class Packet:
+        deliverables = ["a.md", "b.json"]
+
+    (tmp_path / "a.md").write_text("# Heading\n\n## Another\n")
+    assert _outstanding(Packet(), tmp_path) == ["a.md", "b.json"]
+
+    (tmp_path / "a.md").write_text("# Heading\n\nThe disk has 21 GiB free.\n")
+    (tmp_path / "b.json").write_text('{"gpus": 2}')
+    assert _outstanding(Packet(), tmp_path) == []
+    assert _deliverable_nudge(Packet(), tmp_path) == "Reply DONE."
+
+    # The opening brief must not send it after the reports first.
+    source = inspect.getsource(ModelExecutor.implement)
+    assert "after the test passes, " in source
