@@ -102,6 +102,11 @@ def is_hollow(path: Path) -> bool:
 # that has not written a report in six turns is not about to.
 DELIVERABLE_TURNS = 6
 
+# How much of a candidate's diff a reviewer is shown. Bounded because a review
+# prompt has to leave room for the packet and the answer; the cut is announced
+# rather than silent, which is the part that was missing.
+DIFF_BUDGET = 12_000
+
 
 def _outstanding(packet: WPPacket, root: Path) -> list[str]:
     """Deliverables that are absent or say nothing."""
@@ -627,10 +632,30 @@ class ModelExecutor:
         role = {"specification_compliance": "spec_reviewer",
                 "code_quality": "code_reviewer"}[kind]
         client = self._client(role)
-        diff = subprocess.run(
+        full = subprocess.run(
             ["git", "-C", worktree.path, "diff",
              f"{worktree.base_revision}..{candidate}"],
-            capture_output=True, text=True).stdout[:12000]
+            capture_output=True, text=True).stdout
+        # A reviewer shown a silently cut diff reports what the cut looks like.
+        # This one read 12000 of 27880 characters, stopped inside a test file,
+        # and returned "mandatory deliverables are missing and tests are
+        # incomplete" — about files that were present and complete, below the
+        # cut. Say what was withheld and name it, so an absence the harness
+        # created is never mistaken for one the candidate has.
+        diff = full[:DIFF_BUDGET]
+        if len(full) > DIFF_BUDGET:
+            listed = subprocess.run(
+                ["git", "-C", worktree.path, "diff", "--stat",
+                 f"{worktree.base_revision}..{candidate}"],
+                capture_output=True, text=True).stdout
+            diff += (
+                f"\n\n[The diff is {len(full)} characters and was cut here at "
+                f"{DIFF_BUDGET}. What is below the cut is NOT missing from the "
+                f"candidate — it is missing from this message. Every file it "
+                f"touches:\n{listed}\n"
+                "Do not conclude that anything is absent from the candidate on "
+                "the strength of this cut. If your judgement turns on a file "
+                "you cannot see here, say that instead of failing it.]")
 
         if role == "spec_reviewer":
             question = ("Was the requirement met? Judge the diff against the "

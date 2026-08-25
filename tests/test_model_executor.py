@@ -277,3 +277,17 @@ def test_the_deliverables_are_asked_for_after_green_not_before(tmp_path):
     # The opening brief must not send it after the reports first.
     source = inspect.getsource(ModelExecutor.implement)
     assert "after the test passes, " in source
+
+
+def test_a_reviewer_is_told_when_the_diff_was_cut():
+    """It read 12000 of 27880 characters, stopped inside a test file, and
+    returned "mandatory deliverables are missing and tests are incomplete" --
+    about files that were present and complete, below the cut."""
+    import inspect
+    from dume.control import model_executor
+
+    source = inspect.getsource(model_executor.ModelExecutor.review)
+    assert "DIFF_BUDGET" in source
+    assert "is NOT missing from the" in source, (
+        "the cut is still silent, so an absence the harness created reads as "
+        "one the candidate has")
