@@ -24,14 +24,14 @@
   "context_policy": "task state only. The previous agent's conversation is deliberately excluded: it would double the context, carry over its confusions, and prejudice a role that is supposed to form its own view.",
   "from_binding": {
     "agent_id": "WP-001/implementer",
-    "bound_at": "2026-08-26T11:40:27+00:00",
+    "bound_at": "2026-08-26T11:54:12+00:00",
     "family": "qwen",
     "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
     "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
     "role_id": "implementer",
     "runtime_id": "qwen-local"
   },
-  "issued_at": "2026-08-26T11:45:45+00:00",
+  "issued_at": "2026-08-26T12:00:20+00:00",
   "logical_role": "implementer",
   "open_findings": [],
   "open_steps": [],
@@ -40,13 +40,13 @@
   "task_id": "WP-001-implement",
   "to_binding": {
     "agent_id": "WP-001/implementer@fallback",
-    "bound_at": "2026-08-26T11:45:45+00:00",
+    "bound_at": "2026-08-26T12:00:20+00:00",
     "family": "mistral",
     "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
     "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
     "role_id": "implementer",
     "runtime_id": "mistral-local"
   },
-  "worktree": "/tmp/dume-live-m3op0d9p/worktrees/WP-001__live-66921faa",
+  "worktree": "/tmp/dume-live-0wtrwxnd/worktrees/WP-001__live-66921faa",
   "wp_id": "WP-001"
 }

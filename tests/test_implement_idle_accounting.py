@@ -46,12 +46,12 @@ class ScriptedImplementer:
                                           raw_arguments=json.dumps(args))])
 
 
-def Packet():
+def Packet(deliverables=()):
     """The real packet type — a stand-in would drift from what it projects."""
     return WPPacket(wp_id="WP-TEST", title="a capacity helper",
                     workstream="test", wave=1, owner="implementer",
                     verifier_role="verifier", spec_revision="r1",
-                    packet_sha256="0" * 64)
+                    deliverables=list(deliverables), packet_sha256="0" * 64)
 
 
 class Tree:
@@ -146,3 +146,28 @@ def test_a_refusal_leaves_the_transcript_behind(tmp_path):
     log = tmp_path / "evidence" / "WP-TEST" / "tool_log.json"
     assert log.is_file()
     assert json.loads(log.read_text())["calls"]
+
+
+def test_the_transcript_holds_every_call_the_run_reports(tmp_path):
+    """It was written before the deliverable turns, and they use the tools.
+
+    So the record of "what the agent actually did" stopped where the cycle
+    stopped, and every call that produced a mandatory deliverable was missing
+    from it — the phase the deliverables gate then returns a verdict on. Two
+    live runs reported 19 and 17 tool calls against files holding 8 and 11.
+    """
+    tree = _worktree(tmp_path)
+    # The main loop breaks the moment it has red and then green, so the
+    # deliverable turns are served the entries after that — not after DONE,
+    # which it never reaches.
+    turns = CANONICAL[:4] + [
+        ("write_file", {"path": "notes.md", "content": "# notes\n\nreal.\n"}),
+        (None, "DONE")]
+    result = _executor(turns, tmp_path).implement(
+        Packet(deliverables=["notes.md"]), {}, tree)
+    log = tmp_path / "evidence" / "WP-TEST" / "tool_log.json"
+    calls = json.loads(log.read_text())["calls"]
+    assert [c["tool"] for c in calls].count("write_file") == 3, (
+        "the deliverable the gate judges is missing from the transcript")
+    assert f"{len(calls)} tool calls" in result["discipline"]
+    assert len(calls) == result["tool_calls"]

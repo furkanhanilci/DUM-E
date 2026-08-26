@@ -667,6 +667,15 @@ class ModelExecutor:
                 messages.append({"role": "tool", "tool_call_id": call.id,
                                  "content": json.dumps(outcome)[:2000]})
 
+        # Again, now that the deliverable turns have run. The first write is
+        # before them, and for as long as it was the only one the transcript
+        # ended where the cycle ended: every call that produced a mandatory
+        # deliverable was missing from the record of "what the agent actually
+        # did", which is precisely the phase the deliverables gate then
+        # returns a verdict on. Two runs reported 19 and 17 tool calls against
+        # files holding 8 and 11.
+        self._save_tool_log(packet, log)
+
         if red_exit is None or green_exit != 0:
             raise ImplementationRefused(
                 f"no red-then-green cycle was observed "

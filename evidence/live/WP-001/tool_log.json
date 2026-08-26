@@ -4,10 +4,10 @@
       "tool": "write_file",
       "arguments": {
         "path": "test_capacity.py",
-        "content": "<863 chars>"
+        "content": "<868 chars>"
       },
       "outcome": "OK",
-      "detail": "wrote 863 chars"
+      "detail": "wrote 868 chars"
     },
     {
       "tool": "run_tests",
@@ -19,16 +19,40 @@
       "tool": "write_file",
       "arguments": {
         "path": "test_capacity.py",
-        "content": "<1094 chars>"
+        "content": "<868 chars>"
       },
       "outcome": "OK",
-      "detail": "wrote 1094 chars"
+      "detail": "wrote the same content again"
+    },
+    {
+      "tool": "write_file",
+      "arguments": {
+        "path": "test_capacity.py",
+        "content": "<1403 chars>"
+      },
+      "outcome": "OK",
+      "detail": "wrote 1403 chars"
+    },
+    {
+      "tool": "run_tests",
+      "arguments": {},
+      "outcome": "EXIT_0",
+      "detail": "\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                       [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m2 passed\u001b[0m\u001b[32m in 0.01s\u001b[0m\u001b[0m\n"
+    },
+    {
+      "tool": "write_file",
+      "arguments": {
+        "path": "test_capacity.py",
+        "content": "<1039 chars>"
+      },
+      "outcome": "OK",
+      "detail": "wrote 1039 chars"
     },
     {
       "tool": "run_tests",
       "arguments": {},
       "outcome": "EXIT_1",
-      "detail": "r\u001b[0m\n\n\u001b[1m\u001b[31mtest_capacity.py\u001b[0m:19: Failed\n\u001b[36m\u001b[1m=========================== short test summary info ============================\u001b[0m\n\u001b[31mFAILED\u001b[0m test_capacity.py::\u001b[1mtest_usable_vram_bytes\u001b[0m - Failed: DID NOT RAISE NotImplementedError\n\u001b[31mFAILED\u001b[0m test_capacity.py::\u001b[1mtest_classify\u001b[0m - Failed: DID NOT RAISE NotImplementedError\n\u001b[31m\u001b[31m\u001b[1m2 failed\u001b[0m\u001b[31m in 0.05s\u001b[0m\u001b[0m\n"
+      "detail": "ributeError\u001b[0m\n\n\u001b[1m\u001b[31mtest_capacity.py\u001b[0m:19: Failed\n\u001b[36m\u001b[1m=========================== short test summary info ============================\u001b[0m\n\u001b[31mFAILED\u001b[0m test_capacity.py::\u001b[1mtest_usable_vram_bytes\u001b[0m - Failed: DID NOT RAISE AttributeError\n\u001b[31mFAILED\u001b[0m test_capacity.py::\u001b[1mtest_classify\u001b[0m - Failed: DID NOT RAISE AttributeError\n\u001b[31m\u001b[31m\u001b[1m2 failed\u001b[0m\u001b[31m in 0.05s\u001b[0m\u001b[0m\n"
     },
     {
       "tool": "write_file",
@@ -43,16 +67,16 @@
       "tool": "run_tests",
       "arguments": {},
       "outcome": "EXIT_1",
-      "detail": "r\u001b[0m\n\n\u001b[1m\u001b[31mtest_capacity.py\u001b[0m:19: Failed\n\u001b[36m\u001b[1m=========================== short test summary info ============================\u001b[0m\n\u001b[31mFAILED\u001b[0m test_capacity.py::\u001b[1mtest_usable_vram_bytes\u001b[0m - Failed: DID NOT RAISE NotImplementedError\n\u001b[31mFAILED\u001b[0m test_capacity.py::\u001b[1mtest_classify\u001b[0m - Failed: DID NOT RAISE NotImplementedError\n\u001b[31m\u001b[31m\u001b[1m2 failed\u001b[0m\u001b[31m in 0.05s\u001b[0m\u001b[0m\n"
+      "detail": "ributeError\u001b[0m\n\n\u001b[1m\u001b[31mtest_capacity.py\u001b[0m:19: Failed\n\u001b[36m\u001b[1m=========================== short test summary info ============================\u001b[0m\n\u001b[31mFAILED\u001b[0m test_capacity.py::\u001b[1mtest_usable_vram_bytes\u001b[0m - Failed: DID NOT RAISE AttributeError\n\u001b[31mFAILED\u001b[0m test_capacity.py::\u001b[1mtest_classify\u001b[0m - Failed: DID NOT RAISE AttributeError\n\u001b[31m\u001b[31m\u001b[1m2 failed\u001b[0m\u001b[31m in 0.04s\u001b[0m\u001b[0m\n"
     },
     {
       "tool": "write_file",
       "arguments": {
         "path": "test_capacity.py",
-        "content": "<863 chars>"
+        "content": "<868 chars>"
       },
       "outcome": "OK",
-      "detail": "wrote 863 chars"
+      "detail": "wrote 868 chars"
     },
     {
       "tool": "run_tests",
