@@ -4,6 +4,6 @@ exit=0
     "tool": "run_tests",
     "arguments": {},
     "outcome": "EXIT_0",
-    "detail": "...................                                                      [100%]\n19 passed in 0.02s\n"
+    "detail": "\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m                                                                       [100%]\u001b[0m\n\u001b[32m\u001b[32m\u001b[1m2 passed\u001b[0m\u001b[32m in 0.01s\u001b[0m\u001b[0m\n"
   }
 ]

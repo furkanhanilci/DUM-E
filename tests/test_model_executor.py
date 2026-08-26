@@ -300,12 +300,16 @@ def test_running_the_tests_again_without_changing_anything_is_caught():
     import inspect
     from dume.control import model_executor
 
+    # The behaviour itself is in tests/test_implement_idle_accounting.py; what
+    # is checked here is the shape that made it go wrong once.
     source = inspect.getsource(model_executor.ModelExecutor.implement)
     assert "MAX_IDLE_TEST_RUNS" in source
     assert "without changing a file" in source
     # A rewrite of what the file already held is idle too: one run did that
-    # thirteen times and every log called it a write.
-    assert '"changed") is False' in source
+    # thirteen times and every log called it a write. The default matters:
+    # append_file reports no "changed" key, and reading a missing one as
+    # unchanged would make every append idle.
+    assert '.get("changed", True)' in source
     # The nudge must come after the tool results, not between them.
     results = source.index('"content": json.dumps(result)[:3000]')
     nudge = source.index("Nothing changed on that turn")

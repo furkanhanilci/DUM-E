@@ -1,0 +1,52 @@
+{
+  "accepted_plan": {
+    "risks": [
+      "Threshold values for SINGLE_GPU_CONSTRAINED vs HIGH_THROUGHPUT_GPU are not pinned in the packet; choosing them without upstream evidence risks an envelope that flatters the host.",
+      "The 0.12 overhead default is a heuristic; real display/driver overhead varies and must be validated against the actual host probe, not assumed.",
+      "This slice does not produce the full host_inventory.json or gpu_probe.log, so acceptance of the whole WP-001 still depends on the remaining deliverables.",
+      "Without running on the real host, the classification logic is unverified against actual VRAM/driver state, leaving residual risk that the envelope is trusted prematurely."
+    ],
+    "satisfiable": true,
+    "steps": [
+      "Write the failing test file first (e.g. test_capacity.py) covering: usable_vram_bytes subtracts the 12% default overhead, honors a custom overhead, and clamps to zero for small/negative totals; classify returns CPU_HEAVY for gpu_count==0 regardless of usable_bytes, REMOTE_GPU_REQUIRED for a single GPU below the throughput threshold, SINGLE_GPU_CONSTRAINED for a single GPU at/above threshold, and HIGH_THROUGHPUT_GPU for multiple GPUs; assert zero-GPU never yields a GPU class.",
+      "Run the tests and record the RED observation (ImportError or assertion failures) with exact command and exit code.",
+      "Create capacity.py implementing usable_vram_bytes(total, overhead=0.12) as max(0, total * (1 - overhead)) and classify(usable_bytes, gpu_count) with explicit thresholds and the zero-GPU guard.",
+      "Run the tests to GREEN; refactor only while tests stay green.",
+      "Add a small probe/fixture demonstrating the two adversarial failure modes: an envelope that would flatter the host if total VRAM were used directly, and a zero-GPU host that must not be classified as a GPU class.",
+      "Record the candidate revision, exact commands, exit codes, and upstream references (Qwen3.8/vLLM/SGLang compatibility notes) in the package-local evidence for the verifier packet."
+    ],
+    "summary": "Plan a TDD implementation of capacity.py with usable_vram_bytes and classify functions, plus their test file, as the bounded capacity-envelope slice of WP-001.",
+    "test_first": "A test asserting that usable_vram_bytes(16 * 1024**3) equals 16 * 1024**3 * 0.88 (not the raw total), that usable_vram_bytes(100, overhead=0.5) equals 50, that usable_vram_bytes(0) and usable_vram_bytes(-5) both equal 0, and that classify(0, 0) returns CPU_HEAVY while classify(10**12, 0) still returns CPU_HEAVY (zero GPUs is never a GPU class)."
+  },
+  "artefact_refs": [],
+  "candidate_sha": null,
+  "completed_steps": [],
+  "context_policy": "task state only. The previous agent's conversation is deliberately excluded: it would double the context, carry over its confusions, and prejudice a role that is supposed to form its own view.",
+  "from_binding": {
+    "agent_id": "WP-001/implementer",
+    "bound_at": "2026-08-26T11:40:27+00:00",
+    "family": "qwen",
+    "model": "Qwen3.8-27B (quantised — profile decided by WP-005)",
+    "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+    "role_id": "implementer",
+    "runtime_id": "qwen-local"
+  },
+  "issued_at": "2026-08-26T11:45:45+00:00",
+  "logical_role": "implementer",
+  "open_findings": [],
+  "open_steps": [],
+  "packet_sha256": "66921faa41f496cde827432d5d4b25cd6303cda657be1d2103f91c347903500d",
+  "reason": "qwen-local failed to run the work: the model stopped mid tool call (max_tokens=4000); the arguments are incomplete",
+  "task_id": "WP-001-implement",
+  "to_binding": {
+    "agent_id": "WP-001/implementer@fallback",
+    "bound_at": "2026-08-26T11:45:45+00:00",
+    "family": "mistral",
+    "model": "Mistral-Small-3.2-24B-Instruct-2506 (Q4_K_M)",
+    "reason": "cheapest qualified runtime for implementer; identity must differ from spec_reviewer, code_reviewer, verifier",
+    "role_id": "implementer",
+    "runtime_id": "mistral-local"
+  },
+  "worktree": "/tmp/dume-live-m3op0d9p/worktrees/WP-001__live-66921faa",
+  "wp_id": "WP-001"
+}

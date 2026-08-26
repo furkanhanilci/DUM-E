@@ -297,6 +297,20 @@ class ModelExecutor:
         self.transcripts.setdefault(role, []).append(
             {"messages": messages[-2:], "reply": reply_text[:4000]})
 
+    def _save_tool_log(self, packet, log):
+        """Write the implementer's tool transcript, refusal or not.
+
+        Called from the refusal paths as well as from the end of the loop. A
+        run that dies is the one whose transcript is worth reading, and this
+        used to be written only after a clean return — so the only runs with
+        no record of what the implementer did were the ones that failed.
+        """
+        out = self.evidence_dir / packet.wp_id
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "tool_log.json").write_text(
+            json.dumps({"calls": log.calls}, indent=2))
+        return out
+
     # ---- roles ----------------------------------------------------------
 
     def plan(self, packet: WPPacket, cohort) -> dict:
@@ -440,7 +454,9 @@ class ModelExecutor:
 
         red_exit: int | None = None
         idle_runs = 0
-        turn_idle = False
+        # Running the tests before anything has been written is idle by
+        # definition: there is no change for the run to be evidence about.
+        changed_since_tests = False
         green_exit: int | None = None
         silent = 0
         for turn in range(MAX_TOOL_TURNS):
@@ -456,21 +472,31 @@ class ModelExecutor:
                 reply = client.chat(messages, tools=TOOL_SCHEMAS,
                                     max_tokens=IMPLEMENTER_MAX_TOKENS)
             except ToolCallTruncated:
-                reply = client.chat(
-                    messages + [{"role": "user", "content":
-                                 "Your last tool call was cut off because it "
-                                 "was too long. Write the same file in smaller "
-                                 "pieces: one write_file per file, and split a "
-                                 "long file into a first write_file and then "
-                                 "append_file calls."}],
-                    tools=TOOL_SCHEMAS,
-                    max_tokens=IMPLEMENTER_MAX_TOKENS * 2)
+                try:
+                    reply = client.chat(
+                        messages + [{"role": "user", "content":
+                                     "Your last tool call was cut off because it "
+                                     "was too long. Write the same file in smaller "
+                                     "pieces: one write_file per file, and split a "
+                                     "long file into a first write_file and then "
+                                     "append_file calls."}],
+                        tools=TOOL_SCHEMAS,
+                        max_tokens=IMPLEMENTER_MAX_TOKENS * 2)
+                except ToolCallTruncated:
+                    # Twice the budget and it still did not fit. That leaves
+                    # the stage, and it used to take the transcript of
+                    # everything the implementer had already done correctly
+                    # with it — which is exactly the record needed to tell a
+                    # file that wants splitting from a model that cannot.
+                    self._save_tool_log(packet, log)
+                    raise
             if not reply.tool_calls:
                 text = (reply.content or "").strip()
                 if "DONE" in text.upper() and green_exit == 0:
                     break
                 silent += 1
                 if silent >= MAX_SILENT_TURNS:
+                    self._save_tool_log(packet, log)
                     raise ImplementationRefused(
                         f"the implementer answered in prose {silent} turns "
                         f"running without calling a tool (last reply "
@@ -490,27 +516,6 @@ class ModelExecutor:
                 continue
 
             silent = 0
-            # A model that runs the tests, reads the failure and runs them
-            # again has not done anything: the result is identical because
-            # nothing changed. One run spent twenty-two of its twenty-four
-            # calls this way, wrote two files, and was recorded as a runtime
-            # failure. Say the thing that is actually true.
-            # A turn that changed no file is idle whatever it called: writing
-            # a file the content it already had is not progress, and thirteen
-            # of them in one run looked like work in every log.
-            if all(c.name == "run_tests" for c in reply.tool_calls) or turn_idle:
-                idle_runs += 1
-                if idle_runs >= MAX_IDLE_TEST_RUNS:
-                    raise ImplementationRefused(
-                        f"the implementer took {idle_runs} turns in a row "
-                        "without changing a file — re-running the tests, or "
-                        "rewriting a file with what it already held. The "
-                        "result cannot "
-                        f"differ, and it has made no progress in "
-                        f"{len(log.calls)} tool call(s).")
-            else:
-                idle_runs = 0
-
             messages.append({"role": "assistant", "content": reply.content or "",
                              "tool_calls": [
                                  {"id": c.id, "type": "function",
@@ -566,6 +571,35 @@ class ModelExecutor:
                 messages.append({"role": "tool", "tool_call_id": call.id,
                                  "content": json.dumps(result)[:3000]})
 
+            # Did anything actually move this turn? Answered here, where the
+            # results of THIS turn exist.
+            #
+            # It used to be computed at the bottom of the loop and read at the
+            # top of the next one, so every turn was judged by what the
+            # previous turn did — a write was counted idle because a test run
+            # preceded it, however much it changed. Worse, a lone `run_tests`
+            # was idle unconditionally, and the red run is one the protocol
+            # *requires*. Together they spent the whole idle budget on the
+            # canonical cycle: write the test, run it red, write the code, run
+            # it green. Four correct turns, refused for being correct. The
+            # only runs that survived were the ones whose model happened to
+            # bundle the write and the run into a single turn.
+            #
+            # A run of the tests is progress exactly once per change. A second
+            # one with nothing touched in between cannot answer differently,
+            # and that — not the first one — is the loop worth refusing.
+            changed = any(
+                c.name in ("write_file", "append_file")
+                and results_by_id.get(c.id, {}).get("changed", True)
+                for c in reply.tool_calls)
+            if changed:
+                idle_runs, changed_since_tests = 0, True
+            elif any(c.name == "run_tests" for c in reply.tool_calls):
+                idle_runs = 0 if changed_since_tests else idle_runs + 1
+                changed_since_tests = False
+            else:
+                idle_runs = 0
+
             # After the results, never between them: a tool reply has to follow
             # the assistant turn that called it, and a user message wedged in
             # the middle is a malformed request rather than a clearer one.
@@ -576,21 +610,28 @@ class ModelExecutor:
                     "result is the one you already have. Change the code, then "
                     "run them."})
 
-            # Did anything actually move this turn?
-            turn_idle = all(
-                c.name == "run_tests"
-                or (c.name in ("write_file", "append_file")
-                    and results_by_id.get(c.id, {}).get("changed") is False)
-                for c in reply.tool_calls)
+            if idle_runs >= MAX_IDLE_TEST_RUNS:
+                # Written before the raise: a run that dies is the one whose
+                # transcript is worth reading, and this used to be saved only
+                # after a clean return.
+                self._save_tool_log(packet, log)
+                raise ImplementationRefused(
+                    f"the implementer took {idle_runs} turns in a row "
+                    "without changing a file — re-running the tests on a tree "
+                    "it had already run them on, or rewriting a file with what it "
+                    "already held. The result cannot differ, and it has made "
+                    f"no progress in {len(log.calls)} tool call(s): "
+                    + "; ".join(
+                        f"{c.get('tool')}"
+                        f"({(c.get('arguments') or {}).get('path', '')}) "
+                        f"{c.get('outcome')} — {c.get('detail')}"
+                        for c in log.calls[-6:]))
 
             if green_exit == 0 and red_exit is not None:
                 break
 
         self._record("implementer", messages, f"red={red_exit} green={green_exit}")
-        discipline_dir = self.evidence_dir / packet.wp_id
-        discipline_dir.mkdir(parents=True, exist_ok=True)
-        (discipline_dir / "tool_log.json").write_text(
-            json.dumps({"calls": log.calls}, indent=2))
+        discipline_dir = self._save_tool_log(packet, log)
         (discipline_dir / "skills_injected.json").write_text(json.dumps(
             {"schema": "dume.skills_injected/1",
              "note": ("What each role was actually held to. Injection is an "

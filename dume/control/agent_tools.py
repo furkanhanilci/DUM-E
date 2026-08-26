@@ -12,6 +12,7 @@ the narrower scope of one task.
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import subprocess
 import sys
@@ -234,7 +235,22 @@ class Toolbox:
         return {"ok": True, "files": files[:200]}
 
     def run_tests(self) -> dict:
-        """Run the suite. The exit code is the evidence; nothing else is."""
+        """Run the suite. The exit code is the evidence; nothing else is.
+
+        Unless there is no suite runner, in which case the exit code is
+        evidence about the host and none at all about the work. `python -m
+        pytest` on an interpreter without pytest exits 1 — indistinguishable
+        from a test that ran and failed, and the harness read it as the red
+        phase. A run launched with the wrong interpreter therefore reported a
+        correct red, then never reached green, and the implementer was blamed
+        for it. A failure to run is not a failure to implement.
+        """
+        if importlib.util.find_spec("pytest") is None:
+            message = (f"pytest is not installed for {sys.executable}. The "
+                       "tests could not be run, so nothing here is evidence "
+                       "about the code.")
+            self.log.record("run_tests", {}, "UNAVAILABLE", message)
+            return {"ok": False, "error": message}
         result = subprocess.run(
             [sys.executable, "-m", "pytest", "-q", str(self.root)],
             cwd=str(self.root), capture_output=True, text=True, timeout=600)
