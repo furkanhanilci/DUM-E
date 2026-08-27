@@ -14,6 +14,18 @@ from .state import Store
 
 DEFAULT_PACK = Path("/home/otonom/Desktop/FH/DUME_COMMISSIONING_IMPLEMENTATION_PACK")
 
+# Three packages are stated in the source catalogue in terms of one specific
+# target repository. DUM-E holds no opinion about what its target is — the
+# mechanism each package builds is identical whatever it is pointed at — so they
+# are registered by what is being built rather than by whose repository it is
+# being built for. Overriding at seed time rather than editing the pack keeps the
+# pack as the single source for everything else: waves, dependencies, streams.
+TITLE_OVERRIDES: dict[str, str] = {
+    "WP-029": "Deterministic WP Packet Builder",
+    "WP-053": "First Real Low-Risk Target-Repository Pilot",
+    "WP-054": "Two Heterogeneous Pilots and DUM-E v0.1 Acceptance",
+}
+
 
 def seed(store: Store, pack: Path | None = None) -> dict:
     """Register every package and its hard dependencies. Idempotent."""
@@ -30,7 +42,9 @@ def seed(store: Store, pack: Path | None = None) -> dict:
         if len(deps) == 1 and "," in deps[0]:
             deps = [d.strip() for d in deps[0].split(",") if d.strip()]
         store.register(
-            wp_id=row["wp"], title=row["title"], workstream=row["stream"],
+            wp_id=row["wp"],
+            title=TITLE_OVERRIDES.get(row["wp"], row["title"]),
+            workstream=row["stream"],
             wave=int(row["wave"]), depends_on=deps)
 
     dangling = []

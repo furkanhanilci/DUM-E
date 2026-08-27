@@ -1,6 +1,7 @@
 # DUM-E as built — the design, and where each piece lives
 
-> DUM-E builds AETHRIONIS. AETHRIONIS does the science.
+> A supervised multi-model engineering harness. No single model writes the code,
+> judges the code, and declares it done.
 
 This maps the commissioning design onto the code that now implements it, and is
 honest about what is borrowed, what was rebuilt, and what is still absent.
@@ -10,7 +11,7 @@ honest about what is borrowed, what was rebuilt, and what is still absent.
 ```
 Human ──▶ Command Gateway ──▶ Orchestrator
                                   │
-        AETHRION_SPEC (read-only) ─┴─▶ WP Packet Builder
+          SPEC_MOUNT (read-only) ─┴─▶ WP Packet Builder
                                         │
                                         ▼
                                   Cohort Compiler
@@ -134,6 +135,6 @@ that the discipline injected was the pinned revision.
 - **Live runtime switching over kind 24200** — implemented in Buzz, not used here.
 - **An accepted package** — no independent verifier identity is bound, and the
   store refuses to let the producer accept its own work.
-- **A bound target** — `AETHRION_SPEC` and `AETHRION_TARGET` are declared,
-  unbound configuration slots. Binding one is the single action this harness
-  refuses to take on its own.
+- **A bound target** — `SPEC_MOUNT` and `BUILD_TARGET` are declared, unbound
+  configuration slots ([ADR-0003](adr/ADR-0003-specification-and-target-workspaces-are-unbound.md)).
+  Binding one is the single action this harness refuses to take on its own.

@@ -51,7 +51,7 @@ def synthetic_registry(*, exhaust: tuple[str, ...] = ()) -> RuntimeRegistry:
 
 def make_target_repo(root: Path) -> Path:
     """A disposable target repository. Never a real one."""
-    repo = root / "AETHRION_TARGET_FIXTURE"
+    repo = root / "BUILD_TARGET_FIXTURE"
     repo.mkdir(parents=True)
     run = lambda *a: subprocess.run(["git", "-C", str(repo), *a],
                                     capture_output=True, check=False)
@@ -60,7 +60,7 @@ def make_target_repo(root: Path) -> Path:
     run("config", "user.name", "DUM-E pilot")
     (repo / "README.md").write_text(
         "# Disposable pilot target\n\nCreated by DUM-E's synthetic pilot and "
-        "destroyed with it. Not a real AETHRIONIS target.\n")
+        "destroyed with it. Not a real build target.\n")
     acceptance = repo / "acceptance"
     acceptance.mkdir()
     (acceptance / "frozen.md").write_text("AC-01 frozen by the commissioning plan\n")

@@ -153,12 +153,11 @@ def test_a_topic_names_the_channel_it_mirrors():
 
 
 def test_dume_speaks_only_for_itself():
-    """DUM-E is a structure inside AETHRIONIS — the harness in the laboratory,
-    not the laboratory. Its narration belongs in its own channels.
+    """A run's narration belongs in the harness's own channels.
 
-    `runtime_binding` was routed to Operations, which is where AETHRIONIS talks
-    about runtimes as a shared resource. A binding made for one of DUM-E's runs
-    is part of that run, and sending it there made the harness sound like the
+    `runtime_binding` was routed to Operations, which is where the workspace
+    talks about runtimes as a shared resource. A binding made for one of DUM-E's
+    runs is part of that run, and sending it there made one run sound like the
     voice of the whole workspace.
     """
     from dume.control.announce import Announcer
@@ -207,7 +206,7 @@ def test_naming_an_account_says_which_one_is_meant():
     from dume.control.address import addressee, belongs_to, strip_address
 
     assert addressee("@dume durum") == "dume"
-    assert addressee("@aethrionis alanlar") == "aethrionis"
+    assert addressee("@workspace alanlar") == "workspace"
     assert addressee("dum-e ne yapıyor") == "dume"
     assert addressee("durum nedir") is None
     # A name inside another word is not a name.
@@ -215,7 +214,7 @@ def test_naming_an_account_says_which_one_is_meant():
 
     assert strip_address("@dume durum nedir") == "durum nedir"
     assert belongs_to("commission") == "dume"
-    assert belongs_to("spaces") == "aethrionis"
+    assert belongs_to("spaces") == "workspace"
 
 
 def test_only_readings_are_narrated():

@@ -699,7 +699,7 @@ class ModelExecutor:
         commit = subprocess.run(
             ["git", "-C", str(root),
              "-c", f"user.name={producer}",
-             "-c", "user.email=dume@aethrionis.local",
+             "-c", "user.email=dume@dum-e.local",
              "commit", "-qm", f"{packet.wp_id}: candidate"],
             capture_output=True, text=True, check=False)
         # Not swallowed. This ran with check=False and no output, so a commit

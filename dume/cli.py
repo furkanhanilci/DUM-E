@@ -629,15 +629,15 @@ def cmd_telegram(args) -> int:
         data["broadcast"] = str(args.broadcast)
         path.write_text(_json.dumps(data, indent=2))
         path.chmod(0o600)
-        print(f"AETHRIONIS will narrate to chat {args.broadcast}")
-        # Sent by the command account, not the narrator. This is AETHRIONIS
-        # saying something about itself; the narrator is DUM-E, and a message
-        # about the workspace arriving in the harness's voice is the harness
-        # speaking for the laboratory it lives in.
+        print(f"DUM-E will narrate to chat {args.broadcast}")
+        # Sent by the command account, not the narrator. This message is about
+        # the wiring, not about a run, and narration is reserved for what a run
+        # actually did — a setup notice in the narrator's voice would be the
+        # first entry in a log that records nothing that happened.
         try:
             bridge = TelegramBridge(Config.load(), None, None)
             bridge.send(args.broadcast,
-                        "AETHRIONIS will narrate here.\n\n"
+                        "DUM-E will narrate here.\n\n"
                         "Narration only — nothing posted here moves anything.")
             print("test message delivered")
         except TelegramError as exc:
@@ -883,10 +883,10 @@ def build_parser() -> argparse.ArgumentParser:
                      choices=["READ", "CONTROL", "HUMAN_DECISION",
                               "DANGEROUS_ACTION"])
     tgp.add_argument("--forum", metavar="CHAT_ID",
-                     help="create one topic per AETHRIONIS channel in this "
+                     help="create one topic per workspace channel in this "
                           "forum supergroup, and narrate into them")
     tgp.add_argument("--broadcast", metavar="CHAT_ID",
-                     help="where AETHRIONIS narrates; send /here in the chat to "
+                     help="where DUM-E narrates; send /here in the chat to "
                           "find its id")
     tgp.add_argument("--check", action="store_true",
                      help="verify the bot and the allowlist, then exit")

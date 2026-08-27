@@ -54,7 +54,7 @@ def test_the_specification_is_mounted_read_only_however_it_is_bound():
     names a path that exists.
     """
     cfg = config.load()
-    spec = cfg["workspaces"]["AETHRION_SPEC"]
+    spec = cfg["workspaces"]["SPEC_MOUNT"]
     assert spec["mode"] == "READ_ONLY", "the specification must not be writable"
 
     for name, workspace in cfg["workspaces"].items():

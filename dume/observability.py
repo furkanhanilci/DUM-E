@@ -243,7 +243,7 @@ ul {{ margin:.3rem 0; padding-left:1.1rem }} li {{ margin:.2rem 0; color:var(--m
 footer {{ margin-top:2rem; color:var(--muted); font-size:.78rem; border-top:1px solid var(--line); padding-top:.8rem }}
 </style></head><body>
 <h1>DUM-E</h1>
-<p class="sub">DUM-E builds AETHRIONIS. AETHRIONIS does the science. ·
+<p class="sub">Supervised multi-model engineering harness. ·
 generated {e(data['generated_at'])} · refreshes every 10s</p>
 {''.join(parts)}
 <footer>Read-only. Every action lives in the command gateway, where it is

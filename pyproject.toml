@@ -1,7 +1,7 @@
 [project]
 name = "dume"
 version = "0.1.0.dev0"
-description = "The temporary commissioning harness that builds AETHRION"
+description = "A supervised multi-model software engineering harness"
 requires-python = ">=3.10"
 # The foundation layer has no third-party runtime dependency on purpose: the
 # harness that verifies the environment must not itself need the environment to

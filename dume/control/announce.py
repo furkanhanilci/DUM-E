@@ -74,7 +74,7 @@ class Announcer:
             channel: str | None = None) -> bool:
         """Send one message. Returns whether it left the building.
 
-        `channel` names an AETHRIONIS channel; when the target is a forum group
+        `channel` names a workspace channel; when the target is a forum group
         the message lands in that channel's topic. In a plain chat the topic is
         simply absent, so the same call works either way.
         """
@@ -107,12 +107,11 @@ class Announcer:
 
     # Which conversation a step belongs to.
     #
-    # All four are DUM-E's own channels. DUM-E is a structure inside AETHRIONIS
-    # — the harness in the laboratory, not the laboratory — so it speaks about
-    # its own work and nothing else. A runtime binding made for one of its runs
-    # is part of that run; it does not belong in Operations, which is where
-    # AETHRIONIS talks about runtimes as a shared resource. Routing it there
-    # made DUM-E sound like the voice of the whole workspace, which it is not.
+    # All four are the harness's own channels, and a run speaks about its own
+    # work and nothing else. A runtime binding made for one of its runs is part
+    # of that run; it does not belong in Operations, which is where the
+    # workspace talks about runtimes as a shared resource. Routing it there made
+    # one run sound like the voice of the whole workspace, which it is not.
     STEP_CHANNEL = {
         "precondition": "control", "packet": "control", "cohort": "control",
         "tech_complete": "control", "machine_gate": "control",

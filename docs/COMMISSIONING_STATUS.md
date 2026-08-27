@@ -65,7 +65,7 @@ produced this code accept it.
 |---|---|
 | 0001 foundation has no third-party dependency | a harness that verifies an environment cannot need that environment first |
 | 0002 quantised serving is first-class | 41.1 GiB usable VRAM measured, not assumed |
-| 0003 AETHRIONIS workspaces unbound | commissioning DUM-E in isolation |
+| 0003 specification and target workspaces unbound | commissioning DUM-E in isolation, with no target repository present |
 | 0004 llama.cpp CUDA is the profile | only stack with no driver-535 blocker, only one that grammar-constrains the tool call |
 | 0005 Buzz over the HTTP bridge | no headless agent/team API exists; the CLI costs 10–14 GiB to reach the same three endpoints |
 | 0006 the harness supplies the proof | Superpowers enforces nothing and says so |

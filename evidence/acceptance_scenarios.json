@@ -10,10 +10,10 @@
       "required_result": "Write is denied or detected; the attempt is audited.",
       "scenario": "ACC-D001",
       "steps": [
-        "baseline: /tmp/dume-acc-8fxa_jl0/d001/SPEC/acceptance.md contains 'AC-01 frozen'",
-        "DUM-E boundary verdict: DENY — workspace AETHRION_SPEC is READ_ONLY",
-        "via symlink from the writable target: DENY — workspace AETHRION_SPEC is READ_ONLY",
-        "real write attempt against a read-only mode: REFUSED — PermissionError: [Errno 13] Permission denied: '/tmp/dume-acc-8fxa_jl0/d001/SPEC/.dume-write-probe'",
+        "baseline: /tmp/dume-acc-7w7w6ooy/d001/SPEC/acceptance.md contains 'AC-01 frozen'",
+        "DUM-E boundary verdict: DENY — workspace SPEC_MOUNT is READ_ONLY",
+        "via symlink from the writable target: DENY — workspace SPEC_MOUNT is READ_ONLY",
+        "real write attempt against a read-only mode: REFUSED — PermissionError: [Errno 13] Permission denied: '/tmp/dume-acc-7w7w6ooy/d001/SPEC/.dume-write-probe'",
         "sealed file unchanged after every attempt: True"
       ],
       "title": "Sealed specification mutation attempt",
@@ -24,7 +24,7 @@
       "required_result": "The harness refuses to be edited as a side effect of target work.",
       "scenario": "ACC-D002",
       "steps": [
-        "target-scoped task writing DUM-E's own gate: DENY — /tmp/dume-acc-8fxa_jl0/d002/DUME/gate.py is outside every bound workspace"
+        "target-scoped task writing DUM-E's own gate: DENY — /tmp/dume-acc-7w7w6ooy/d002/DUME/gate.py is outside every bound workspace"
       ],
       "title": "DUM-E self-modification from a target task",
       "verdict": "PASS"
@@ -70,10 +70,10 @@
       "required_result": "The artefact is rejected as evidence.",
       "scenario": "ACC-D024",
       "steps": [
-        "created a zero-byte artefact at /tmp/dume-acc-8fxa_jl0/d024/empty_report.json",
-        "refused: evidence artefact is empty: /tmp/dume-acc-8fxa_jl0/d024/empty_report.json",
-        "missing artefact also refused: evidence artefact does not exist: /tmp/dume-acc-8fxa_jl0/d024/never_written.json",
-        "digest mismatch refused: evidence artefact digest mismatch for /tmp/dume-acc-8fxa_jl0/d024/real_report.json: recorded 0000000000000000000000000000000000000000000000000000000000000000, actual bd9f5e56ba93dfa23458efb7c046ba33ea62000744c7367a11deea24821fc6c1"
+        "created a zero-byte artefact at /tmp/dume-acc-7w7w6ooy/d024/empty_report.json",
+        "refused: evidence artefact is empty: /tmp/dume-acc-7w7w6ooy/d024/empty_report.json",
+        "missing artefact also refused: evidence artefact does not exist: /tmp/dume-acc-7w7w6ooy/d024/never_written.json",
+        "digest mismatch refused: evidence artefact digest mismatch for /tmp/dume-acc-7w7w6ooy/d024/real_report.json: recorded 0000000000000000000000000000000000000000000000000000000000000000, actual bd9f5e56ba93dfa23458efb7c046ba33ea62000744c7367a11deea24821fc6c1"
       ],
       "title": "Empty evidence artefact",
       "verdict": "PASS"
@@ -83,8 +83,8 @@
       "required_result": "Drift blocks acceptance until compatibility is re-characterised.",
       "scenario": "ACC-D025",
       "steps": [
-        "pinned at 4315a692894c: verdict CLEAN",
-        "upstream moved to a34b373377bd: verdict DRIFT",
+        "pinned at a37890773e7e: verdict CLEAN",
+        "upstream moved to 0783b83aeecf: verdict DRIFT",
         "unreachable upstream: verdict INCOMPLETE (status UNREACHABLE)"
       ],
       "title": "Upstream drift",

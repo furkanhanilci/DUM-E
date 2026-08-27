@@ -16,10 +16,10 @@
         "verifier",
         "specialist"
       ],
-      "reason": "qualification trials passed: tool_calling, structured_output, refuses_an_unsound_claim, admits_uncertainty",
+      "reason": "no OpenAI-compatible endpoint answered on http://127.0.0.1:8000/v1/models, http://127.0.0.1:30000/v1/models, http://127.0.0.1:8080/v1/models",
       "retry_after": "2026-08-26T12:24:38+00:00",
       "runtime_id": "qwen-local",
-      "status": "AVAILABLE"
+      "status": "RUNTIME_MISSING"
     },
     {
       "cost_tier": 2,
@@ -37,10 +37,10 @@
         "verifier",
         "specialist"
       ],
-      "reason": "qualification trials passed: tool_calling, structured_output, refuses_an_unsound_claim, admits_uncertainty",
+      "reason": "no OpenAI-compatible endpoint answered on http://127.0.0.1:8001/v1/models",
       "retry_after": "2026-08-26T12:24:38+00:00",
       "runtime_id": "mistral-local",
-      "status": "AVAILABLE"
+      "status": "RUNTIME_MISSING"
     },
     {
       "cost_tier": 4,
@@ -58,7 +58,7 @@
         "verifier",
         "specialist"
       ],
-      "reason": "qualification trials passed: tool_calling, structured_output, refuses_an_unsound_claim, admits_uncertainty",
+      "reason": "/home/otonom/.local/bin/claude is installed; qualification trials established quota and auth",
       "retry_after": null,
       "runtime_id": "claude-opus-5",
       "status": "AVAILABLE"
@@ -79,7 +79,7 @@
         "verifier",
         "specialist"
       ],
-      "reason": "qualification trials passed: tool_calling, structured_output, refuses_an_unsound_claim, admits_uncertainty",
+      "reason": "/home/otonom/.local/bin/claude is installed; qualification trials established quota and auth",
       "retry_after": null,
       "runtime_id": "claude-fable-5",
       "status": "AVAILABLE"
@@ -116,7 +116,7 @@
         "verifier",
         "specialist"
       ],
-      "reason": "qualification trials passed: tool_calling, structured_output, refuses_an_unsound_claim, admits_uncertainty",
+      "reason": "/home/otonom/.local/bin/codex is installed; qualification trials established quota and auth",
       "retry_after": null,
       "runtime_id": "codex-terra",
       "status": "AVAILABLE"
@@ -137,7 +137,7 @@
         "verifier",
         "specialist"
       ],
-      "reason": "qualification trials passed: tool_calling, structured_output, refuses_an_unsound_claim, admits_uncertainty",
+      "reason": "/home/otonom/.local/bin/codex is installed; qualification trials established quota and auth",
       "retry_after": null,
       "runtime_id": "codex-sol",
       "status": "AVAILABLE"

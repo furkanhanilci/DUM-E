@@ -1,7 +1,7 @@
-"""AETHRIONIS's spaces as a Telegram forum.
+"""The workspace's spaces as a Telegram forum.
 
 A forum supergroup has topics, and a topic is a conversation with its own name
-and its own unread state. That is the same shape AETHRIONIS already has, so the
+and its own unread state. That is the same shape the workspace already has, so the
 mapping is one to one: one topic per channel, grouped by space in the name.
 
 Why one bot and not one per role. Telegram does not deliver a bot's messages to
@@ -23,7 +23,7 @@ from pathlib import Path
 
 MAP = Path.home() / ".dume" / "secrets" / "telegram-topics.json"
 
-# Name, and the AETHRIONIS channel it mirrors. The space is carried in the name
+# Name, and the workspace channel it mirrors. The space is carried in the name
 # because Telegram has no grouping above a topic — so the only place the space
 # can be said is in the words a person reads.
 TOPICS: list[tuple[str, str]] = [
@@ -53,7 +53,7 @@ COLOUR = {
 
 @dataclass
 class Topics:
-    """The recorded mapping between AETHRIONIS channels and forum topics."""
+    """The recorded mapping between workspace channels and forum topics."""
     chat_id: str | None = None
     by_channel: dict[str, int] = None  # channel short name -> topic id
 
@@ -77,7 +77,7 @@ class Topics:
         return path
 
     def channel_for(self, thread_id: int | None) -> str | None:
-        """Which AETHRIONIS channel a topic stands for, if any."""
+        """Which workspace channel a topic stands for, if any."""
         if thread_id is None:
             return None
         for channel, topic in (self.by_channel or {}).items():

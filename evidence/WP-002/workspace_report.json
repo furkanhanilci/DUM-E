@@ -1,6 +1,9 @@
 {
   "schema": "dume.workspace_report/1",
-  "unbound": [],
+  "unbound": [
+    "SPEC_MOUNT",
+    "BUILD_TARGET"
+  ],
   "workspaces": [
     {
       "bound": true,
@@ -10,18 +13,16 @@
       "path": "/home/otonom/Desktop/FH/DUM-E"
     },
     {
-      "bound": true,
+      "bound": false,
       "mode": "READ_ONLY",
-      "mount_read_only": false,
-      "name": "AETHRION_SPEC",
-      "path": "/home/otonom/Desktop/FH/AETHRION"
+      "name": "SPEC_MOUNT",
+      "path": null
     },
     {
-      "bound": true,
+      "bound": false,
       "mode": "READ_WRITE",
-      "mount_read_only": false,
-      "name": "AETHRION_TARGET",
-      "path": "/home/otonom/Desktop/FH/AETHRION_BUILD"
+      "name": "BUILD_TARGET",
+      "path": null
     },
     {
       "bound": true,

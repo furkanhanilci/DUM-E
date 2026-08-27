@@ -7,7 +7,7 @@ doing anything — a run that cannot advance the state cannot finish a package,
 which is why WP-001 sat at EXECUTING through every successful rehearsal.
 
 This is the other one. The store is the deployment's own, the target repository
-is the workspace bound to AETHRION_TARGET, and the evidence lands under the
+is the workspace bound to BUILD_TARGET, and the evidence lands under the
 package's own directory. What a run does here is kept.
 
 The specification is mounted read-only and stays that way. A harness able to
@@ -72,10 +72,10 @@ def _lock_holder() -> int | None:
 def target_repo() -> Path:
     """The repository DUM-E builds into."""
     workspaces = load_config()["workspaces"]
-    target = workspaces.get("AETHRION_TARGET") or {}
+    target = workspaces.get("BUILD_TARGET") or {}
     if not target.get("bound") or not target.get("path"):
         raise NotCommissionable(
-            "AETHRION_TARGET is not bound. A package needing it is BLOCKED "
+            "BUILD_TARGET is not bound. A package needing it is BLOCKED "
             "rather than improvised — bind it in config/dume.config.json.")
     path = Path(target["path"])
     if not (path / ".git").is_dir():

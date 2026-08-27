@@ -53,15 +53,24 @@ def test_frontmatter_carries_what_the_vault_linter_requires():
         assert required in fm
 
 
-def test_tags_stay_outside_the_aethrion_namespace():
-    """The vault's controlled vocabulary governs `aethrionis/` only. A DUM-E note
-    emitting an `aethrionis/` tag would be a lint finding in someone else's
-    project."""
+def test_tags_stay_inside_the_dume_namespace():
+    """A shared vault has other projects' controlled vocabularies in it. Every
+    tag a DUM-E note emits is inside `dume/`, so a note from here can never be a
+    lint finding in someone else's namespace.
+
+    Asserted positively rather than by naming a namespace to avoid: a new
+    foreign namespace appearing in the vault must not silently pass."""
     fm = m.frontmatter(title="T", dume_id="D", note_type="work-package",
                        category="commissioning",
                        tags=["dume/work-package", "dume/wave/w1"],
                        summary="S", source="x.md")
-    assert "aethrionis/" not in fm
+    emitted = [line.strip("- ").strip()
+               for line in fm.split("tags:")[1].split("---")[0].splitlines()
+               if line.strip().startswith("-")]
+    assert emitted, "the fixture must actually emit tags for this to prove anything"
+    # `dume/...` for the hierarchy and the flat `dume-note` marker: both are
+    # DUM-E's own vocabulary, and neither can collide with another project's.
+    assert all(t.startswith("dume/") or t.startswith("dume-") for t in emitted), emitted
 
 
 def test_relative_markdown_links_become_wikilinks_that_resolve():
@@ -109,14 +118,14 @@ def test_applying_colours_preserves_groups_it_did_not_write(tmp_path):
     obsidian = tmp_path / ".obsidian"
     obsidian.mkdir()
     (obsidian / "graph.json").write_text(json.dumps({
-        "colorGroups": [{"query": "tag:#aethrionis/work-package",
+        "colorGroups": [{"query": "tag:#other-project/work-package",
                          "color": {"a": 1, "rgb": 111}}],
         "scale": 1.0}))
     result = m.apply_colour_groups(tmp_path)
     assert result["status"] == "WRITTEN"
     assert result["foreign_groups_preserved"] == 1
     after = json.loads((obsidian / "graph.json").read_text())
-    assert any("aethrionis" in g["query"] for g in after["colorGroups"])
+    assert any("other-project" in g["query"] for g in after["colorGroups"])
     assert after["scale"] == 1.0, "unrelated settings must survive"
     # ...and running it twice does not duplicate.
     m.apply_colour_groups(tmp_path)

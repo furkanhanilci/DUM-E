@@ -48,8 +48,8 @@ def _fixture_cfg(root: Path) -> dict:
     return {
         "schema_version": 1,
         "workspaces": {
-            "AETHRION_SPEC": {"path": str(spec), "mode": "READ_ONLY", "bound": True},
-            "AETHRION_TARGET": {"path": str(target), "mode": "READ_WRITE", "bound": True},
+            "SPEC_MOUNT": {"path": str(spec), "mode": "READ_ONLY", "bound": True},
+            "BUILD_TARGET": {"path": str(target), "mode": "READ_WRITE", "bound": True},
             "EVIDENCE": {"path": str(evidence), "mode": "APPEND_ONLY", "bound": True},
             "DUME": {"path": str(dume), "mode": "READ_WRITE", "bound": True},
         },
@@ -77,7 +77,7 @@ def acc_d001(root: Path) -> Result:
     """Sealed specification mutation attempt."""
     steps = []
     cfg = _fixture_cfg(root)
-    spec = Path(cfg["workspaces"]["AETHRION_SPEC"]["path"])
+    spec = Path(cfg["workspaces"]["SPEC_MOUNT"]["path"])
     boundary = Boundary(cfg)
     sealed = spec / "acceptance.md"
     baseline = sealed.read_text()
@@ -89,7 +89,7 @@ def acc_d001(root: Path) -> Result:
 
     # The tempting shortcut: reach the same file through a symlink planted in a
     # workspace the task *is* allowed to write.
-    link = Path(cfg["workspaces"]["AETHRION_TARGET"]["path"]) / "spec-link"
+    link = Path(cfg["workspaces"]["BUILD_TARGET"]["path"]) / "spec-link"
     if not link.exists():
         link.symlink_to(spec)
     via_link = boundary.check_write(link / "acceptance.md")

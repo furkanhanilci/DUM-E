@@ -372,8 +372,9 @@ class IntentHandler:
     # and the distinction between spaces is an authority distinction rather
     # than a filing one.
     SPACE_PURPOSE = {
-        "DUM-E": "The commissioning harness that builds AETHRIONIS. Decides "
-                 "merge eligibility, and that by a deterministic gate.",
+        "DUM-E": "The commissioning harness itself — packets, cohorts, "
+                 "runs. Decides merge eligibility, and that by a "
+                 "deterministic gate.",
         "Research": "Sources and open questions. Decides nothing — the Source "
                     "Registry owns bibliographic truth.",
         "Review": "Claims, evidence and rebuttal. A verdict is a record bound "
@@ -384,9 +385,9 @@ class IntentHandler:
     }
 
     def _spaces(self) -> str:
-        """AETHRIONIS's spaces. DUM-E is one of them, and the first, because it
-        is the harness that builds the rest — not because it is the product."""
-        lines = ["AETHRIONIS", ""]
+        """The workspace's spaces. DUM-E is the first because the harness's own
+        run is what the other four report on."""
+        lines = ["DUM-E WORKSPACE", ""]
         for space, channels in self.SPACES.items():
             lines.append(f"▸ {space}")
             lines.append(f"   {self.SPACE_PURPOSE.get(space, '')}")

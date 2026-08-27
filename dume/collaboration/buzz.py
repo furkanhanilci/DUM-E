@@ -53,10 +53,14 @@ NEEDS_REFERENCE = frozenset({"CHALLENGE", "EVIDENCE", "CORRECTION",
 # The old names stay readable indefinitely. There is no migration to run and
 # nothing to remember: the old form simply stops being written and fades as the
 # messages carrying it age out.
-TYPE_TAG = "aethrionis-type"
-REF_TAG = "aethrionis-ref"
-LEGACY_TYPE_TAGS = ("aethrionis-type", "aethrion-type")
-LEGACY_REF_TAGS = ("aethrionis-ref", "aethrion-ref")
+TYPE_TAG = "dume-type"
+REF_TAG = "dume-ref"
+# Every tag name the wire has ever carried. Events already accepted by the
+# relay cannot be rewritten, and a read that only knew the current name would
+# report them as untyped — so the older names stay readable. These are opaque
+# historical strings, not a vocabulary anything new is written with.
+LEGACY_TYPE_TAGS = ("dume-type", "aethrionis-type", "aethrion-type")
+LEGACY_REF_TAGS = ("dume-ref", "aethrionis-ref", "aethrion-ref")
 
 
 def declared_type(tags: list) -> str | None:
@@ -432,7 +436,7 @@ def ensure_spaces(client: BuzzClient, operator: str | None = None) -> dict[str, 
     for name, channel in SPACE_CHANNELS.items():
         try:
             client.create_channel(channel, SPACE_TITLES.get(name, name),
-                                  "A standing AETHRIONIS space.", private=False)
+                                  "A standing DUM-E workspace space.", private=False)
             # The relay accepts a create for an id that already exists, so
             # this says what was asserted, not what was new. Claiming
             # "created" for eleven channels that were already there reads as

@@ -7,17 +7,17 @@
       "mode": "READ_WRITE",
       "purpose": "The commissioning harness source. Control-plane changes are separate work, never a side effect of a target work package."
     },
-    "AETHRION_SPEC": {
-      "path": "/home/otonom/Desktop/FH/AETHRION",
+    "SPEC_MOUNT": {
+      "path": null,
       "mode": "READ_ONLY",
-      "purpose": "Authoritative commissioning specification. Read-only to every build agent. UNBOUND until a human binds it.",
-      "bound": true
+      "purpose": "The authoritative specification for whatever DUM-E is pointed at. Read-only to every build agent, so a package cannot rewrite the requirement it is failing. UNBOUND until a human binds it with the bind_workspace action.",
+      "bound": false
     },
-    "AETHRION_TARGET": {
-      "path": "/home/otonom/Desktop/FH/AETHRION_BUILD",
+    "BUILD_TARGET": {
+      "path": null,
       "mode": "READ_WRITE",
-      "purpose": "The implementation under construction. Written only through an assigned worktree. UNBOUND until a human binds it.",
-      "bound": true
+      "purpose": "The implementation under construction. Written only through an assigned worktree, never directly. UNBOUND until a human binds it with the bind_workspace action.",
+      "bound": false
     },
     "WORKTREES": {
       "path": "/home/otonom/Desktop/FH/DUM-E/worktrees",
@@ -37,8 +37,8 @@
     }
   },
   "protected_paths": [
-    "AETHRION_SPEC/**",
+    "SPEC_MOUNT/**",
     "evidence/**"
   ],
-  "notes": "JSON rather than TOML/YAML: the host runs Python 3.10 (no stdlib tomllib) and DUM-E foundation must have zero third-party dependencies."
+  "notes": "JSON rather than TOML/YAML: the host runs Python 3.10 (no stdlib tomllib) and the DUM-E foundation must have zero third-party dependencies. SPEC_MOUNT and BUILD_TARGET ship unbound: a slot that grants nothing is the correct default, and binding one is a deliberate, recorded, human act."
 }

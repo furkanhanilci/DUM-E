@@ -1,6 +1,6 @@
 """Membership through GitHub, admission through the relay.
 
-AETHRIONIS keeps three things apart that a conventional account system merges:
+DUM-E keeps three things apart that a conventional account system merges:
 
   identity    a key held on the operator's machine. Nothing registers it, no
               service issues it, and none can revoke it.
@@ -103,7 +103,7 @@ def _post(url: str, payload: dict, *, token: str | None = None) -> dict:
     body = urllib.parse.urlencode(payload).encode()
     request = urllib.request.Request(url, data=body, headers={
         "Accept": "application/json",
-        "User-Agent": "AETHRION-Studio",
+        "User-Agent": "DUM-E",
         **({"Authorization": f"Bearer {token}"} if token else {}),
     })
     try:
@@ -142,7 +142,7 @@ def _explain(exc: urllib.error.HTTPError, url: str) -> str:
 def _get(url: str, token: str) -> dict:
     request = urllib.request.Request(url, headers={
         "Accept": "application/vnd.github+json",
-        "User-Agent": "AETHRION-Studio",
+        "User-Agent": "DUM-E",
         "Authorization": f"Bearer {token}",
     })
     try:

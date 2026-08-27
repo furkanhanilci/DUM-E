@@ -1,6 +1,6 @@
 {
   "schema": "dume.upstream_lock/1",
-  "note": "AETHRION is deliberately absent. DUM-E is being commissioned as a harness in isolation; the specification and target workspaces are unbound configuration slots until a human binds them.",
+  "note": "The target this harness builds is not an upstream of it. Specification and target workspaces are unbound configuration slots until a human binds them, so nothing about a target is pinned here \u2014 only the components DUM-E itself runs on.",
   "reference_date": "2026-08-24",
   "upstreams": [
     {

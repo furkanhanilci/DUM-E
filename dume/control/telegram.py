@@ -248,9 +248,9 @@ class TelegramBridge:
     # teaches its first-time reader that it is broken; answering with what this
     # place is costs one branch.
     GREETING = (
-        "AETHRIONIS\n\n"
-        "Five spaces, and DUM-E is one of them — the harness that builds the "
-        "rest, not the product.\n\n"
+        "DUM-E WORKSPACE\n\n"
+        "Five spaces. DUM-E — the harness itself — is the first, and the "
+        "other four are what a run produces evidence for.\n\n"
         "  spaces      the spaces and their channels\n"
         "  commands    everything you may do\n"
         "  open        what nobody has answered\n\n"
@@ -337,7 +337,7 @@ class TelegramBridge:
                       f"This chat is {chat_id}."
                       + (f"\nThis topic is {thread_id}." if thread_id else "")
                       + "\n\n"
-                      "To have AETHRIONIS narrate here, run on the host:\n"
+                      "To have DUM-E narrate here, run on the host:\n"
                       f"  dume telegram --broadcast {chat_id}")
             return {"outcome": "GREETED", "actor": actor_id, "chat": chat_id}
 

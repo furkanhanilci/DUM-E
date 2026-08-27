@@ -3,10 +3,10 @@
 Two questions, and they are separate.
 
 **Who.** A group holds two accounts. `@dume` is the harness — it answers about
-work packages, candidates, reviews, gates and runs. `@aethrionis` is the
-workspace — spaces, channels, membership, what is waiting for an answer. Naming
-one is how a person says which they mean, and a message addressed to one is not
-answered by the other.
+work packages, candidates, reviews, gates and runs. `@workspace` is the
+collaboration surface — spaces, channels, membership, what is waiting for an
+answer. Naming one is how a person says which they mean, and a message addressed
+to one is not answered by the other.
 
 **What.** The command vocabulary is fixed and there is no shell. That does not
 mean a person has to remember the exact verb: "hangi paketler bekliyor" and
@@ -23,10 +23,10 @@ from __future__ import annotations
 import re
 
 # The two accounts, by every name a person might type. Matched case-insensitively
-# and only at a word boundary, so "aethrionis" inside a sentence still counts and
+# and only at a word boundary, so "workspace" inside a sentence still counts and
 # "dumela" does not.
 DUME = ("dume", "dum-e", "dume_autonomous_bot", "dum_e")
-AETHRIONIS = ("aethrionis", "aethrionis_bot", "aethrion", "studio")
+WORKSPACE = ("workspace", "workspace_bot", "studio", "spaces_bot")
 
 # Which commands belong to which addressee. A command asked of the wrong one is
 # still answered — refusing it would be pedantry — but the answer says which it
@@ -35,7 +35,7 @@ DUME_COMMANDS = frozenset({
     "status", "show", "history", "findings", "evidence", "next", "roles",
     "runtimes", "retry", "commission", "pause", "resume", "decide", "block",
     "reserve", "release", "disable", "enable", "kill", "ask"})
-AETHRIONIS_COMMANDS = frozenset({
+WORKSPACE_COMMANDS = frozenset({
     "spaces", "read", "open", "say", "challenge", "commands", "bind_workspace"})
 
 # Plain text, mapped onto the vocabulary. Deliberately small and deliberately
@@ -64,16 +64,16 @@ def addressee(text: str) -> str | None:
     for name in DUME:
         if re.search(rf"@?\b{re.escape(name)}\b", lowered):
             return "dume"
-    for name in AETHRIONIS:
+    for name in WORKSPACE:
         if re.search(rf"@?\b{re.escape(name)}\b", lowered):
-            return "aethrionis"
+            return "workspace"
     return None
 
 
 def strip_address(text: str) -> str:
     """The message without the name it was addressed to."""
     out = text
-    for name in DUME + AETHRIONIS:
+    for name in DUME + WORKSPACE:
         out = re.sub(rf"@?\b{re.escape(name)}\b[,:]?\s*", "", out, flags=re.I)
     return out.strip()
 
@@ -92,7 +92,7 @@ def interpret(text: str) -> tuple[str | None, str | None]:
 
     # An exact command wins outright — someone who typed `next` meant `next`.
     first = body.split()[0].lower().lstrip("/")
-    if first in DUME_COMMANDS | AETHRIONIS_COMMANDS:
+    if first in DUME_COMMANDS | WORKSPACE_COMMANDS:
         return None, None
 
     package = PACKAGE.search(body)
@@ -112,8 +112,8 @@ def interpret(text: str) -> tuple[str | None, str | None]:
 
 def belongs_to(command: str) -> str:
     """Which account a command is really about."""
-    if command in AETHRIONIS_COMMANDS:
-        return "aethrionis"
+    if command in WORKSPACE_COMMANDS:
+        return "workspace"
     if command in DUME_COMMANDS:
         return "dume"
-    return "aethrionis"
+    return "workspace"

@@ -68,7 +68,7 @@ def address() -> str:
     first. Moving between them is a single-row change rather than a migration,
     but it is a change somebody has to make deliberately.
     """
-    override = os.environ.get("AETHRIONIS_HOST", "").strip()
+    override = os.environ.get("DUME_HOST", "").strip()
     if override:
         return override
     return tailscale_address() or lan_address()
