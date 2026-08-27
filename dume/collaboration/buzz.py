@@ -44,37 +44,27 @@ MESSAGE_TYPES = frozenset({
 NEEDS_REFERENCE = frozenset({"CHALLENGE", "EVIDENCE", "CORRECTION",
                              "DISAGREEMENT", "CONSENSUS_CANDIDATE"})
 
-# The tag a message declares its class in. Renamed with the product, and read
-# under both names: 105 messages are already on the relay and six of them carry
-# the old tag. Writing the new name and refusing the old one would make those
-# six read as undeclared — and "nobody said" is a different fact from "somebody
-# said STATUS", which is the whole reason the tag exists.
-#
-# The old names stay readable indefinitely. There is no migration to run and
-# nothing to remember: the old form simply stops being written and fades as the
-# messages carrying it age out.
+# The tag a message declares its class in, and the tag naming what it is about.
+# These are the only names read or written. Messages posted to the relay under a
+# tag this harness no longer knows read as *undeclared* — "nobody said" rather
+# than "somebody said STATUS" — which is a real difference, so a tag rename is a
+# change to make deliberately and not as a side effect.
 TYPE_TAG = "dume-type"
 REF_TAG = "dume-ref"
-# Every tag name the wire has ever carried. Events already accepted by the
-# relay cannot be rewritten, and a read that only knew the current name would
-# report them as untyped — so the older names stay readable. These are opaque
-# historical strings, not a vocabulary anything new is written with.
-LEGACY_TYPE_TAGS = ("dume-type", "aethrionis-type", "aethrion-type")
-LEGACY_REF_TAGS = ("dume-ref", "aethrionis-ref", "aethrion-ref")
 
 
 def declared_type(tags: list) -> str | None:
-    """The class a message declared, under either name."""
+    """The class a message declared, if it declared one."""
     for tag in tags or []:
-        if len(tag) > 1 and tag[0] in LEGACY_TYPE_TAGS:
+        if len(tag) > 1 and tag[0] == TYPE_TAG:
             return tag[1]
     return None
 
 
 def declared_refs(tags: list) -> list[str]:
-    """What a message says it is about, under either name."""
+    """What a message says it is about."""
     return [tag[1] for tag in tags or []
-            if len(tag) > 1 and tag[0] in LEGACY_REF_TAGS and tag[1]]
+            if len(tag) > 1 and tag[0] == REF_TAG and tag[1]]
 
 
 def channel_id_for(wp_id: str) -> str:
