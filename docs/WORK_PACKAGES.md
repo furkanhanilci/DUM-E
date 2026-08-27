@@ -162,16 +162,6 @@ Prove it end to end — synthetically first, then for real.
 | `WP-053` | 27 | First Real Low-Risk Target-Repository Pilot | WP-052 | `DISCOVERED` |
 | `WP-054` | 28 | Two Heterogeneous Pilots and DUM-E v0.1 Acceptance | WP-053 | `DISCOVERED` |
 
-## A note on three titles
-
-`WP-029`, `WP-053` and `WP-054` are stated in the source catalogue in terms
-of one specific target repository. `dume.catalogue.TITLE_OVERRIDES` registers
-them by what is actually built — a packet builder, a low-risk pilot, and two
-heterogeneous pilots — because the harness holds no opinion about what its
-target is. The mechanism is identical either way, and overriding at seed time
-keeps the source catalogue authoritative for everything else: waves,
-dependencies and streams.
-
 ## Regenerating this file
 
 Generated from the live state store. Re-run after a transition rather than

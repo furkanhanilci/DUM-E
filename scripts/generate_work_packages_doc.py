@@ -5,8 +5,8 @@ The table is generated rather than written because a hand-maintained status
 table is a status table that will disagree with the store on the day it matters
 — and the store, not a document, is what the gate reads.
 
-Titles come from the store, which already applies
-``dume.catalogue.TITLE_OVERRIDES`` at seed time. Nothing is renamed here.
+Titles come from the store, which reads them from the source catalogue at seed
+time. Nothing is renamed here.
 
 Usage:
     python3 scripts/generate_work_packages_doc.py [--check]
@@ -130,14 +130,6 @@ def render() -> str:
             depends = ", ".join(sorted(deps[wp])) or "—"
             add(f"| `{wp}` | {wave} | {title} | {depends} | `{state}` |")
         add("")
-    add("## A note on three titles\n")
-    add("`WP-029`, `WP-053` and `WP-054` are stated in the source catalogue in terms")
-    add("of one specific target repository. `dume.catalogue.TITLE_OVERRIDES` registers")
-    add("them by what is actually built — a packet builder, a low-risk pilot, and two")
-    add("heterogeneous pilots — because the harness holds no opinion about what its")
-    add("target is. The mechanism is identical either way, and overriding at seed time")
-    add("keeps the source catalogue authoritative for everything else: waves,")
-    add("dependencies and streams.\n")
     add("## Regenerating this file\n")
     add("Generated from the live state store. Re-run after a transition rather than")
     add("editing by hand — an edit here is a divergence nothing can detect.\n")
